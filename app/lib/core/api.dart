@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ApiException implements Exception {
   final String message;
@@ -80,15 +81,16 @@ class Api {
 
   /// Uploads one photo as multipart form data. The content type is set from the file
   /// extension, because the server only accepts JPG, PNG or WEBP photos.
-  Future<dynamic> upload(String path, String filePath) {
+  /// Reads bytes instead of a file path so it also works on the web, where the path is a blob URL.
+  Future<dynamic> upload(String path, XFile file) {
     return _send(() async {
       final http.MultipartRequest req = http.MultipartRequest('POST', _uri(path));
       req.headers.addAll(_headers(json: false));
-      final String lower = filePath.toLowerCase();
-      final MediaType type = lower.endsWith('.png')
+      final String lower = '${file.mimeType ?? ''} ${file.name}'.toLowerCase();
+      final MediaType type = lower.contains('png')
           ? MediaType('image', 'png')
-          : (lower.endsWith('.webp') ? MediaType('image', 'webp') : MediaType('image', 'jpeg'));
-      req.files.add(await http.MultipartFile.fromPath('file', filePath, contentType: type));
+          : (lower.contains('webp') ? MediaType('image', 'webp') : MediaType('image', 'jpeg'));
+      req.files.add(http.MultipartFile.fromBytes('file', await file.readAsBytes(), filename: file.name, contentType: type));
       final http.StreamedResponse streamed = await req.send();
       return http.Response.fromStream(streamed);
     });

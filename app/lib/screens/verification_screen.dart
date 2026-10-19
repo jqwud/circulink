@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,18 +19,26 @@ class VerificationScreen extends StatefulWidget {
 
 class _VerificationScreenState extends State<VerificationScreen> {
   XFile? _file;
+  Uint8List? _preview;
   bool _busy = false;
 
   Future<void> _pick() async {
     final XFile? f = await pickPhoto(context);
-    if (f != null && mounted) setState(() => _file = f);
+    if (f == null) return;
+    final Uint8List bytes = await f.readAsBytes();
+    if (mounted) {
+      setState(() {
+        _file = f;
+        _preview = bytes;
+      });
+    }
   }
 
   Future<void> _send() async {
     if (_file == null) return;
     setState(() => _busy = true);
     try {
-      await context.app.api.upload('/me/id-photo', _file!.path);
+      await context.app.api.upload('/me/id-photo', _file!);
       await context.app.bump();
       if (!mounted) return;
       Navigator.pop(context);
@@ -66,10 +74,10 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          if (_file != null)
+          if (_preview != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(kRadius),
-              child: Image.file(File(_file!.path), height: 200, width: double.infinity, fit: BoxFit.cover),
+              child: Image.memory(_preview!, height: 200, width: double.infinity, fit: BoxFit.cover),
             ),
           const SizedBox(height: 12),
           SoftButton(label: _file == null ? context.t('Take or choose a photo') : context.t('Choose a different photo'), icon: Icons.photo_camera, onPressed: _pick),

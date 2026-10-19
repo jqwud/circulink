@@ -47,7 +47,7 @@ Future<String?> pickAndUploadPhoto(BuildContext context) async {
     builder: (BuildContext ctx) => const Center(child: CircularProgressIndicator(color: HiColors.primary)),
   );
   try {
-    final dynamic res = await Api.instance.upload('/uploads', file.path);
+    final dynamic res = await Api.instance.upload('/uploads', file);
     if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     return (res as Map)['url'] as String?;
   } catch (e) {
