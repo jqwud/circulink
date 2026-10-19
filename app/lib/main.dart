@@ -22,6 +22,7 @@ class HiramanApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         navigatorKey: rootNavigatorKey,
         theme: buildTheme(),
+        builder: (BuildContext context, Widget? child) => ContentFrame(child: child ?? const SizedBox.shrink()),
         home: const Gate(),
       ),
     );

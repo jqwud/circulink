@@ -45,9 +45,9 @@ class StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(color: toneBg(tone), borderRadius: BorderRadius.circular(99)),
-      child: Text(label, style: TextStyle(color: toneFg(tone), fontSize: 12, fontWeight: FontWeight.w800)),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: toneBg(tone), borderRadius: BorderRadius.circular(HiRadius.pill)),
+      child: Text(label, style: TextStyle(color: toneFg(tone), fontSize: 12, fontWeight: FontWeight.w700, height: 1.2)),
     );
   }
 }
@@ -70,22 +70,31 @@ class HiCard extends StatelessWidget {
     this.borderColor,
   });
 
+  /// White cards float on a soft shadow. Tinted cards sit flat.
+  /// A border is drawn only when [borderColor] differs from the fill.
   @override
   Widget build(BuildContext context) {
-    final BorderRadius radius = BorderRadius.circular(kRadius);
+    final BorderRadius radius = BorderRadius.circular(HiRadius.lg);
+    final Color fill = color ?? HiColors.card;
+    final bool tinted = fill != HiColors.card;
+    final bool outlined = borderColor != null && borderColor != fill;
     return Padding(
       padding: margin,
-      child: Material(
-        color: color ?? HiColors.card,
-        borderRadius: radius,
-        child: InkWell(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: fill,
           borderRadius: radius,
-          onTap: onTap,
-          child: Container(
-            width: double.infinity,
-            padding: padding,
-            decoration: BoxDecoration(borderRadius: radius, border: Border.all(color: borderColor ?? HiColors.line)),
-            child: child,
+          boxShadow: tinted ? null : HiShadow.card,
+          border: outlined ? Border.all(color: borderColor!, width: 1.2) : null,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          borderRadius: radius,
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: SizedBox(width: double.infinity, child: Padding(padding: padding, child: child)),
           ),
         ),
       ),
@@ -104,13 +113,7 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ButtonStyle style = FilledButton.styleFrom(
-      backgroundColor: danger ? HiColors.danger : HiColors.primary,
-      foregroundColor: Colors.white,
-      minimumSize: const Size(0, 52),
-      shape: const StadiumBorder(),
-      textStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-    );
+    final ButtonStyle? style = danger ? FilledButton.styleFrom(backgroundColor: HiColors.danger) : null;
     final Widget content = busy
         ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
         : (icon == null
@@ -133,17 +136,10 @@ class SoftButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ButtonStyle style = OutlinedButton.styleFrom(
-      foregroundColor: HiColors.ink,
-      side: const BorderSide(color: HiColors.line, width: 1.5),
-      minimumSize: const Size(0, 48),
-      shape: const StadiumBorder(),
-      textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-    );
     final Widget content = icon == null
         ? Text(label)
-        : Row(mainAxisSize: MainAxisSize.min, children: <Widget>[Icon(icon, size: 18), const SizedBox(width: 8), Text(label)]);
-    final Widget button = OutlinedButton(style: style, onPressed: onPressed, child: content);
+        : Row(mainAxisSize: MainAxisSize.min, children: <Widget>[Icon(icon, size: 18), const SizedBox(width: 8), Flexible(child: Text(label))]);
+    final Widget button = OutlinedButton(onPressed: onPressed, child: content);
     return expand ? SizedBox(width: double.infinity, child: button) : button;
   }
 }
@@ -156,10 +152,10 @@ class SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 10),
+      padding: const EdgeInsets.fromLTRB(2, HiSpace.md, 2, HiSpace.sm),
       child: Row(
         children: <Widget>[
-          Expanded(child: Text(text, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: HiColors.ink))),
+          Expanded(child: Text(text, style: HiText.title)),
           if (trailing != null) trailing!,
         ],
       ),
