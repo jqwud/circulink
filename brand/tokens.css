@@ -1,0 +1,19 @@
+:root{
+  --c-primary: #B8560A;
+  --c-primary-soft: #FDE7CF;
+  --c-fur: #F5A04A;
+  --c-fur-dark: #D9781E;
+  --c-cream: #FFF8EE;
+  --c-card: #FFFFFF;
+  --c-ink: #22304A;
+  --c-muted: #6B7690;
+  --c-leaf: #1F7A50;
+  --c-leaf-soft: #DDF3E8;
+  --c-warn: #B7791F;
+  --c-warn-soft: #FDF1D6;
+  --c-danger: #C0392B;
+  --c-danger-soft: #FBE3E0;
+  --c-line: #EADFCF;
+  --r-sm:8px; --r-md:14px; --r-lg:22px;
+  --font:'Nunito', 'Segoe UI', system-ui, sans-serif;
+}

@@ -1,0 +1,105 @@
+// Filipino / English toggle. The English text itself is the key, so a missing translation just shows English.
+import { createContext, useContext, useState, useCallback } from 'react';
+
+const FIL = {
+  // navigation
+  'Dashboard': 'Dashboard', 'Verification': 'Beripikasyon', 'Residents': 'Mga Residente', 'Listings': 'Mga Listahan',
+  'Barangay Shelf': 'Barangay Shelf', 'Transactions': 'Mga Transaksyon', 'Reports & disputes': 'Mga Report at Hidwaan',
+  'Announcements': 'Mga Anunsyo', 'Impact': 'Epekto', 'Rules': 'Mga Patakaran', 'Staff & audit log': 'Staff at audit log',
+  'Log out': 'Mag-log out', 'LGU Portal': 'Portal ng LGU',
+  // login
+  'Staff login': 'Login ng Staff', 'Email': 'Email', 'Password': 'Password', 'Log in': 'Mag-log in',
+  'Signing in...': 'Nag-log in...', 'This portal is for barangay and LGU staff only.': 'Ang portal na ito ay para lamang sa staff ng barangay at LGU.',
+  'Demo accounts (password hiraman123): admin@hiraman.test or staff@hiraman.test': 'Mga demo account (password hiraman123): admin@hiraman.test o staff@hiraman.test',
+  // dashboard
+  'Good day': 'Magandang araw', 'Here is what Hiraman looks like today.': 'Ito ang kalagayan ng Hiraman ngayon.',
+  'Needs your attention': 'Kailangan ng iyong atensyon', 'Everything is in order. Pawsa is taking a nap.': 'Maayos ang lahat. Natutulog muna si Pawsa.',
+  'Verified residents': 'Beripikadong residente', 'Active listings': 'Aktibong listahan', 'Shelf items': 'Gamit sa Shelf',
+  'Items out on loan': 'Mga gamit na hiniram', 'Completed loans': 'Natapos na hiraman', 'Return rate': 'Rate ng pagbabalik',
+  'Purchases avoided': 'Iniwasang pagbili', 'Loans this week': 'Hiraman ngayong linggo',
+  'IDs waiting for review': 'Mga ID na naghihintay ng review', 'Staff approvals waiting': 'Mga aprubal na naghihintay',
+  'Overdue items': 'Mga lampas na sa takdang araw', 'Open reports': 'Bukas na report',
+  // common
+  'Name': 'Pangalan', 'Phone': 'Telepono', 'Purok': 'Purok', 'Status': 'Katayuan', 'Credits': 'Credits', 'Actions': 'Aksyon',
+  'Search': 'Maghanap', 'All': 'Lahat', 'Approve': 'Aprubahan', 'Reject': 'Tanggihan', 'Cancel': 'Kanselahin', 'Save': 'I-save',
+  'Close': 'Isara', 'Reason': 'Dahilan', 'Remove': 'Alisin', 'Restore': 'Ibalik', 'View': 'Tingnan', 'Loading...': 'Naglo-load...',
+  'Nothing here yet.': 'Wala pa rito.', 'Try again': 'Subukan muli', 'Item': 'Gamit', 'Borrower': 'Humihiram', 'Owner': 'May-ari',
+  'Dates': 'Petsa', 'Tier': 'Tier', 'Category': 'Kategorya', 'Condition': 'Kondisyon', 'Date': 'Petsa', 'Details': 'Detalye',
+  'Send': 'Ipadala', 'Add': 'Idagdag', 'Edit': 'I-edit', 'Yes': 'Oo', 'No': 'Hindi', 'Photo': 'Larawan', 'Optional': 'Opsyonal',
+  'Notes': 'Mga tala', 'Outcome': 'Kinalabasan', 'Reporter': 'Nag-report', 'Target': 'Pinag-uulatan', 'Created': 'Ginawa',
+  // statuses
+  'pending': 'naghihintay', 'approved': 'aprubado', 'rejected': 'tinanggihan', 'unverified': 'hindi pa beripikado',
+  'cancelled': 'kinansela', 'handed_over': 'nasa humihiram', 'closed': 'tapos na', 'disputed': 'may hidwaan',
+  'available': 'available', 'paused': 'naka-pause', 'removed': 'inalis', 'open': 'bukas', 'in_mediation': 'sa mediation',
+  'resolved': 'naresolba', 'low': 'mababa', 'medium': 'katamtaman', 'high': 'mataas', 'good': 'maayos', 'damaged': 'sira',
+  'lost': 'nawala', 'new': 'bago', 'fair': 'katamtaman', 'worn': 'luma', 'suspended': 'suspendido',
+  // verification
+  'Verification queue': 'Pila ng beripikasyon', 'Review each resident\'s ID, then approve or ask them to fix it.': 'Suriin ang ID ng bawat residente, saka aprubahan o ipaayos.',
+  'Waiting for review': 'Naghihintay ng review', 'No IDs are waiting. Nice work!': 'Walang naghihintay na ID. Magaling!',
+  'View ID': 'Tingnan ang ID', 'ID photo': 'Larawan ng ID', 'Why is it being rejected?': 'Bakit ito tinatanggihan?',
+  'Tell the resident what to fix, for example: "ID photo is blurry, please retake."': 'Sabihin sa residente kung ano ang aayusin, hal. "Malabo ang ID, paki-kuha ulit."',
+  'Resident approved. 3 starter credits given.': 'Naaprubahan ang residente. Nabigyan ng 3 starter credits.', 'Resident was asked to fix their ID.': 'Pinaayos sa residente ang ID.',
+  'Check that the name matches the account, the photo is clear, and the address is in this barangay.': 'Tiyaking tugma ang pangalan sa account, malinaw ang larawan, at nasa barangay na ito ang tirahan.',
+  'Registered': 'Nagparehistro', 'Reject with reason': 'Tanggihan na may dahilan',
+  // residents
+  'Residents': 'Mga Residente', 'Search name, email or phone': 'Hanapin ang pangalan, email o telepono', 'Items listed': 'Mga naka-list na gamit',
+  'Loans done': 'Natapos na hiraman', 'Suspend': 'I-suspend', 'Reinstate': 'Ibalik', 'Loan history': 'Kasaysayan ng hiraman',
+  'Credit history': 'Kasaysayan ng credits', 'Resident': 'Residente', 'Back to residents': 'Bumalik sa mga residente',
+  // listings
+  'Listings moderation': 'Moderasyon ng mga listahan', 'Remove listings that break the community rules. The owner is told why.': 'Alisin ang mga listahang lumalabag sa patakaran. Sasabihan ang may-ari kung bakit.',
+  'Search item or owner': 'Hanapin ang gamit o may-ari', 'Owner / source': 'May-ari / pinagmulan', 'Why is this being removed?': 'Bakit ito inaalis?',
+  'Remove listing': 'Alisin ang listahan', 'Shelf': 'Shelf', 'Resident item': 'Gamit ng residente', 'On loan': 'Hiniram',
+  // shelf
+  'Community-owned items kept at the barangay hall. Borrowing them is free, and staff hand them over and take them back.': 'Mga gamit ng komunidad na nasa barangay hall. Libre ang hiramin at staff ang nag-aabot at tumatanggap pabalik.',
+  'Add shelf item': 'Magdagdag ng gamit sa Shelf', 'Item name': 'Pangalan ng gamit', 'Description': 'Paglalarawan', 'Pickup point': 'Pickup point',
+  'Pause': 'I-pause', 'Make available': 'Gawing available', 'Shelf item added.': 'Naidagdag ang gamit sa Shelf.',
+  'Low: auto-approved': 'Mababa: kusang aprubado', 'Medium: staff approve': 'Katamtaman: aprubal ng staff', 'High: hall handover only': 'Mataas: sa hall lang iaabot',
+  'Repair and Reuse': 'Ayusin at Gamitin Muli',
+  // transactions
+  'Needs action': 'Kailangan ng aksyon', 'Overdue': 'Lampas na', 'Every transaction': 'Lahat ng transaksyon',
+  'Approvals, handovers and returns for items the barangay handles, plus every loan in the system.': 'Mga aprubal, pag-abot at pagbabalik ng mga gamit na hawak ng barangay, at lahat ng hiraman sa sistema.',
+  'Confirm handover': 'Kumpirmahin ang pag-abot', 'Confirm return': 'Kumpirmahin ang pagbabalik', 'Send reminders now': 'Magpadala ng paalala ngayon',
+  'Reminders sent': 'Naipadala ang mga paalala', 'Return condition': 'Kondisyon sa pagbabalik', 'Damaged or lost items go to a dispute for mediation.': 'Ang sira o nawalang gamit ay mapupunta sa hidwaan para sa mediation.',
+  'Condition photo (required for medium and high tier)': 'Larawan ng kondisyon (kailangan sa katamtaman at mataas)', 'Barangay handles': 'Hawak ng barangay',
+  'day(s) late': 'araw na huli',
+  'ESTIMATE, not a measurement. Low = items where the borrower answered "yes, I would have bought or rented it" x average product weight for the category. High adds "maybe" answers. One loan does not equal one product not made.': 'TANTIYA ito, hindi sukat. Mababa = mga gamit na sinagot ng humiram ng "oo, bibilhin o uupahan ko sana ito" x karaniwang bigat ng produkto sa kategorya. Mataas = kasama ang mga sagot na "baka". Ang isang hiraman ay hindi katumbas ng isang produktong hindi nagawa.', 'Due': 'Takdang araw', 'Contact': 'Kontakin', 'Nothing needs action right now.': 'Walang kailangang aksyunan ngayon.',
+  'Saved.': 'Na-save.', 'Done.': 'Tapos na.', 'Search item or borrower': 'Hanapin ang gamit o humihiram', 'Credit cost': 'Gastos sa credit',
+  // reports
+  'Reports and disputes': 'Mga report at hidwaan', 'Mediate cases between neighbors. Write the outcome before closing a case.': 'Mamagitan sa mga kaso ng magkapitbahay. Isulat ang kinalabasan bago isara ang kaso.',
+  'Start mediation': 'Simulan ang mediation', 'Resolve case': 'Isara ang kaso', 'Mediator notes': 'Tala ng mediator', 'Also mark the loan as closed': 'Isara rin ang hiraman',
+  'No reports. Pawsa is happy.': 'Walang report. Masaya si Pawsa.', 'Case updated.': 'Na-update ang kaso.',
+  // announcements
+  'Announcements to residents': 'Mga anunsyo sa mga residente', 'Residents get the message as a notification in the app.': 'Matatanggap ng mga residente ang mensahe bilang notification sa app.',
+  'New announcement': 'Bagong anunsyo', 'Title': 'Pamagat', 'Message': 'Mensahe', 'Send to': 'Ipadala sa', 'Everyone': 'Lahat',
+  'Sent announcements': 'Mga naipadalang anunsyo', 'Sent to': 'Naipadala sa', 'residents': 'residente',
+  // impact
+  'Impact analytics': 'Pagsusuri ng epekto', 'Measured numbers first, estimates clearly labeled.': 'Mga nasukat na bilang muna, at malinaw na may label ang mga tantiya.',
+  'Loans per month': 'Hiraman bawat buwan', 'Loans by category': 'Hiraman ayon sa kategorya', 'Measured': 'Nasukat', 'Estimate': 'Tantiya',
+  'Download transactions (CSV)': 'I-download ang mga transaksyon (CSV)', 'Items reused': 'Mga gamit na nagamit muli', 'Survey answers': 'Sagot sa survey',
+  '"Yes" answers (purchases avoided)': 'Sagot na "Oo" (iniwasang pagbili)', 'Estimated new products not made (kg)': 'Tantiyang bigat ng bagong produktong hindi nagawa (kg)',
+  'How this estimate is made': 'Paano ginawa ang tantiyang ito', 'No data yet.': 'Wala pang datos.', 'Active residents': 'Aktibong residente',
+  // rules
+  'Rules and settings': 'Mga patakaran at setting', 'These rules are built into the system. To change them, ask the Hiraman team.': 'Nakapaloob ang mga patakarang ito sa sistema. Para baguhin, kausapin ang Hiraman team.',
+  'Credit rules': 'Patakaran sa credits', 'Item risk tiers': 'Mga tier ng panganib ng gamit', 'Prohibited words in listings': 'Mga ipinagbabawal na salita sa listahan',
+  'Pickup points': 'Mga pickup point', 'Starter credits': 'Starter credits', 'Lender reward': 'Gantimpala sa nagpapahiram', 'Late return penalty': 'Parusa sa late na pagbabalik',
+  'Maximum loan days': 'Pinakamaraming araw ng hiram', 'Monthly reward cap per pair': 'Limit ng gantimpala bawat buwan sa magkapares', 'Shelf item cost': 'Halaga ng gamit sa Shelf',
+  'Approval': 'Aprubal', 'Handover': 'Pag-abot', 'Example': 'Halimbawa',
+  // staff
+  'Staff accounts': 'Mga account ng staff', 'Add staff': 'Magdagdag ng staff', 'Role': 'Tungkulin', 'Staff': 'Staff', 'Admin': 'Admin', 'Full name': 'Buong pangalan',
+  'At least 8 characters': 'Hindi bababa sa 8 character', 'Disable': 'I-disable', 'Enable': 'I-enable', 'Audit log': 'Audit log', 'Who': 'Sino', 'What': 'Ano', 'When': 'Kailan',
+  'Staff accounts are created by an admin. Every action is written to the audit log.': 'Admin ang gumagawa ng account ng staff. Nakatala sa audit log ang bawat aksyon.',
+  'Staff account added.': 'Naidagdag ang account ng staff.',
+};
+
+const Ctx = createContext(null);
+const KEY = 'hiraman_portal_lang';
+
+export function I18nProvider({ children }) {
+  const [lang, setLangState] = useState(() => localStorage.getItem(KEY) || 'fil');
+  const setLang = useCallback((l) => { localStorage.setItem(KEY, l); setLangState(l); document.documentElement.lang = l === 'fil' ? 'fil' : 'en'; }, []);
+  const t = useCallback((s) => (lang === 'fil' && FIL[s]) || s, [lang]);
+  return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>;
+}
+
+export const useI18n = () => useContext(Ctx);
+export const FIL_PHRASES = Object.keys(FIL);
