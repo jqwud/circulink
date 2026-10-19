@@ -2,9 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+
+/// Server address given at build time. A new value replaces the saved address once (see AppState.init).
+const String kServerFromBuild = String.fromEnvironment('HIRAMAN_SERVER');
 
 class ApiException implements Exception {
   final String message;
@@ -21,9 +25,11 @@ class Api {
   Api._();
   static final Api instance = Api._();
 
-  /// 10.0.2.2 is how the Android emulator reaches the computer. On a real phone,
-  /// set the server address on the login screen to your computer's Wi-Fi address.
-  String baseUrl = 'http://10.0.2.2:4000';
+  /// tools/run-phone.cmd builds with --dart-define=HIRAMAN_SERVER=http://localhost:4000
+  /// and tunnels that port over USB, so a phone needs no Wi-Fi setup.
+  /// Otherwise: the browser reaches the computer as localhost, and the Android emulator
+  /// as 10.0.2.2. A phone on Wi-Fi uses the server address set on the login screen.
+  String baseUrl = kServerFromBuild.isNotEmpty ? kServerFromBuild : (kIsWeb ? 'http://localhost:4000' : 'http://10.0.2.2:4000');
   String? token;
   void Function()? onUnauthorized;
 

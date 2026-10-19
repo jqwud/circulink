@@ -47,6 +47,12 @@ class AppState extends ChangeNotifier {
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    // A build from run-phone.cmd starts on its address (the USB cable) once.
+    // After that, an address saved with the plug icon (like Wi-Fi) is kept.
+    if (kServerFromBuild.isNotEmpty && _prefs!.getString('server_from_build') != kServerFromBuild) {
+      await _prefs!.setString('server_from_build', kServerFromBuild);
+      await _prefs!.setString('server', kServerFromBuild);
+    }
     api.baseUrl = _prefs!.getString('server') ?? api.baseUrl;
     lang = _prefs!.getString('lang') ?? 'fil';
     seenOnboarding = _prefs!.getBool('seen_onboarding') ?? false;
