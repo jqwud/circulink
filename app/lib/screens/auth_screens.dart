@@ -68,7 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            const Center(child: PawsaImage(pose: 'wink', size: 130)),
+            const Center(child: PawsaImage(pose: 'wink', size: 170)),
             const SizedBox(height: 8),
             const Text('Hiraman', textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: HiColors.ink)),
             Text(context.t('Hiram muna, kapitbahay.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
@@ -180,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: <Widget>[
-            const Center(child: PawsaImage(pose: 'happy', size: 90)),
+            const Center(child: PawsaImage(pose: 'happy', size: 120)),
             const SizedBox(height: 12),
             TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: context.t('Full name'), border: const OutlineInputBorder())),
             const SizedBox(height: 14),
@@ -189,7 +189,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: '${context.t('Phone')} (${context.t('Optional')})', border: const OutlineInputBorder())),
             const SizedBox(height: 14),
             DropdownButtonFormField<String>(
-              value: _purok,
+              initialValue: _purok,
               decoration: InputDecoration(labelText: context.t('Purok'), border: const OutlineInputBorder()),
               items: kPuroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
               onChanged: (String? v) => setState(() => _purok = v ?? _purok),

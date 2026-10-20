@@ -60,7 +60,7 @@ function Shell() {
     <div className="shell">
       <aside className={`sidebar ${open ? 'open' : ''}`} aria-label="Main">
         <div className="brand">
-          <img src="/pawsa/pawsa-head.svg" alt="" />
+          <img src="/pawsa/pawsa-head.webp" alt="" />
           <div><b>Hiraman</b><span>{t('LGU Portal')}</span></div>
         </div>
         <nav className="nav">

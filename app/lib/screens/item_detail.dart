@@ -74,8 +74,8 @@ class _ItemBody extends StatelessWidget {
                   height: 210,
                   width: double.infinity,
                   child: photo.isEmpty
-                      ? Container(color: HiColors.primarySoft, child: Icon(categoryIcon(str(category['slug'])), size: 80, color: HiColors.primary))
-                      : Image.network(photo, fit: BoxFit.cover, errorBuilder: (BuildContext c, Object e, StackTrace? s) => Container(color: HiColors.primarySoft, child: const Icon(Icons.image_not_supported, color: HiColors.primary))),
+                      ? Container(color: HiColors.primarySoft, child: Icon(categoryIcon(str(category['slug'])), size: 80, color: HiColors.accent))
+                      : Image.network(photo, fit: BoxFit.cover, errorBuilder: (BuildContext c, Object e, StackTrace? s) => Container(color: HiColors.primarySoft, child: const Icon(Icons.image_not_supported, color: HiColors.accent))),
                 ),
               ),
               const SizedBox(height: 14),
@@ -167,7 +167,7 @@ class _ItemBody extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Icon(icon, size: 20, color: HiColors.primary),
+          Icon(icon, size: 20, color: HiColors.accent),
           const SizedBox(width: 10),
           Expanded(child: Text(text, style: const TextStyle(height: 1.3))),
         ],
@@ -300,7 +300,7 @@ class _RequestSheetState extends State<_RequestSheet> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: HiColors.primarySoft, borderRadius: BorderRadius.circular(14)),
               child: Row(children: <Widget>[
-                const Icon(Icons.stars_rounded, color: HiColors.primary),
+                const Icon(Icons.star_rounded, color: HiColors.accent),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

@@ -15,12 +15,12 @@ Future<XFile?> pickPhoto(BuildContext context) async {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           ListTile(
-            leading: const Icon(Icons.photo_camera, color: HiColors.primary),
+            leading: const Icon(Icons.photo_camera, color: HiColors.accent),
             title: Text(ctx.tx('Take a photo')),
             onTap: () => Navigator.pop(ctx, ImageSource.camera),
           ),
           ListTile(
-            leading: const Icon(Icons.photo_library, color: HiColors.primary),
+            leading: const Icon(Icons.photo_library, color: HiColors.accent),
             title: Text(ctx.tx('Choose from gallery')),
             onTap: () => Navigator.pop(ctx, ImageSource.gallery),
           ),
@@ -44,7 +44,7 @@ Future<String?> pickAndUploadPhoto(BuildContext context) async {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (BuildContext ctx) => const Center(child: CircularProgressIndicator(color: HiColors.primary)),
+    builder: (BuildContext ctx) => const Center(child: CircularProgressIndicator(color: HiColors.accent)),
   );
   try {
     final dynamic res = await Api.instance.upload('/uploads', file);

@@ -22,7 +22,7 @@ class ImpactScreen extends StatelessWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16),
             children: <Widget>[
-              const Center(child: PawsaImage(pose: 'cheer', size: 110)),
+              const Center(child: PawsaImage(pose: 'cheer', size: 160)),
               const SizedBox(height: 8),
               Text(ctx.t('Together we have shared more and bought less.'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
               const SizedBox(height: 14),
@@ -55,7 +55,7 @@ class ImpactScreen extends StatelessWidget {
       child: HiCard(
         margin: const EdgeInsets.all(4),
         child: Column(children: <Widget>[
-          Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: HiColors.primary)),
+          Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: HiColors.accent)),
           Text(label, textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 13)),
         ]),
       ),

@@ -45,11 +45,10 @@ class WalletScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: <Widget>[
               HiCard(
-                color: HiColors.ink,
-                borderColor: HiColors.ink,
+                gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: <Color>[HiColors.mint, HiColors.primary]),
                 child: Column(children: <Widget>[
-                  Text(ctx.t('Balance'), style: const TextStyle(color: Colors.white70)),
-                  Text('${intOf(data['balance'])}', style: const TextStyle(color: Colors.white, fontSize: 52, fontWeight: FontWeight.w900)),
+                  Text(ctx.t('Balance'), style: const TextStyle(color: HiColors.ink, fontWeight: FontWeight.w600)),
+                  Text('${intOf(data['balance'])}', style: const TextStyle(color: HiColors.ink, fontSize: 52, fontWeight: FontWeight.w800, height: 1.1)),
                 ]),
               ),
               HiCard(

@@ -35,7 +35,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final List<_Slide> slides = <_Slide>[
-      _Slide('wink', context.t('Borrow what you need'), context.t('Need a ladder, chairs or a calculator for a day? Ask a neighbor instead of buying.')),
+      _Slide('hero', context.t('Borrow what you need'), context.t('Need a ladder, chairs or a calculator for a day? Ask a neighbor instead of buying.')),
       _Slide('happy', context.t("Lend what you don't use"), context.t('Share things that sit idle at home. Only verified neighbors can borrow from you.')),
       _Slide('cheer', context.t('Earn credits, be a good neighbor'), context.t('Get credits for every on-time lend and use them to borrow. Together we waste less.')),
     ];
@@ -55,7 +55,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              PawsaImage(pose: s.pose, size: 190),
+                              PawsaImage(pose: s.pose, size: 250),
                               const SizedBox(height: 24),
                               Text(s.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: HiColors.ink)),
                               const SizedBox(height: 12),
@@ -75,7 +75,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   margin: const EdgeInsets.all(4),
                   width: i == _index ? 26 : 9,
                   height: 9,
-                  decoration: BoxDecoration(color: i == _index ? HiColors.primary : HiColors.line, borderRadius: BorderRadius.circular(9)),
+                  decoration: BoxDecoration(color: i == _index ? HiColors.accent : HiColors.line, borderRadius: BorderRadius.circular(9)),
                 ),
               ),
             ),

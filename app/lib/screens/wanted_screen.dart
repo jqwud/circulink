@@ -86,7 +86,7 @@ class WantedScreen extends StatelessWidget {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: HiColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: HiColors.onPrimary,
         icon: const Icon(Icons.add),
         label: Text(context.t('I need something')),
         onPressed: () => _post(context),

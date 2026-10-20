@@ -55,7 +55,7 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: <Widget>[
         Row(children: <Widget>[
-          const PawsaImage(pose: 'happy', size: 64),
+          const PawsaImage(pose: 'head', size: 72),
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
@@ -100,7 +100,7 @@ class ProfileScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(children: <Widget>[
-                          Icon(_badgeIcon(key), size: 30, color: earned ? HiColors.primary : HiColors.muted),
+                          Icon(_badgeIcon(key), size: 30, color: earned ? HiColors.accent : HiColors.muted),
                           const SizedBox(height: 4),
                           Text(ctx.t(text[0]), textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: earned ? HiColors.ink : HiColors.muted)),
                         ]),
@@ -145,7 +145,7 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: HiColors.line)),
         child: Column(children: <Widget>[
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: HiColors.primary)),
+          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: HiColors.accent)),
           Text(label, style: const TextStyle(fontSize: 11, color: HiColors.muted)),
         ]),
       ),
@@ -158,7 +158,7 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       onTap: onTap,
       child: Row(children: <Widget>[
-        Icon(icon, color: HiColors.primary),
+        Icon(icon, color: HiColors.accent),
         const SizedBox(width: 12),
         Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
         const Icon(Icons.chevron_right, color: HiColors.muted),
@@ -183,7 +183,7 @@ class ProfileScreen extends StatelessWidget {
               TextField(controller: phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: ctx2.tx('Phone'), border: const OutlineInputBorder())),
               const SizedBox(height: 10),
               DropdownButtonFormField<String>(
-                value: purok,
+                initialValue: purok,
                 decoration: InputDecoration(labelText: ctx2.tx('Purok'), border: const OutlineInputBorder()),
                 items: kPuroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
                 onChanged: (String? v) => setLocal(() => purok = v ?? purok),

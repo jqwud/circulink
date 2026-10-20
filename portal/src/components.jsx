@@ -44,7 +44,7 @@ export const useToast = () => useContext(ToastCtx);
 
 // ---------- small pieces ----------
 export function Pawsa({ pose = 'happy', size = 96 }) {
-  return <img src={`/pawsa/pawsa-${pose}.svg`} width={size} height={size} alt="" />;
+  return <img src={`/pawsa/pawsa-${pose}.webp`} width={size} height={size} alt="" />;
 }
 
 export function Empty({ pose = 'sleepy', children }) {

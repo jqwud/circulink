@@ -33,9 +33,9 @@ class RequestsScreen extends StatelessWidget {
             ),
           ),
           TabBar(
-            labelColor: HiColors.primary,
+            labelColor: HiColors.ink,
             unselectedLabelColor: HiColors.muted,
-            indicatorColor: HiColors.primary,
+            indicatorColor: HiColors.accent,
             labelStyle: const TextStyle(fontWeight: FontWeight.w800),
             tabs: <Widget>[Tab(text: context.t('I am borrowing')), Tab(text: context.t('For my items'))],
           ),

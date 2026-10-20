@@ -1,11 +1,11 @@
 {
-    "name": "hiraman",
-    "short_name": "hiraman",
+    "name": "Hiraman",
+    "short_name": "Hiraman",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFDF2",
+    "theme_color": "#A3E635",
+    "description": "Hiram muna, kapitbahay. Borrow what you need, lend what you do not use.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

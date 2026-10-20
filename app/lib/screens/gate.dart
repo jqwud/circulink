@@ -29,12 +29,12 @@ class _Splash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: HiColors.primarySoft,
+      backgroundColor: HiColors.cream,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            PawsaImage(pose: 'happy', size: 150),
+            PawsaImage(pose: 'hero', size: 240),
             SizedBox(height: 12),
             Text('Hiraman', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: HiColors.ink)),
           ],

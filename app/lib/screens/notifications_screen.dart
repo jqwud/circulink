@@ -87,7 +87,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Icon(_icon(type), color: HiColors.primary),
+                    Icon(_icon(type), color: HiColors.accent),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(

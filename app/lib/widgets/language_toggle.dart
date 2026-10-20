@@ -13,8 +13,8 @@ class LanguageToggle extends StatelessWidget {
     return SegmentedButton<String>(
       showSelectedIcon: false,
       style: SegmentedButton.styleFrom(
-        selectedBackgroundColor: HiColors.ink,
-        selectedForegroundColor: Colors.white,
+        selectedBackgroundColor: HiColors.primary,
+        selectedForegroundColor: HiColors.onPrimary,
         foregroundColor: HiColors.muted,
         visualDensity: VisualDensity.compact,
       ),

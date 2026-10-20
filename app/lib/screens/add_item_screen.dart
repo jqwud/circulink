@@ -95,9 +95,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
               clipBehavior: Clip.antiAlias,
               child: photoUrl.isEmpty
                   ? Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-                      const Icon(Icons.add_a_photo, size: 36, color: HiColors.primary),
+                      const Icon(Icons.add_a_photo, size: 36, color: HiColors.accent),
                       const SizedBox(height: 6),
-                      Text(context.t('Add a photo'), style: const TextStyle(color: HiColors.primary, fontWeight: FontWeight.w800)),
+                      Text(context.t('Add a photo'), style: const TextStyle(color: HiColors.accent, fontWeight: FontWeight.w800)),
                     ])
                   : Image.network(photoUrl, fit: BoxFit.cover, width: double.infinity),
             ),
@@ -108,14 +108,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
           TextField(controller: _desc, maxLines: 3, decoration: InputDecoration(labelText: context.t('Description (optional)'), border: const OutlineInputBorder())),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            value: _categoryId,
+            initialValue: _categoryId,
             decoration: InputDecoration(labelText: context.t('Category'), border: const OutlineInputBorder()),
             items: cats.map((Map<String, dynamic> c) => DropdownMenuItem<int>(value: intOf(c['id']), child: Text(context.lang == 'fil' ? str(c['name_fil']) : str(c['name_en'])))).toList(),
             onChanged: (int? v) => setState(() => _categoryId = v),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            value: _pickupId,
+            initialValue: _pickupId,
             isExpanded: true,
             decoration: InputDecoration(labelText: context.t('Pickup point'), border: const OutlineInputBorder()),
             items: points.map((Map<String, dynamic> p) => DropdownMenuItem<int>(value: intOf(p['id']), child: Text(str(p['name']), overflow: TextOverflow.ellipsis))).toList(),
@@ -123,7 +123,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _condition,
+            initialValue: _condition,
             decoration: InputDecoration(labelText: context.t('Condition'), border: const OutlineInputBorder()),
             items: <DropdownMenuItem<String>>[
               DropdownMenuItem<String>(value: 'new', child: Text(context.t('Like new'))),
@@ -142,10 +142,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
             return HiCard(
               margin: const EdgeInsets.only(bottom: 8),
               color: on ? HiColors.primarySoft : Colors.white,
-              borderColor: on ? HiColors.primary : HiColors.line,
+              borderColor: on ? HiColors.accent : HiColors.line,
               onTap: () => setState(() => _tier = t),
               child: Row(children: <Widget>[
-                Icon(on ? Icons.radio_button_checked : Icons.radio_button_off, color: on ? HiColors.primary : HiColors.muted),
+                Icon(on ? Icons.radio_button_checked : Icons.radio_button_off, color: on ? HiColors.accent : HiColors.muted),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[

@@ -40,7 +40,7 @@ class MyItemsScreen extends StatelessWidget {
       appBar: hiAppBar(context.t('My items')),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: HiColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: HiColors.onPrimary,
         icon: const Icon(Icons.add),
         label: Text(context.t('Share an item')),
         onPressed: () {

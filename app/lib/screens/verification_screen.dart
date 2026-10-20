@@ -57,7 +57,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: <Widget>[
-          const Center(child: PawsaImage(pose: 'wink', size: 100)),
+          const Center(child: PawsaImage(pose: 'point', size: 150)),
           const SizedBox(height: 12),
           Text(context.t('Only verified neighbors can borrow and lend. This keeps everyone safe.'), style: const TextStyle(fontSize: 16, height: 1.4)),
           const SizedBox(height: 14),

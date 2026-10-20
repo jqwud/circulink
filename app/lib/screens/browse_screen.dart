@@ -55,7 +55,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: HiColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: HiColors.onPrimary,
         icon: const Icon(Icons.add),
         label: Text(context.t('Share an item')),
         onPressed: () {
@@ -142,9 +142,9 @@ class _BrowseScreenState extends State<BrowseScreen> {
         label: Text(label),
         selected: selected,
         onSelected: (_) => onTap(),
-        selectedColor: HiColors.ink,
+        selectedColor: HiColors.primary,
         backgroundColor: Colors.white,
-        labelStyle: TextStyle(color: selected ? Colors.white : HiColors.ink, fontWeight: FontWeight.w700),
+        labelStyle: const TextStyle(color: HiColors.ink, fontWeight: FontWeight.w700),
         side: const BorderSide(color: HiColors.line),
         showCheckmark: false,
       ),

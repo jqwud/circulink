@@ -24,7 +24,7 @@ class HelpScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          const Center(child: PawsaImage(pose: 'wink', size: 90)),
+          const Center(child: PawsaImage(pose: 'wink', size: 130)),
           const SizedBox(height: 8),
           ...rules.map((List<String> r) => HiCard(
                 child: Column(

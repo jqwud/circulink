@@ -82,24 +82,29 @@ class HomeTab extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             HiCard(
-              color: HiColors.ink,
-              borderColor: HiColors.ink,
+              gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: <Color>[HiColors.mint, HiColors.primary]),
               onTap: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => const WalletScreen())),
               child: Row(
                 children: <Widget>[
-                  const Icon(Icons.stars_rounded, color: HiColors.fur, size: 36),
+                  const CircleAvatar(radius: 22, backgroundColor: HiColors.sun, child: Icon(Icons.star_rounded, color: HiColors.ink, size: 28)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(ctx.t('Your credits'), style: const TextStyle(color: Colors.white70)),
-                        Text('${app.credits}', style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900)),
+                        Text(ctx.t('Your credits'), style: const TextStyle(color: HiColors.ink, fontWeight: FontWeight.w600)),
+                        Text('${app.credits}', style: const TextStyle(color: HiColors.ink, fontSize: 30, fontWeight: FontWeight.w800, height: 1.1)),
                       ],
                     ),
                   ),
-                  Text(ctx.t('See history'), style: const TextStyle(color: HiColors.fur, fontWeight: FontWeight.w800)),
-                  const Icon(Icons.chevron_right, color: HiColors.fur),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(HiRadius.pill), boxShadow: HiShadow.card),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
+                      Text(ctx.t('See history'), style: const TextStyle(color: HiColors.ink, fontWeight: FontWeight.w800, fontSize: 13)),
+                      const Icon(Icons.chevron_right, color: HiColors.ink, size: 18),
+                    ]),
+                  ),
                 ],
               ),
             ),
@@ -162,7 +167,7 @@ class HomeTab extends StatelessWidget {
               onTap: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => const KitsScreen())),
               child: Row(
                 children: <Widget>[
-                  const Icon(Icons.celebration, color: HiColors.primary, size: 30),
+                  const Icon(Icons.celebration, color: HiColors.accent, size: 30),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

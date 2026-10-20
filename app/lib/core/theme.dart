@@ -3,25 +3,39 @@ import 'package:flutter/material.dart';
 /// Design tokens. Colors, radii, spacing and shadows mirror brand/tokens.json
 /// so the app and the LGU portal look like one product.
 class HiColors {
-  static const Color primary = Color(0xFFB8560A);
-  static const Color primarySoft = Color(0xFFFDE7CF);
+  /// Lime: fills only (buttons, selected states). Text and icons on it use [onPrimary].
+  static const Color primary = Color(0xFFA3E635);
+  static const Color primarySoft = Color(0xFFECFCCB);
+  static const Color mint = Color(0xFFD9F99D);
+  static const Color onPrimary = Color(0xFF1F2A1F);
+
+  /// Leaf green for links and small icons on light backgrounds (4.9:1 on ivory).
+  static const Color accent = Color(0xFF4D7C0F);
+
+  /// Sun yellow: credits, rewards, the sun emblem.
+  static const Color sun = Color(0xFFFACC15);
+  static const Color sunSoft = Color(0xFFFEF3C7);
+
+  /// Pawsa's own orange. Only the mascot uses it.
   static const Color fur = Color(0xFFF5A04A);
-  static const Color cream = Color(0xFFFFF8EE);
+  static const Color cream = Color(0xFFFFFDF2);
   static const Color card = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFFBF3E8);
-  static const Color ink = Color(0xFF22304A);
-  static const Color muted = Color(0xFF5E6983);
-  static const Color mutedSoft = Color(0xFFEEE8DD);
-  static const Color leaf = Color(0xFF1F7A50);
-  static const Color leafSoft = Color(0xFFDDF3E8);
+  static const Color surfaceMuted = Color(0xFFF6F4E4);
+  static const Color ink = Color(0xFF1F2A1F);
+  static const Color muted = Color(0xFF4B5F52);
+  static const Color mutedSoft = Color(0xFFE9EADC);
+
+  /// Success is teal so it never fights the green brand.
+  static const Color leaf = Color(0xFF0F766E);
+  static const Color leafSoft = Color(0xFFD5F3EE);
   static const Color warn = Color(0xFF7A5410);
   static const Color warnSoft = Color(0xFFFDF1D6);
-  static const Color danger = Color(0xFFC0392B);
-  static const Color dangerSoft = Color(0xFFFBE3E0);
+  static const Color danger = Color(0xFFB42318);
+  static const Color dangerSoft = Color(0xFFFEE4E2);
   static const Color info = Color(0xFF1B4F9C);
   static const Color infoSoft = Color(0xFFE3EFFF);
-  static const Color line = Color(0xFFEADFCF);
-  static const Color lineStrong = Color(0xFFD8C8B0);
+  static const Color line = Color(0xFFE8E2C8);
+  static const Color lineStrong = Color(0xFFD3CDB0);
 }
 
 class HiSpace {
@@ -49,16 +63,16 @@ const double kRadius = HiRadius.lg;
 /// Soft shadows tinted with ink. card: resting cards, float: bars and sheets, modal: dialogs.
 class HiShadow {
   static const List<BoxShadow> card = <BoxShadow>[
-    BoxShadow(color: Color(0x0D22304A), offset: Offset(0, 1), blurRadius: 2),
-    BoxShadow(color: Color(0x0D22304A), offset: Offset(0, 2), blurRadius: 8),
+    BoxShadow(color: Color(0x0D1F2A1F), offset: Offset(0, 1), blurRadius: 2),
+    BoxShadow(color: Color(0x0D1F2A1F), offset: Offset(0, 2), blurRadius: 8),
   ];
   static const List<BoxShadow> float = <BoxShadow>[
-    BoxShadow(color: Color(0x0F22304A), offset: Offset(0, 2), blurRadius: 6),
-    BoxShadow(color: Color(0x1422304A), offset: Offset(0, 8), blurRadius: 24),
+    BoxShadow(color: Color(0x0F1F2A1F), offset: Offset(0, 2), blurRadius: 6),
+    BoxShadow(color: Color(0x141F2A1F), offset: Offset(0, 8), blurRadius: 24),
   ];
   static const List<BoxShadow> modal = <BoxShadow>[
-    BoxShadow(color: Color(0x1422304A), offset: Offset(0, 8), blurRadius: 16),
-    BoxShadow(color: Color(0x2422304A), offset: Offset(0, 20), blurRadius: 48),
+    BoxShadow(color: Color(0x141F2A1F), offset: Offset(0, 8), blurRadius: 16),
+    BoxShadow(color: Color(0x241F2A1F), offset: Offset(0, 20), blurRadius: 48),
   ];
 }
 
@@ -83,7 +97,7 @@ ThemeData buildTheme() {
     brightness: Brightness.light,
   ).copyWith(
     primary: HiColors.primary,
-    onPrimary: Colors.white,
+    onPrimary: HiColors.onPrimary,
     primaryContainer: HiColors.primarySoft,
     onPrimaryContainer: HiColors.ink,
     secondary: HiColors.ink,
@@ -149,7 +163,7 @@ ThemeData buildTheme() {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: HiColors.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: HiColors.onPrimary,
         disabledBackgroundColor: HiColors.mutedSoft,
         disabledForegroundColor: HiColors.muted,
         minimumSize: const Size(0, 52),
@@ -172,7 +186,7 @@ ThemeData buildTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        foregroundColor: HiColors.primary,
+        foregroundColor: HiColors.accent,
         shape: controlShape,
         textStyle: const TextStyle(fontFamily: HiText.family, fontSize: 14, fontWeight: FontWeight.w700),
       ),
@@ -180,7 +194,7 @@ ThemeData buildTheme() {
     iconButtonTheme: IconButtonThemeData(style: IconButton.styleFrom(foregroundColor: HiColors.ink)),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: HiColors.primary,
-      foregroundColor: Colors.white,
+      foregroundColor: HiColors.onPrimary,
       elevation: 3,
       focusElevation: 3,
       hoverElevation: 4,
@@ -193,7 +207,7 @@ ThemeData buildTheme() {
       fillColor: HiColors.card,
       contentPadding: const EdgeInsets.symmetric(horizontal: HiSpace.md, vertical: 14),
       labelStyle: const TextStyle(color: HiColors.muted, fontWeight: FontWeight.w500),
-      floatingLabelStyle: const TextStyle(color: HiColors.primary, fontWeight: FontWeight.w700),
+      floatingLabelStyle: const TextStyle(color: HiColors.accent, fontWeight: FontWeight.w700),
       hintStyle: const TextStyle(color: HiColors.muted),
       helperStyle: HiText.caption,
       prefixIconColor: HiColors.muted,
@@ -201,7 +215,7 @@ ThemeData buildTheme() {
       border: inputBorder(HiColors.line),
       enabledBorder: inputBorder(HiColors.line),
       disabledBorder: inputBorder(HiColors.mutedSoft),
-      focusedBorder: inputBorder(HiColors.primary, 1.6),
+      focusedBorder: inputBorder(HiColors.accent, 1.8),
       errorBorder: inputBorder(HiColors.danger),
       focusedErrorBorder: inputBorder(HiColors.danger, 1.6),
     ),
@@ -220,7 +234,7 @@ ThemeData buildTheme() {
       shadowColor: HiColors.ink,
       elevation: 8,
       height: 68,
-      indicatorColor: HiColors.primarySoft,
+      indicatorColor: HiColors.primary,
       indicatorShape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HiRadius.md)),
       labelTextStyle: WidgetStateProperty.resolveWith((Set<WidgetState> s) => TextStyle(
             fontFamily: HiText.family,
@@ -230,19 +244,19 @@ ThemeData buildTheme() {
           )),
       iconTheme: WidgetStateProperty.resolveWith((Set<WidgetState> s) => IconThemeData(
             size: 24,
-            color: s.contains(WidgetState.selected) ? HiColors.primary : HiColors.muted,
+            color: s.contains(WidgetState.selected) ? HiColors.onPrimary : HiColors.muted,
           )),
     ),
     tabBarTheme: const TabBarThemeData(
       labelColor: HiColors.ink,
       unselectedLabelColor: HiColors.muted,
-      indicatorColor: HiColors.primary,
+      indicatorColor: HiColors.accent,
       indicatorSize: TabBarIndicatorSize.label,
       dividerColor: HiColors.line,
       labelStyle: TextStyle(fontFamily: HiText.family, fontSize: 15, fontWeight: FontWeight.w800),
       unselectedLabelStyle: TextStyle(fontFamily: HiText.family, fontSize: 15, fontWeight: FontWeight.w600),
       indicator: UnderlineTabIndicator(
-        borderSide: BorderSide(color: HiColors.primary, width: 3),
+        borderSide: BorderSide(color: HiColors.accent, width: 3),
         borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
       ),
     ),
@@ -257,7 +271,7 @@ ThemeData buildTheme() {
       backgroundColor: HiColors.card,
       surfaceTintColor: Colors.transparent,
       elevation: 12,
-      shadowColor: const Color(0x6622304A),
+      shadowColor: const Color(0x661F2A1F),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HiRadius.lg + 4)),
       titleTextStyle: const TextStyle(fontFamily: HiText.family, fontSize: 20, fontWeight: FontWeight.w800, color: HiColors.ink),
       contentTextStyle: HiText.body,
@@ -283,15 +297,15 @@ ThemeData buildTheme() {
       color: HiColors.card,
       surfaceTintColor: Colors.transparent,
       elevation: 8,
-      shadowColor: const Color(0x6622304A),
+      shadowColor: const Color(0x661F2A1F),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HiRadius.md)),
     ),
-    listTileTheme: const ListTileThemeData(iconColor: HiColors.primary, textColor: HiColors.ink),
-    progressIndicatorTheme: const ProgressIndicatorThemeData(color: HiColors.primary, linearTrackColor: HiColors.mutedSoft),
+    listTileTheme: const ListTileThemeData(iconColor: HiColors.accent, textColor: HiColors.ink),
+    progressIndicatorTheme: const ProgressIndicatorThemeData(color: HiColors.accent, linearTrackColor: HiColors.mutedSoft),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) => s.contains(WidgetState.selected) ? Colors.white : HiColors.lineStrong),
       trackOutlineColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) => s.contains(WidgetState.selected) ? Colors.transparent : HiColors.lineStrong),
-      trackColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) => s.contains(WidgetState.selected) ? HiColors.leaf : HiColors.surfaceMuted),
+      trackColor: WidgetStateProperty.resolveWith((Set<WidgetState> s) => s.contains(WidgetState.selected) ? HiColors.accent : HiColors.surfaceMuted),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
@@ -309,7 +323,7 @@ ThemeData buildTheme() {
       rangePickerHeaderBackgroundColor: HiColors.cream,
       rangePickerHeaderForegroundColor: HiColors.ink,
       rangeSelectionBackgroundColor: HiColors.primarySoft,
-      todayBorder: const BorderSide(color: HiColors.primary),
+      todayBorder: const BorderSide(color: HiColors.accent),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HiRadius.lg + 4)),
     ),
     tooltipTheme: TooltipThemeData(

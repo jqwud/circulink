@@ -1,0 +1,9 @@
+{
+  "name": "pawsa-art-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Builds the Pawsa poses from the approved illustration",
+  "dependencies": {
+    "sharp": "^0.34.0"
+  }
+}

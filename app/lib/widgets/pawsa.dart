@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
-/// Pawsa, the Hiraman mascot. Poses: happy, wink, oops, sleepy, cheer, head.
+/// Pawsa, the Hiraman mascot, as a sticker image.
+/// Poses: happy, hero (welcome), point, wink, oops, sleepy, cheer, head (round badge).
+/// Every pose uses the same frame and scale, so changing the pose never makes him jump.
 class PawsaImage extends StatelessWidget {
   final String pose;
   final double size;
@@ -9,11 +10,13 @@ class PawsaImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.asset(
-      'assets/pawsa/pawsa-$pose.svg',
+    return Image.asset(
+      'assets/pawsa/pawsa-$pose.webp',
       width: size,
       height: size,
-      semanticsLabel: 'Pawsa the cat',
+      fit: BoxFit.contain,
+      filterQuality: FilterQuality.high,
+      semanticLabel: 'Pawsa the cat',
     );
   }
 }

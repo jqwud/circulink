@@ -37,6 +37,22 @@ Color toneFg(Tone t) {
   }
 }
 
+/// Colour is never the only signal: every tone except plain grey also carries an icon.
+IconData? _toneIcon(Tone t) {
+  switch (t) {
+    case Tone.ok:
+      return Icons.check_rounded;
+    case Tone.warn:
+      return Icons.schedule_rounded;
+    case Tone.bad:
+      return Icons.error_outline_rounded;
+    case Tone.info:
+      return Icons.info_outline_rounded;
+    case Tone.muted:
+      return null;
+  }
+}
+
 class StatusChip extends StatelessWidget {
   final String label;
   final Tone tone;
@@ -44,10 +60,17 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final IconData? icon = _toneIcon(tone);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.fromLTRB(icon == null ? 10 : 8, 4, 10, 4),
       decoration: BoxDecoration(color: toneBg(tone), borderRadius: BorderRadius.circular(HiRadius.pill)),
-      child: Text(label, style: TextStyle(color: toneFg(tone), fontSize: 12, fontWeight: FontWeight.w700, height: 1.2)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          if (icon != null) ...<Widget>[Icon(icon, size: 14, color: toneFg(tone)), const SizedBox(width: 4)],
+          Flexible(child: Text(label, style: TextStyle(color: toneFg(tone), fontSize: 12, fontWeight: FontWeight.w700, height: 1.2))),
+        ],
+      ),
     );
   }
 }
@@ -59,6 +82,7 @@ class HiCard extends StatelessWidget {
   final VoidCallback? onTap;
   final Color? color;
   final Color? borderColor;
+  final Gradient? gradient;
 
   const HiCard({
     super.key,
@@ -68,6 +92,7 @@ class HiCard extends StatelessWidget {
     this.onTap,
     this.color,
     this.borderColor,
+    this.gradient,
   });
 
   /// White cards float on a soft shadow. Tinted cards sit flat.
@@ -76,13 +101,14 @@ class HiCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final BorderRadius radius = BorderRadius.circular(HiRadius.lg);
     final Color fill = color ?? HiColors.card;
-    final bool tinted = fill != HiColors.card;
+    final bool tinted = fill != HiColors.card || gradient != null;
     final bool outlined = borderColor != null && borderColor != fill;
     return Padding(
       padding: margin,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: fill,
+          color: gradient == null ? fill : null,
+          gradient: gradient,
           borderRadius: radius,
           boxShadow: tinted ? null : HiShadow.card,
           border: outlined ? Border.all(color: borderColor!, width: 1.2) : null,
@@ -113,9 +139,9 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ButtonStyle? style = danger ? FilledButton.styleFrom(backgroundColor: HiColors.danger) : null;
+    final ButtonStyle? style = danger ? FilledButton.styleFrom(backgroundColor: HiColors.danger, foregroundColor: Colors.white) : null;
     final Widget content = busy
-        ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white))
+        ? SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 3, color: danger ? Colors.white : HiColors.onPrimary))
         : (icon == null
             ? Text(label)
             : Row(mainAxisSize: MainAxisSize.min, children: <Widget>[Icon(icon, size: 20), const SizedBox(width: 8), Text(label)]));
@@ -179,7 +205,7 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            PawsaImage(pose: pose, size: 120),
+            PawsaImage(pose: pose, size: 160),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
             if (actionLabel != null && onAction != null) ...<Widget>[
@@ -206,7 +232,7 @@ class ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const PawsaImage(pose: 'oops', size: 110),
+            const PawsaImage(pose: 'oops', size: 150),
             const SizedBox(height: 12),
             Text(context.app.errorText(error), textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
             const SizedBox(height: 16),
@@ -274,11 +300,11 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
   @override
   Widget build(BuildContext context) {
     if (_data == null) {
-      if (_loading) return const Center(child: CircularProgressIndicator(color: HiColors.primary));
+      if (_loading) return const Center(child: CircularProgressIndicator(color: HiColors.accent));
       return ErrorView(error: _error ?? 'error', onRetry: _load);
     }
     final Widget body = RefreshIndicator(
-      color: HiColors.primary,
+      color: HiColors.accent,
       onRefresh: _load,
       child: widget.builder(context, _data as T, _load),
     );
@@ -317,7 +343,7 @@ Future<bool> confirmDialog(BuildContext context, {required String title, require
         TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tx('Cancel'))),
         TextButton(
           onPressed: () => Navigator.pop(ctx, true),
-          child: Text(confirmLabel, style: TextStyle(color: danger ? HiColors.danger : HiColors.primary, fontWeight: FontWeight.w800)),
+          child: Text(confirmLabel, style: TextStyle(color: danger ? HiColors.danger : HiColors.accent, fontWeight: FontWeight.w800)),
         ),
       ],
     ),
@@ -325,16 +351,48 @@ Future<bool> confirmDialog(BuildContext context, {required String title, require
   return ok == true;
 }
 
+/// "KASAMA" (companion): the lime sticker shown on success moments.
+class KasamaBadge extends StatelessWidget {
+  const KasamaBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: -0.05,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+        decoration: BoxDecoration(
+          color: HiColors.primary,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: HiColors.ink, width: 2.5),
+          boxShadow: HiShadow.card,
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Icon(Icons.wb_sunny_rounded, size: 17, color: HiColors.ink),
+            SizedBox(width: 6),
+            Text('KASAMA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1.4, color: HiColors.ink, height: 1.1)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// A dialog with Pawsa on top, used after an important action.
+/// Happy outcomes (happy, hero, cheer) also get the KASAMA badge.
 Future<void> pawsaDialog(BuildContext context, {required String pose, required String title, required String message}) {
+  final bool celebrate = pose == 'cheer' || pose == 'happy' || pose == 'hero';
   return showDialog<void>(
     context: context,
     builder: (BuildContext ctx) => AlertDialog(
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          PawsaImage(pose: pose, size: 110),
-          const SizedBox(height: 8),
+          PawsaImage(pose: pose, size: 150),
+          if (celebrate) Transform.translate(offset: const Offset(0, -14), child: const KasamaBadge()),
+          SizedBox(height: celebrate ? 0 : 8),
           Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
           const SizedBox(height: 8),
           Text(message, textAlign: TextAlign.center),
@@ -441,7 +499,7 @@ class ItemThumb extends StatelessWidget {
       width: size,
       height: size,
       color: HiColors.primarySoft,
-      child: Icon(categoryIcon(slug), color: HiColors.primary, size: size * 0.45),
+      child: Icon(categoryIcon(slug), color: HiColors.accent, size: size * 0.45),
     );
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
