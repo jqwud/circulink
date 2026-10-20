@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -45,7 +46,44 @@ class AppState extends ChangeNotifier {
     return tr('Something went wrong. Please try again.');
   }
 
+  /// 'checking', 'ok' or 'down'. The login screen and every error screen show it.
+  String serverStatus = 'checking';
+
+  /// Tries the saved address first, then the addresses this phone might reach the laptop on
+  /// (USB cable, Wi-Fi, hotspot, emulator), and keeps the first one that answers.
+  Future<void> findServer() async {
+    serverStatus = 'checking';
+    notifyListeners();
+    final List<String> candidates = <String>[];
+    void add(String? url) {
+      if (url != null && url.isNotEmpty && !candidates.contains(url)) candidates.add(url);
+    }
+
+    add(api.baseUrl);
+    serverCandidates().forEach(add);
+    if (!kIsWeb) add('http://10.0.2.2:4000');
+    final List<bool> ok = await Future.wait<bool>(candidates.map((String u) => api.ping(u, timeout: const Duration(milliseconds: 2500))));
+    final int hit = ok.indexOf(true);
+    if (hit >= 0) {
+      if (candidates[hit] != api.baseUrl) await setBaseUrl(candidates[hit]);
+      serverStatus = 'ok';
+    } else {
+      serverStatus = 'down';
+    }
+    notifyListeners();
+  }
+
+  /// Checks only the current address (used after typing one by hand).
+  Future<void> checkServer() async {
+    serverStatus = 'checking';
+    notifyListeners();
+    serverStatus = await api.ping(api.baseUrl, timeout: const Duration(seconds: 3)) ? 'ok' : 'down';
+    notifyListeners();
+  }
+
   Future<void> init() async {
+    // The splash always shows for a moment, so it is seen even when the server answers at once.
+    final Future<void> minSplash = Future<void>.delayed(const Duration(milliseconds: 1400));
     _prefs = await SharedPreferences.getInstance();
     // A build from run-phone.cmd starts on its address (the USB cable) once.
     // After that, an address saved with the plug icon (like Wi-Fi) is kept.
@@ -59,6 +97,8 @@ class AppState extends ChangeNotifier {
     api.token = _prefs!.getString('token');
     api.onUnauthorized = _expired;
 
+    await findServer();
+
     if (api.token != null) {
       // Use the saved profile first so the app opens even without a connection.
       final String? cached = _prefs!.getString('user');
@@ -69,13 +109,17 @@ class AppState extends ChangeNotifier {
           user = null;
         }
       }
-      try {
-        await refreshMe();
-        await loadMeta();
-      } on ApiException catch (e) {
-        if (e.status == 401 || e.status == 403) await _clear();
+      // No server, no waiting: keep the saved profile and let the screens explain.
+      if (serverStatus == 'ok') {
+        try {
+          await refreshMe();
+          await loadMeta();
+        } on ApiException catch (e) {
+          if (e.status == 401 || e.status == 403) await _clear();
+        }
       }
     }
+    await minSplash;
     ready = true;
     notifyListeners();
   }

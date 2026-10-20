@@ -10,6 +10,12 @@ import 'package:image_picker/image_picker.dart';
 /// Server address given at build time. A new value replaces the saved address once (see AppState.init).
 const String kServerFromBuild = String.fromEnvironment('HIRAMAN_SERVER');
 
+/// Other addresses the app may try, given at build time as a comma-separated list
+/// (tools/run-phone.ps1 fills it with this computer's own addresses).
+const String kServerCandidates = String.fromEnvironment('HIRAMAN_SERVERS');
+
+List<String> serverCandidates() => kServerCandidates.split(',').map((String s) => s.trim()).where((String s) => s.isNotEmpty).toList();
+
 class ApiException implements Exception {
   final String message;
   final String code;
@@ -109,9 +115,9 @@ class Api {
   }
 
   /// Quick check used by the "Test connection" button.
-  Future<bool> ping(String url) async {
+  Future<bool> ping(String url, {Duration timeout = const Duration(seconds: 6)}) async {
     try {
-      final http.Response res = await http.get(Uri.parse('$url/api/health')).timeout(const Duration(seconds: 6));
+      final http.Response res = await http.get(Uri.parse('$url/api/health')).timeout(timeout);
       return res.statusCode == 200;
     } catch (_) {
       return false;

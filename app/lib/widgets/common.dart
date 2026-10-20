@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../core/api.dart';
 import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/theme.dart';
+import 'connection.dart';
 import 'pawsa.dart';
 
 enum Tone { ok, warn, bad, info, muted }
@@ -226,6 +228,7 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool net = error is ApiException && ((error as ApiException).code == 'network' || (error as ApiException).code == 'timeout');
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -236,7 +239,12 @@ class ErrorView extends StatelessWidget {
             const SizedBox(height: 12),
             Text(context.app.errorText(error), textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
             const SizedBox(height: 16),
-            SoftButton(label: context.t('Try again'), onPressed: onRetry, expand: false),
+            if (net) const ServerStatusCard(),
+            SoftButton(
+              label: context.t('Try again'),
+              onPressed: net ? () => context.app.findServer().then((_) => onRetry()) : onRetry,
+              expand: false,
+            ),
           ],
         ),
       ),

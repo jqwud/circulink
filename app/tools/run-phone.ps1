@@ -94,4 +94,11 @@ Info 'The first time takes 3-10 minutes. Later runs take under a minute.'
 Info 'When it is running, press  r = reload,  R = restart,  q = quit.'
 Write-Host ''
 Set-Location $app
-flutter run -d $serial --dart-define=HIRAMAN_SERVER=http://localhost:$port
+# Tell the app every address this laptop can be reached on (Wi-Fi, hotspot...), so it can find the
+# server by itself when the cable is unplugged.
+$addrs = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+  Where-Object { $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' } |
+  ForEach-Object { "http://$($_.IPAddress):$port" })
+$servers = (@("http://localhost:$port") + $addrs) -join ','
+Info "The app will look for the server at: $servers"
+flutter run -d $serial --dart-define=HIRAMAN_SERVER=http://localhost:$port "--dart-define=HIRAMAN_SERVERS=$servers"

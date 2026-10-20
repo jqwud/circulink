@@ -6,6 +6,7 @@ import '../core/i18n.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
+import '../widgets/connection.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/pawsa.dart';
 import 'auth_screens.dart';

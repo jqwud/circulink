@@ -28,15 +28,25 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: HiColors.cream,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            PawsaImage(pose: 'hero', size: 240),
-            SizedBox(height: 12),
-            Text('Hiraman', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: HiColors.ink)),
+            const PawsaImage(pose: 'hero', size: 240),
+            const SizedBox(height: 4),
+            const Text('Hiraman', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: HiColors.ink)),
+            const SizedBox(height: 4),
+            const Text('Hiram muna, kapitbahay.', style: TextStyle(color: HiColors.muted, fontSize: 15)),
+            const SizedBox(height: 22),
+            SizedBox(
+              width: 120,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(HiRadius.pill),
+                child: const LinearProgressIndicator(minHeight: 5, color: HiColors.primary, backgroundColor: HiColors.mutedSoft),
+              ),
+            ),
           ],
         ),
       ),

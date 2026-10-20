@@ -4,6 +4,7 @@ import '../core/api.dart';
 import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
+import '../widgets/connection.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/pawsa.dart';
 
@@ -72,7 +73,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 8),
             const Text('Hiraman', textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: HiColors.ink)),
             Text(context.t('Hiram muna, kapitbahay.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
+            const ServerStatusCard(),
             TextField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
@@ -217,56 +219,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-}
-
-/// Where is the Hiraman server? On a real phone this is the computer's Wi-Fi address.
-Future<void> showServerDialog(BuildContext context) async {
-  final TextEditingController controller = TextEditingController(text: context.app.api.baseUrl);
-  String? result;
-  await showDialog<void>(
-    context: context,
-    builder: (BuildContext ctx) {
-      return StatefulBuilder(
-        builder: (BuildContext ctx2, void Function(void Function()) setLocal) {
-          return AlertDialog(
-            title: Text(ctx2.tx('Server address')),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  ctx2.tx('Use your computer\'s Wi-Fi address, for example http://192.168.1.10:4000. On the Android emulator use http://10.0.2.2:4000.'),
-                  style: const TextStyle(fontSize: 13, color: HiColors.muted),
-                ),
-                const SizedBox(height: 12),
-                TextField(controller: controller, keyboardType: TextInputType.url, decoration: const InputDecoration(border: OutlineInputBorder())),
-                if (result != null) ...<Widget>[
-                  const SizedBox(height: 10),
-                  Text(result!, style: TextStyle(fontWeight: FontWeight.w700, color: result!.startsWith('✓') ? HiColors.leaf : HiColors.danger)),
-                ],
-              ],
-            ),
-            actions: <Widget>[
-              TextButton(
-                onPressed: () async {
-                  final String url = controller.text.trim().startsWith('http') ? controller.text.trim() : 'http://${controller.text.trim()}';
-                  final bool ok = await Api.instance.ping(url.endsWith('/') ? url.substring(0, url.length - 1) : url);
-                  setLocal(() => result = ok ? '✓ ${ctx2.tx('Connected')}' : '✗ ${ctx2.tx('Cannot reach the server')}');
-                },
-                child: Text(ctx2.tx('Test connection')),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await ctx2.app.setBaseUrl(controller.text);
-                  if (ctx2.mounted) Navigator.pop(ctx2);
-                },
-                child: Text(ctx2.tx('Save'), style: const TextStyle(fontWeight: FontWeight.w800)),
-              ),
-            ],
-          );
-        },
-      );
-    },
-  );
-  controller.dispose();
 }
