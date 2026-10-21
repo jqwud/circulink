@@ -149,6 +149,7 @@ const Map<String, String> kFil = <String, String>{
   "Cancelled": "Kinansela",
   "Returned": "Naibalik",
   "Under review": "Sinusuri",
+  "Expired": "Nag-expire",
   "Overdue": "Lampas na sa takdang araw",
   "Borrower": "Humihiram",
   "Lender": "Nagpapahiram",
@@ -246,6 +247,8 @@ const Map<String, String> kFil = <String, String>{
   "Held for a borrow request": "Hawak para sa hiling na hiram",
   "Returned: request not approved": "Ibinalik: hindi naaprubahan ang hiling",
   "Returned: request cancelled": "Ibinalik: kinansela ang hiling",
+  "Returned: request expired": "Ibinalik: nag-expire ang hiling",
+  "Returned: item removed": "Ibinalik: inalis ang gamit",
   "Thanks for lending": "Salamat sa pagpapahiram",
   "Late return": "Huling pagbalik",
 

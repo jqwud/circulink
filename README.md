@@ -43,4 +43,6 @@ Read **`docs/SETUP.md`**. It is written step by step for Windows. In short:
 - The **lender earns 1 credit only after a good, on-time return**. A late return costs the borrower 1 credit.
 - Three **risk tiers** decide who approves: low is automatic, medium needs the owner (and photos), high is handled by LGU staff at the barangay hall.
 - Damaged or lost items go to **barangay mediation** and no reward is given until settled.
+- A request nobody answers **expires after 7 days** (and one never picked up expires after its dates), and the credit comes back.
+- **ID photos are deleted 7 days** after the barangay approves or rejects them.
 - **Impact is counted honestly**: "purchases avoided" counts only borrowers who answered "yes, I would have bought or rented it". Waste numbers are shown as a labeled estimate range.

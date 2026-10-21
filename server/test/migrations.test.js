@@ -52,13 +52,16 @@ describe('guard rails (001)', () => {
 });
 
 describe('undo', () => {
-  test('down removes the guard rails and up puts them back', async () => {
+  test('every migration can be undone in reverse order and applied again', async () => {
     const u = await someUser();
-    const id = await migrateDown();
-    assert.equal(id, readMigrations().at(-1).id);
-    await q('UPDATE users SET credits = -1 WHERE id = ?', [u]);   // allowed without the guard rail
+    const all = readMigrations().map((m) => m.id);
+    const undone = [];
+    for (let i = 0; i < all.length; i++) undone.push(await migrateDown());
+    assert.deepEqual(undone, [...all].reverse());
+    assert.equal(await migrateDown(), null, 'nothing left to undo');
+    await q('UPDATE users SET credits = -1 WHERE id = ?', [u]);   // allowed without the guard rails
     await q('UPDATE users SET credits = 0 WHERE id = ?', [u]);
-    assert.deepEqual(await migrateUp(), [id]);
+    assert.deepEqual(await migrateUp(), all);
     await rejects('UPDATE users SET credits = -1 WHERE id = ?', [u], 'ER_CHECK_CONSTRAINT_VIOLATED');
   });
 });

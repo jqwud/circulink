@@ -30,5 +30,8 @@ export async function withTx(fn) {
   }
 }
 
-// Today's date (YYYY-MM-DD) in Philippine time.
-export const todayPH = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+// Today's date (YYYY-MM-DD) in Philippine time. Jobs pass their own "now" so tests can move the clock.
+export const todayPH = (now = new Date()) => now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+
+// A moment as 'YYYY-MM-DD HH:MM:SS' in Philippine time: the way the database stores and returns timestamps.
+export const phTimestamp = (now = new Date()) => now.toLocaleString('sv-SE', { timeZone: 'Asia/Manila' });

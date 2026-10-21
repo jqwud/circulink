@@ -21,6 +21,10 @@ class WalletScreen extends StatelessWidget {
         return c.t('Returned: request not approved');
       case 'refund_cancelled':
         return c.t('Returned: request cancelled');
+      case 'refund_expired':
+        return c.t('Returned: request expired');
+      case 'refund_item_removed':
+        return c.t('Returned: item removed');
       case 'lend_reward':
         return c.t('Thanks for lending');
       case 'late_penalty':

@@ -73,7 +73,7 @@ export function Loading() {
 }
 
 const TONE = {
-  pending: 'warn', approved: 'ok', rejected: 'bad', unverified: 'muted', cancelled: 'muted', handed_over: 'info', closed: 'ok',
+  pending: 'warn', approved: 'ok', rejected: 'bad', unverified: 'muted', cancelled: 'muted', expired: 'muted', handed_over: 'info', closed: 'ok',
   disputed: 'bad', available: 'ok', paused: 'muted', removed: 'bad', open: 'warn', in_mediation: 'info', resolved: 'ok',
   low: 'ok', medium: 'warn', high: 'bad', suspended: 'bad', overdue: 'bad', shelf: 'info',
 };

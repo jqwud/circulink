@@ -62,7 +62,7 @@ router.get('/requests', authRequired, wrap(async (req, res) => {
   const as = req.query.as === 'owner' ? 'owner' : 'borrower';
   const rows = await q(
     `${SELECT_REQUEST} WHERE ${as === 'owner' ? 'i.owner_id' : 'r.borrower_id'} = ? ORDER BY
-       FIELD(r.status,'pending','approved','handed_over','disputed','closed','rejected','cancelled'), r.start_date DESC`,
+       FIELD(r.status,'pending','approved','handed_over','disputed','closed','rejected','cancelled','expired'), r.start_date DESC`,
     [req.user.id]);
   res.json(rows.map((r) => mapRequest(r, req.user.id)));
 }));

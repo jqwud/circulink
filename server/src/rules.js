@@ -8,6 +8,9 @@ export const RULES = {
   costLowMedium: 1,
   costHigh: 2,
   shelfCost: 0,               // Barangay Shelf items are free, so a resident at 0 credits can still borrow
+  pendingExpiryDays: 7,       // a request nobody answers expires this many days after it was made
+  idPhotoRetentionDays: 7,    // ID photos are deleted this many days after staff approve or reject
+  unusedUploadGraceHours: 24, // a photo nobody attached to anything is deleted after this long
 };
 
 // Words that are not allowed in listings (weapons, medicines, hazardous items).

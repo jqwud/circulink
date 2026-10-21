@@ -489,6 +489,8 @@ String statusLabel(BuildContext context, String status) {
       return context.t('Returned');
     case 'disputed':
       return context.t('Under review');
+    case 'expired':
+      return context.t('Expired');
     default:
       return status;
   }

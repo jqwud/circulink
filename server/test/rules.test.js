@@ -18,6 +18,9 @@ describe('the rule numbers', () => {
     assert.equal(RULES.costLowMedium, 1);
     assert.equal(RULES.costHigh, 2);
     assert.equal(RULES.shelfCost, 0);
+    assert.equal(RULES.pendingExpiryDays, 7);
+    assert.equal(RULES.idPhotoRetentionDays, 7);
+    assert.equal(RULES.unusedUploadGraceHours, 24);
   });
 });
 

@@ -7,7 +7,7 @@ A risk-based test plan: test hardest where a bug would hurt residents most (cred
 | Layer | Covers | Tool | Status |
 |---|---|---|---|
 | Unit (many, fast) | `rules.js`, date and credit maths, banned words, Dart formatting | Node `node:test`; `flutter_test` | 🟡 `server/test/rules.test.js` (20 tests) |
-| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js`, `migrations.test.js` (27) |
+| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js`, `migrations.test.js`, `jobs.test.js` (42) |
 | End to end (few) | App: sign up and verify, borrow and return, share an item. Portal: verify a resident, settle a dispute | Flutter `integration_test`; Playwright | ⬜ |
 | Accessibility | Contrast, tap targets, labels, portal WCAG | Flutter `meetsGuideline`; `@axe-core/playwright` | ⬜ |
 | Load | API with 50–200 users | `autocannon` or k6 | ⬜ |
@@ -31,10 +31,10 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 10 | Usability | Developer testing | Script below with real residents |
 | 11 | Compatibility | One Android phone, Chrome | Android 8–15, 320 px to tablet, Chrome, Firefox, Safari, Edge (portal) |
 | 12 | Performance | API median 12–34 ms on demo data | Targets below |
-| 13 | Reliability and recovery | Connection card, Find server, retry | Airplane mode mid-borrow; MySQL stopped while the API runs; app killed during upload |
+| 13 | Reliability and recovery | Connection card, Find server, retry; one failing job does not stop the others (✅ batch 3) | Airplane mode mid-borrow; MySQL stopped while the API runs; app killed during upload |
 | 14 | Localization | 278 app and 184 portal strings translated | Server-made notification text; every screen in Filipino at 320 px |
 | 15 | Installation and upgrade | `run-phone.cmd`; migrations apply once, undo and redo cleanly, backup and restore round-trip (✅ batch 2) | App upgrade keeps the login |
-| 16 | Observability | Audit log, health endpoint | Request log; health that checks the database |
+| 16 | Observability | Audit log; health checks the database (batch 1); `/api/admin/jobs` shows each job's last run, result and error (batch 3) | Request log |
 | 17 | Regression | `npm test`, `flutter test` | CI on every push |
 | 18 | Exploratory | — | Charters below |
 | 19 | Release readiness | — | Checklist below |
@@ -56,8 +56,10 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | Damage | Given a damaged or lost return, the loan is disputed, a report opens, no reward is given. | ✅ |
 | Kits | Given a kit with some lines unavailable, available lines are booked and the rest listed missing; none free → 400. | 🟡 happy path only |
 | Prohibited items | "gun", "gamot" refused; "gunting" allowed. | ✅ |
+| Request expiry | Given a pending request with no answer, after 6 days it is still pending; after 8 days it is expired, the credit is back with a `refund_expired` row, and both people are told. A pending request whose end date has passed, or an approved one never picked up, expires at once. | ✅ |
+| ID photo retention | Given an approved ID, after 6 days the photo is still there; after 8 days it is deleted, logged in the audit log, and staff get 404. A photo still waiting for a decision is never deleted. | ✅ |
 
-**No stated rule yet** (decided on 2026-10-22, to be built): request expiry (B2), daily check-in and lateness (B1), dispute outcomes (B4), ID photo retention (P1), account deletion (P2). Still open: tier changes while on loan, open wanted posts after their date, minimum ratings before showing an average.
+**Decided on 2026-10-22, still to be built:** daily check-in and lateness (B1), dispute outcomes (B4), account deletion (P2). Request expiry (B2) and ID photo retention (P1) are built (batch 3). Still open: tier changes while on loan, open wanted posts after their date, minimum ratings before showing an average.
 
 ## Business-rule tests with exact numbers
 
@@ -80,9 +82,9 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | approved | 400 | borrower | allowed | 400 | 400 |
 | handed_over | 400 | 400 | 400 | allowed | 400 |
 | closed / disputed | 400 | 400 | 400 | 400 | allowed |
-| rejected / cancelled | 400 | 400 | 400 | 400 | 400 |
+| rejected / cancelled / expired | 400 | 400 | 400 | 400 | 400 |
 
-Stuck today (fixed by batches 3, 5, 6): pending forever, approved never collected, handed over never confirmed, disputed never resolved.
+Fixed by batch 3 (✅): pending forever and approved-never-collected now expire. Still stuck (batches 5 and 6): handed over never confirmed, disputed never resolved.
 
 ## Permissions
 

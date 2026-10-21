@@ -16,7 +16,7 @@ A neighbourhood borrowing app for one barangay. Residents borrow and lend items 
   │ Hiraman API (server/): Node.js + Express, one process, port 4000       │
   │ • routes: auth, items, requests, community, admin (~65 endpoints)      │
   │ • serves the built portal and public photos (/uploads/public)          │
-  │ • hourly reminder timer inside the same process                        │
+  │ • scheduled jobs inside the same process (src/jobs.js)                 │
   └───────────────┬─────────────────────────────────────┬──────────────────┘
                   ▼                                     ▼
   ┌──────────────────────────────┐   ┌─────────────────────────────────────┐
@@ -38,6 +38,7 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | `server/src/routes/` | One file per area: `auth`, `items`, `requests`, `community`, `admin` | |
 | `server/src/rules.js` | Every rule number and small rule function (costs, tiers, banned words) | |
 | `server/src/services.js` | The request life cycle and credit movements, shared by app and portal routes. `TAKEN_SQL` / `findClash` is the one definition of "this item is taken on these dates". | |
+| `server/src/jobs.js` | Scheduled jobs: reminders, request expiry, ID photo deletion, unused upload cleanup, and the runner that records each run in `job_runs` | |
 | `server/src/uploads.js` | Photo uploads: 5 MB limit, real-type check from the file's first bytes, own-upload paths only, ID photo clean-up | |
 | `server/test/` | `rules.test.js` (unit), `loop.test.js` (the whole borrow loop against `hiraman_test`), `helpers/` | `npm test` |
 | `database/` | `schema.sql` (starting point for a new database), `migrations/` (numbered changes, each with an undo part), `create-test-db.sql` | |
@@ -57,6 +58,7 @@ There are no push notifications: reminders and alerts are rows in `notifications
         │                                                  └──cancel──► cancelled (refunded)
         │                                                                          └──return damaged/lost──► disputed ──staff resolve──► closed
  low-tier items skip "pending" and are approved at once
+ pending with no answer for 7 days (or past its end date), or approved but never picked up by its end date ──► expired (credits refunded)
 ```
 
 - **Credits** move only inside database transactions (`withTx` in `server/src/db.js`) and every change writes a `credit_ledger` row. Rows are locked (`SELECT ... FOR UPDATE`) so two requests cannot book the same dates or spend the same credit.
@@ -75,6 +77,8 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | Login tokens are JWTs (30 days) and the user is reloaded on every request | A suspension or role change takes effect immediately. |
 | Schema changes go through migrations | `schema.sql` creates a new database; every later change is a numbered file in `database/migrations` with an undo part, recorded in `schema_migrations`. `npm run migrate` backs up first. The server warns at start-up if a migration is missing. |
 | The database enforces the main rules too | Since migration 001: credits never below 0, end date on or after start date, 1–5 stars, and foreign keys on every link, so a bug or manual edit cannot create orphans. |
+| Scheduled work runs inside the API | `startScheduler()` checks every 10 minutes which jobs are due (reminders, expiry and ID photo deletion hourly, upload cleanup daily). Each run is recorded in `job_runs`, visible to staff at `/api/admin/jobs`. A failing job is logged and does not stop the others. Jobs only run while the server runs, and catch up on the next start. |
+| Personal data is kept only as long as needed | ID photos are deleted 7 days after staff approve or reject them; unused uploads after a day. |
 | Tests use their own database | `server/test/helpers/env.js` forces a `*_test` database and a temporary upload folder before anything else loads. |
 
 ## Configuration

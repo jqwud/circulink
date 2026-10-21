@@ -29,7 +29,7 @@ const FIL = {
   'Notes': 'Mga tala', 'Outcome': 'Kinalabasan', 'Reporter': 'Nag-report', 'Target': 'Pinag-uulatan', 'Created': 'Ginawa',
   // statuses
   'pending': 'naghihintay', 'approved': 'aprubado', 'rejected': 'tinanggihan', 'unverified': 'hindi pa beripikado',
-  'cancelled': 'kinansela', 'handed_over': 'nasa humihiram', 'closed': 'tapos na', 'disputed': 'may hidwaan',
+  'cancelled': 'kinansela', 'handed_over': 'nasa humihiram', 'closed': 'tapos na', 'disputed': 'may hidwaan', 'expired': 'nag-expire',
   'available': 'available', 'paused': 'naka-pause', 'removed': 'inalis', 'open': 'bukas', 'in_mediation': 'sa mediation',
   'resolved': 'naresolba', 'low': 'mababa', 'medium': 'katamtaman', 'high': 'mataas', 'good': 'maayos', 'damaged': 'sira',
   'lost': 'nawala', 'new': 'bago', 'fair': 'katamtaman', 'worn': 'luma', 'suspended': 'suspendido',

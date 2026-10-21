@@ -1,7 +1,7 @@
 import { createApp } from './app.js';
 import { config } from './config.js';
 import { pool } from './db.js';
-import { runReminders } from './services.js';
+import { startScheduler } from './jobs.js';
 import { pendingMigrations } from './migrations.js';
 
 try {
@@ -26,7 +26,5 @@ app.listen(config.port, '0.0.0.0', () => {
   console.log(`Hiraman API running on http://localhost:${config.port}  (health: /api/health)`);
 });
 
-// Return reminders: check every hour (staff can also trigger it from the portal).
-const tick = () => runReminders().catch((e) => console.error('[hiraman] reminder run failed:', e.message));
-setTimeout(tick, 5000);
-setInterval(tick, 60 * 60 * 1000);
+// Scheduled jobs: reminders, request expiry, ID photo deletion, unused upload cleanup (see src/jobs.js).
+startScheduler();

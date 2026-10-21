@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 3: Scheduled jobs (2026-10-22)
+
+- **Request expiry:** a pending request nobody answers expires 7 days after it was made (or once its end date passes); an approved request that is never picked up expires once its end date passes. The borrower's held credit is refunded (`refund_expired`) and both people are notified. New request status "Expired" in the app and portal.
+- **ID photos:** deleted 7 days after staff approve or reject them, and the deletion is written to the audit log. Accounts approved or rejected before this change start their 7 days now.
+- **Unused uploads:** photos that were never attached to anything are deleted after a day.
+- **Reminders:** the owner is now told once when their item becomes overdue (before: only the borrower heard).
+- **Job runner:** every job runs on its own interval, checked every 10 minutes. Each run is recorded in a new `job_runs` table and shown to staff at `/api/admin/jobs`; one failing job does not stop the others.
+- Migration 002 adds the "expired" status, `users.verification_decided_at` and `job_runs`. The app's credit history now names "request expired" and "item removed" refunds.
+
 ## Batch 2: Migrations and backups (2026-10-22)
 
 - **Migrations:** numbered SQL files in `database/migrations`, each with an undo part, applied by `npm run migrate` and recorded in a `schema_migrations` table. Running it again does nothing. It takes a backup first. `npm run migrate:status` and `npm run migrate:down` show and undo.

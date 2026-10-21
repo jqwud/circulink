@@ -51,7 +51,7 @@ export async function findClash(conn, itemId, start, end, exceptRequestId = 0) {
   return rows[0] || null;
 }
 
-async function loadRequest(conn, id, lock = true) {
+export async function loadRequest(conn, id, lock = true) {
   const [rows] = await conn.query(
     `SELECT r.*, i.title AS item_title, i.owner_id, i.is_shelf, i.tier, i.status AS item_status
        FROM requests r JOIN items i ON i.id = r.item_id WHERE r.id = ? ${lock ? 'FOR UPDATE' : ''}`, [id]);
@@ -249,25 +249,4 @@ export async function saveRating(requestId, user, stars, comment = null) {
     'INSERT INTO ratings (request_id, rater_id, ratee_id, stars, comment) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE stars = VALUES(stars), comment = VALUES(comment)',
     [requestId, user.id, rateeId, stars, comment]);
   return { ok: true };
-}
-
-// ---------- reminders (due tomorrow, due today, overdue) ----------
-export async function runReminders() {
-  const today = todayPH();
-  const rows = await q(
-    `SELECT r.id, r.borrower_id, r.end_date, i.title, DATEDIFF(r.end_date, ?) AS days_left
-       FROM requests r JOIN items i ON i.id = r.item_id
-      WHERE r.status = 'handed_over' AND r.end_date <= DATE_ADD(?, INTERVAL 1 DAY)`, [today, today]);
-  let sent = 0;
-  for (const r of rows) {
-    const type = r.days_left > 0 ? 'due_tomorrow' : r.days_left === 0 ? 'due_today' : 'overdue';
-    const title = type === 'due_tomorrow' ? `Due tomorrow: ${r.title}` : type === 'due_today' ? `Due today: ${r.title}` : `Overdue: ${r.title}`;
-    const exists = await one(
-      'SELECT id FROM notifications WHERE user_id = ? AND type = ? AND ref_id = ? AND DATE(created_at) = ?', [r.borrower_id, type, r.id, today]);
-    if (exists) continue;
-    await q('INSERT INTO notifications (user_id, type, title, body, ref_id) VALUES (?,?,?,?,?)',
-      [r.borrower_id, type, title, `Return by ${r.end_date}. Pawsa is counting on you!`, r.id]);
-    sent++;
-  }
-  return { checked: rows.length, sent };
 }

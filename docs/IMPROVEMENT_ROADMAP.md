@@ -28,7 +28,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 0 | Safety net: tests on `hiraman_test` only, rule unit tests, roadmap, architecture and QA docs, setup guide refresh | B10 | S | Done (593e0a3) |
 | 1 | Quick fixes: ignore uploads in git, real file-type check and friendly 400, own-upload photo paths only, safe CSV export, health checks the DB, 404 for unknown routes, one "already booked" check, block duplicate requests, delete junk files | P1 (part), B5, B6, S3, B13, B12 (part), A2, B3, A8 | M | Done |
 | 2 | Migrations and backups: plain-SQL migration runner, guard-rail constraints, backup and restore scripts | B7, B8 | M | Done |
-| 3 | Scheduled jobs: 7-day request expiry, 7-day ID photo deletion, unused upload cleanup, reminders | B2, B11, P1 | M | Planned |
+| 3 | Scheduled jobs: 7-day request expiry, 7-day ID photo deletion, unused upload cleanup, reminders | B2, B11, P1 | M | Done |
 | 4 | UI quick fixes: onboarding on small and sideways phones, confirm steps, feedback after every action, demo login in debug only, portal dialog focus and English status labels | D2, D3, D4, D13, D11 | S–M | Planned |
 | **Do next** | | | | |
 | 5 | Daily check-in, fair lateness, request timeline | B1, D5 | L | Planned |
@@ -65,3 +65,9 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Files:** `database/migrations/001_guard_rails.sql` (new), `database/schema.sql` (header), `server/src/migrations.js`, `server/src/backup.js`, `server/scripts/migrate.js`, `backup.js`, `restore.js` (new), `server/src/index.js`, `server/package.json`, `.gitignore`, `server/test/helpers/*`, `server/test/migrations.test.js` (new), docs.
 - **Proof:** 69/69 tests (8 new). Pre-checks on the demo database all 0; migration applied with an automatic backup; demo data identical before and after; a negative balance is now refused by the database.
 - **Undo:** `npm run migrate:down` (removes the guard rails, backs up first), then `git revert` the batch commit. Or restore the backup taken before the migration: `npm run restore -- hiraman-<time>-before-migrate --yes`.
+
+### Batch 3: Scheduled jobs
+- **Goal:** nothing stays stuck or kept longer than needed: unanswered and uncollected requests expire, ID photos are deleted after 7 days, unused uploads are cleaned, owners hear about overdue items.
+- **Files:** `database/migrations/002_jobs_and_expiry.sql` (new), `server/src/jobs.js` (new; reminders moved here from `services.js`), `server/src/db.js`, `rules.js`, `services.js`, `index.js`, `routes/admin.js`, `routes/requests.js`, app status and wallet labels, portal status label, tests `jobs.test.js` (new), `migrations.test.js`, `rules.test.js`.
+- **Proof:** 84/84 tests (15 new, using a clock moved 6 and 8 days ahead). Migration applied to the demo database with a backup first; data unchanged.
+- **Undo:** `npm run migrate:down` (expired requests become cancelled; the decision dates and job history are dropped), then `git revert` the batch commit.

@@ -7,7 +7,8 @@ import { pool, q, one, withTx, todayPH } from '../db.js';
 import { config } from '../config.js';
 import { bad, notFound, wrap } from '../errors.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
-import { addCredits, audit, notify, runReminders } from '../services.js';
+import { addCredits, audit, notify } from '../services.js';
+import { runReminders } from '../jobs.js';
 import { RULES, PROHIBITED, AVG_WEIGHT_KG } from '../rules.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
 import { SELECT_REQUEST, mapRequest } from './requests.js';
@@ -77,7 +78,7 @@ router.post('/admin/users/:id/approve', wrap(async (req, res) => {
   const r = await withTx(async (conn) => {
     const [[u]] = await conn.query('SELECT * FROM users WHERE id = ? AND role = ? FOR UPDATE', [req.params.id, 'resident']);
     if (!u) throw notFound('Resident not found.');
-    await conn.query("UPDATE users SET verification_status = 'approved', reject_reason = NULL WHERE id = ?", [u.id]);
+    await conn.query("UPDATE users SET verification_status = 'approved', reject_reason = NULL, verification_decided_at = NOW() WHERE id = ?", [u.id]);
     // Starter credits are given once.
     const [[given]] = await conn.query("SELECT COUNT(*) n FROM credit_ledger WHERE user_id = ? AND reason = 'starter'", [u.id]);
     if (!given.n) await addCredits(conn, u.id, RULES.starterCredits, 'starter');
@@ -94,7 +95,7 @@ router.post('/admin/users/:id/reject', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
   if (!u) throw notFound('Resident not found.');
   await withTx(async (conn) => {
-    await conn.query("UPDATE users SET verification_status = 'rejected', reject_reason = ? WHERE id = ?", [reason.slice(0, 255), u.id]);
+    await conn.query("UPDATE users SET verification_status = 'rejected', reject_reason = ?, verification_decided_at = NOW() WHERE id = ?", [reason.slice(0, 255), u.id]);
     await notify(conn, u.id, 'verification_rejected', 'Verification needs a fix', reason, null);
     await audit(req.user.id, 'verification_rejected', `user #${u.id} ${u.name}: ${reason}`, conn);
   });
@@ -185,6 +186,11 @@ router.get('/admin/requests', wrap(async (req, res) => {
 }));
 
 router.post('/admin/run-reminders', wrap(async (_req, res) => res.json(await runReminders())));
+
+// When each scheduled job last ran, and its last result or error.
+router.get('/admin/jobs', wrap(async (_req, res) => {
+  res.json(await q('SELECT name, last_run_at, last_ok_at, last_result, last_error FROM job_runs ORDER BY name'));
+}));
 
 // ---------- reports and disputes ----------
 router.get('/admin/reports', wrap(async (req, res) => {
