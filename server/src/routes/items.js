@@ -3,6 +3,7 @@ import { pool, q, one, todayPH } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
 import { creditCost, findProhibited, handledByStaff } from '../rules.js';
+import { ownPhoto } from '../uploads.js';
 
 const router = Router();
 
@@ -105,7 +106,7 @@ function readItemBody(body, { partial = false } = {}) {
     out.tier = b.tier;
   }
   if (b.pickup_point_id !== undefined) out.pickup_point_id = b.pickup_point_id ? Number(b.pickup_point_id) : null;
-  if (b.photo_url !== undefined) out.photo_url = b.photo_url || null;
+  if (b.photo_url !== undefined) out.photo_url = ownPhoto(b.photo_url);
   if (b.repair_reuse !== undefined) out.repair_reuse = b.repair_reuse ? 1 : 0;
   const word = findProhibited(out.title, out.description);
   if (word) throw bad(`"${word}" items are not allowed on Hiraman (weapons, medicines and hazardous items).`, 'prohibited_item');

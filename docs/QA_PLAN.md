@@ -7,7 +7,7 @@ A risk-based test plan: test hardest where a bug would hurt residents most (cred
 | Layer | Covers | Tool | Status |
 |---|---|---|---|
 | Unit (many, fast) | `rules.js`, date and credit maths, banned words, Dart formatting | Node `node:test`; `flutter_test` | 🟡 `server/test/rules.test.js` (20 tests) |
-| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `server/test/loop.test.js` (21 steps) |
+| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js` (19) |
 | End to end (few) | App: sign up and verify, borrow and return, share an item. Portal: verify a resident, settle a dispute | Flutter `integration_test`; Playwright | ⬜ |
 | Accessibility | Contrast, tap targets, labels, portal WCAG | Flutter `meetsGuideline`; `@axe-core/playwright` | ⬜ |
 | Load | API with 50–200 users | `autocannon` or k6 | ⬜ |
@@ -23,9 +23,9 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 2 | Functional | Main loop | Title 1, 2, 120, 121 characters; emoji names; double-submit borrow; every role against every admin route |
 | 3 | Business rules | Rule numbers unit-tested; 12 loop steps | Exact-number table below |
 | 4 | State and workflow | Happy-path transitions | Every refused transition; stuck states |
-| 5 | API | Status and code checks | Expired token → 401 `auth_expired`; 61st login in 15 min → 429; wrong upload type → 400 |
-| 6 | Data integrity | One ledger check | Balance = SUM(ledger) for everyone; 10 parallel borrows of one item → exactly 1 |
-| 7 | Security | Role checks, private ID photo | Object-level access for every route; CSV formula injection; upload abuse |
+| 5 | API | Status and code checks; wrong upload type → 400, 5 MB limit, unknown route → 404, health with DB (✅ batch 1) | Expired token → 401 `auth_expired`; 61st login in 15 min → 429 |
+| 6 | Data integrity | One ledger check; no duplicate requests, overdue items stay taken (✅ batch 1) | Balance = SUM(ledger) for everyone; 10 parallel borrows of one item → exactly 1 |
+| 7 | Security | Role checks, private ID photo; CSV formula injection, file-signature check, own-upload photo paths (✅ batch 1) | Object-level access for every route; rate limits |
 | 8 | Privacy (RA 10173) | First names only; ID views audited | Notice and consent, 7-day ID deletion, account deletion |
 | 9 | Accessibility (WCAG 2.2 AA) | Palette contrast validated | Labels, focus, 200% text, keyboard on web |
 | 10 | Usability | Developer testing | Script below with real residents |

@@ -127,7 +127,9 @@ await step('medium tier: pending until the owner approves; photo needed at hando
   assert.equal((await api('POST', `/requests/${r2}/approve`, ana)).status, 200);
   const noPhoto = await api('POST', `/requests/${r2}/handover`, ana, {});
   assert.equal(noPhoto.status, 400); assert.equal(noPhoto.json.code, 'photo_required');
-  assert.equal((await api('POST', `/requests/${r2}/handover`, ana, { photo: '/uploads/public/x.jpg' })).status, 200);
+  const fd = new FormData(); fd.append('file', new Blob([PNG], { type: 'image/png' }), 'condition.png');
+  const photo = (await (await fetch(`${base}/uploads`, { method: 'POST', headers: { Authorization: `Bearer ${ana}` }, body: fd })).json()).url;
+  assert.equal((await api('POST', `/requests/${r2}/handover`, ana, { photo })).status, 200);
 });
 await step('damaged return goes to mediation: no lender reward, report is opened', async () => {
   const before = await credits(ana);

@@ -22,7 +22,8 @@ export function errorMiddleware(err, req, res, _next) {
     return res.status(409).json({ error: 'That value is already in use.', code: 'duplicate' });
   }
   if (err?.name === 'MulterError') {
-    return res.status(400).json({ error: err.message, code: 'upload_error' });
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'Photos must be 5 MB or smaller.', code: 'file_too_large' });
+    return res.status(400).json({ error: 'The photo could not be received. Please try again.', code: 'upload_error' });
   }
   console.error('[hiraman] unexpected error:', err);
   res.status(500).json({ error: 'Something went wrong on the server.', code: 'server_error' });

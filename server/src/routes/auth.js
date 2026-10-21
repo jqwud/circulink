@@ -1,38 +1,13 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import multer from 'multer';
-import path from 'node:path';
-import fs from 'node:fs';
-import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import { pool, q, one } from '../db.js';
-import { config } from '../config.js';
 import { bad, wrap } from '../errors.js';
 import { authRequired, signToken, publicUser } from '../auth.js';
+import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
 
 const router = Router();
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false });
-
-const IMAGE_TYPES = { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' };
-
-function uploader(subdir) {
-  const dir = path.join(config.uploadDir, subdir);
-  fs.mkdirSync(dir, { recursive: true });
-  return multer({
-    storage: multer.diskStorage({
-      destination: dir,
-      filename: (_req, file, cb) => cb(null, crypto.randomBytes(12).toString('hex') + (IMAGE_TYPES[file.mimetype] || path.extname(file.originalname || '').toLowerCase().replace(/[^.a-z0-9]/g, '') || '.jpg')),
-    }),
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (_req, file, cb) => {
-      const okType = !!IMAGE_TYPES[file.mimetype];
-      const okGeneric = file.mimetype === 'application/octet-stream' && /\.(jpe?g|png|webp)$/i.test(file.originalname || '');
-      return okType || okGeneric ? cb(null, true) : cb(new Error('Only JPG, PNG or WEBP photos are allowed.'));
-    },
-  });
-}
-export const publicUpload = uploader('public');
-export const privateUpload = uploader('private');
 
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
 
@@ -71,16 +46,21 @@ router.patch('/me', authRequired, wrap(async (req, res) => {
 }));
 
 // Public item photos (listings, handover and return photos).
-router.post('/uploads', authRequired, publicUpload.single('file'), wrap(async (req, res) => {
+router.post('/uploads', authRequired, publicUpload, wrap(async (req, res) => {
   if (!req.file) throw bad('Choose a photo first.', 'no_file');
   res.status(201).json({ url: `/uploads/public/${req.file.filename}` });
 }));
 
 // ID photo: stored privately. Only LGU staff can view it, through an authenticated endpoint.
-router.post('/me/id-photo', authRequired, privateUpload.single('file'), wrap(async (req, res) => {
+router.post('/me/id-photo', authRequired, privateUpload, wrap(async (req, res) => {
   if (!req.file) throw bad('Choose a photo of your ID.', 'no_file');
-  if (req.user.role !== 'resident') throw bad('Staff accounts do not need verification.', 'bad_state');
+  if (req.user.role !== 'resident') {
+    removePrivateFile(req.file.filename);
+    throw bad('Staff accounts do not need verification.', 'bad_state');
+  }
   await q("UPDATE users SET id_photo_path = ?, verification_status = 'pending', reject_reason = NULL WHERE id = ?", [req.file.filename, req.user.id]);
+  // Keep only the newest ID photo: the old one is personal data we no longer need.
+  if (req.user.id_photo_path && req.user.id_photo_path !== req.file.filename) removePrivateFile(req.user.id_photo_path);
   const staff = await q("SELECT id FROM users WHERE role IN ('lgu_staff','lgu_admin')");
   for (const s of staff) {
     await q('INSERT INTO notifications (user_id, type, title, body, ref_id) VALUES (?,?,?,?,?)',

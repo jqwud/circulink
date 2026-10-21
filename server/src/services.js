@@ -29,6 +29,28 @@ export async function addCredits(conn, userId, amount, reason, requestId = null)
 const isoDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) && !Number.isNaN(Date.parse(s));
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 
+// Borrow dates: real dates, not in the past (Philippine time), in order, at most maxLoanDays long.
+export function assertDates(start, end) {
+  if (!isoDate(start) || !isoDate(end)) throw bad('Choose a start and end date.', 'bad_dates');
+  if (start < todayPH()) throw bad('The start date cannot be in the past.', 'past_date');
+  if (end < start) throw bad('The end date must be on or after the start date.', 'bad_dates');
+  if (daysBetween(start, end) + 1 > RULES.maxLoanDays) throw bad(`You can borrow for up to ${RULES.maxLoanDays} days.`, 'too_long');
+}
+
+// When is an item taken? By an approved loan on those dates, or by a loan that is out:
+// an item that is out and overdue stays taken until it comes back. The one definition, used everywhere.
+// `r` is the alias of the requests table. Parameters, in order: end date, today, start date.
+export const TAKEN_SQL = (r) =>
+  `${r}.status IN ('approved','handed_over') AND ${r}.start_date <= ?
+   AND (CASE WHEN ${r}.status = 'handed_over' THEN GREATEST(${r}.end_date, ?) ELSE ${r}.end_date END) >= ?`;
+
+export async function findClash(conn, itemId, start, end, exceptRequestId = 0) {
+  const [rows] = await conn.query(
+    `SELECT r.id FROM requests r WHERE r.item_id = ? AND r.id <> ? AND ${TAKEN_SQL('r')} LIMIT 1`,
+    [itemId, exceptRequestId, end, todayPH(), start]);
+  return rows[0] || null;
+}
+
 async function loadRequest(conn, id, lock = true) {
   const [rows] = await conn.query(
     `SELECT r.*, i.title AS item_title, i.owner_id, i.is_shelf, i.tier, i.status AS item_status
@@ -53,23 +75,19 @@ function assertCanManage(req, actor) {
 export async function createRequestTx(conn, { borrower, itemId, start, end, kitId = null, note = null }) {
   if (borrower.role !== 'resident') throw forbidden('Only residents can borrow.', 'residents_only');
   if (borrower.verification_status !== 'approved') throw forbidden('Your account must be verified by the barangay first.', 'not_verified');
-  if (!isoDate(start) || !isoDate(end)) throw bad('Choose a start and end date.', 'bad_dates');
-  if (start < todayPH()) throw bad('The start date cannot be in the past.', 'past_date');
-  if (end < start) throw bad('The end date must be on or after the start date.', 'bad_dates');
-  if (daysBetween(start, end) + 1 > RULES.maxLoanDays) throw bad(`You can borrow for up to ${RULES.maxLoanDays} days.`, 'too_long');
+  assertDates(start, end);
 
   const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
   if (!item || item.status !== 'available') throw bad('This item is not available right now.', 'item_unavailable');
   if (item.owner_id === borrower.id) throw bad('You cannot borrow your own item.', 'own_item');
 
-  // Date clash with an approved loan, or an item that is out and not back yet.
-  const today = todayPH();
-  const [clash] = await conn.query(
-    `SELECT id FROM requests
-      WHERE item_id = ? AND status IN ('approved','handed_over') AND start_date <= ?
-        AND (CASE WHEN status = 'handed_over' THEN GREATEST(end_date, ?) ELSE end_date END) >= ? LIMIT 1`,
-    [itemId, end, today, start]);
-  if (clash.length) throw bad('Those dates are already booked. Try other dates.', 'dates_booked');
+  // The same person asking again for overlapping dates (a double tap, or a kit sent twice).
+  const [[dup]] = await conn.query(
+    `SELECT id FROM requests WHERE item_id = ? AND borrower_id = ? AND status IN ('pending','approved')
+       AND start_date <= ? AND end_date >= ? LIMIT 1`, [itemId, borrower.id, end, start]);
+  if (dup) throw bad('You already asked for this item for those dates.', 'duplicate_request');
+
+  if (await findClash(conn, itemId, start, end)) throw bad('Those dates are already booked. Try other dates.', 'dates_booked');
 
   const cost = creditCost(item);
   const [[me]] = await conn.query('SELECT credits FROM users WHERE id = ? FOR UPDATE', [borrower.id]);
@@ -106,11 +124,8 @@ export function decideRequest(requestId, actor, decision, reason = null) {
     assertCanManage(r, actor);
     if (r.status !== 'pending') throw bad('This request is not waiting for a decision.', 'bad_state');
     if (decision === 'approve') {
-      // Re-check that nobody else got these dates while we waited.
-      const [clash] = await conn.query(
-        `SELECT id FROM requests WHERE item_id = ? AND id <> ? AND status IN ('approved','handed_over')
-           AND start_date <= ? AND end_date >= ? LIMIT 1`, [r.item_id, r.id, r.end_date, r.start_date]);
-      if (clash.length) throw bad('Those dates were booked by another request.', 'dates_booked');
+      // Re-check that nobody else got these dates while we waited, and that the item is not still out.
+      if (await findClash(conn, r.item_id, r.start_date, r.end_date, r.id)) throw bad('Those dates were booked by another request.', 'dates_booked');
       await conn.query("UPDATE requests SET status = 'approved' WHERE id = ?", [r.id]);
       await notify(conn, r.borrower_id, 'request_approved', `Approved: ${r.item_title}`,
         r.handled_by_staff ? 'Pick it up at the barangay hall.' : 'Message the owner and agree on the pickup point.', r.id);

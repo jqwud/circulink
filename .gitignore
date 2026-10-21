@@ -10,6 +10,9 @@ build/
 .env.*
 !.env.example
 
+# Uploaded photos. ID photos are sensitive personal data: never commit any upload.
+server/uploads/
+
 # Logs
 *.log
 npm-debug.log*

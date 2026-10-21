@@ -6,14 +6,17 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import { errorMiddleware } from './errors.js';
+import { pool } from './db.js';
 import authRoutes from './routes/auth.js';
 import itemRoutes from './routes/items.js';
 import requestRoutes from './routes/requests.js';
 import communityRoutes from './routes/community.js';
 import adminRoutes from './routes/admin.js';
 
-export function createApp() {
+// options.checkDb lets tests simulate a database that is down.
+export function createApp(options = {}) {
   const app = express();
+  const checkDb = options.checkDb || (() => pool.query('SELECT 1'));
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(',') }));
   app.use(express.json({ limit: '200kb' }));
@@ -21,7 +24,15 @@ export function createApp() {
   // Public item photos only. ID photos live in uploads/private and are never served here.
   app.use('/uploads/public', express.static(path.join(config.uploadDir, 'public'), { maxAge: '7d' }));
 
-  app.get('/api/health', (_req, res) => res.json({ ok: true, app: 'Hiraman API' }));
+  // Healthy means the API can also reach the database (checked within 3 seconds).
+  app.get('/api/health', async (_req, res) => {
+    try {
+      await Promise.race([checkDb(), new Promise((_, fail) => setTimeout(() => fail(new Error('timeout')), 3000))]);
+      res.json({ ok: true, app: 'Hiraman API', db: 'ok' });
+    } catch {
+      res.status(503).json({ ok: false, app: 'Hiraman API', db: 'down' });
+    }
+  });
 
   const api = express.Router();
   api.use(authRoutes);

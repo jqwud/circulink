@@ -26,6 +26,8 @@ A neighbourhood borrowing app for one barangay. Residents borrow and lend items 
                                      └─────────────────────────────────────┘
 ```
 
+`/api/health` reports `db: ok` (200) or `db: down` (503).
+
 There are no push notifications: reminders and alerts are rows in `notifications` that the app fetches when it is opened.
 
 ## Folders
@@ -35,7 +37,8 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | `server/` | The API | `src/index.js` (starts the server and the reminder timer) → `src/app.js` (builds the Express app) |
 | `server/src/routes/` | One file per area: `auth`, `items`, `requests`, `community`, `admin` | |
 | `server/src/rules.js` | Every rule number and small rule function (costs, tiers, banned words) | |
-| `server/src/services.js` | The request life cycle and credit movements, shared by app and portal routes | |
+| `server/src/services.js` | The request life cycle and credit movements, shared by app and portal routes. `TAKEN_SQL` / `findClash` is the one definition of "this item is taken on these dates". | |
+| `server/src/uploads.js` | Photo uploads: 5 MB limit, real-type check from the file's first bytes, own-upload paths only, ID photo clean-up | |
 | `server/test/` | `rules.test.js` (unit), `loop.test.js` (the whole borrow loop against `hiraman_test`), `helpers/` | `npm test` |
 | `database/` | `schema.sql` (tables and reference data), `create-test-db.sql` | |
 | `portal/` | React + Vite staff portal, 12 pages | `src/main.jsx` → `src/App.jsx` |
@@ -66,7 +69,7 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | One API for app and portal | One place for rules and data; the portal is served by the API in production. |
 | Rules in `rules.js` and `services.js`, not in the clients | The server is the authority. (Some numbers are still repeated in client text; see the roadmap.) |
 | Philippine time everywhere | MySQL sessions use `+08:00` and dates are compared as `YYYY-MM-DD` strings (`todayPH`), so loans do not shift with the server's own clock. |
-| ID photos private | Stored in `uploads/private`, served only through an authenticated staff route, and every view is written to `audit_log`. |
+| ID photos private | Stored in `uploads/private`, served only through an authenticated staff route, every view is written to `audit_log`, only the newest ID photo is kept, and `server/uploads/` is ignored by git. |
 | Residents see first names only | Phone and email are visible to staff only. |
 | Login tokens are JWTs (30 days) and the user is reloaded on every request | A suspension or role change takes effect immediately. |
 | Tests use their own database | `server/test/helpers/env.js` forces a `*_test` database and a temporary upload folder before anything else loads. |

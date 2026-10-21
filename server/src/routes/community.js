@@ -3,11 +3,12 @@ import { Router } from 'express';
 import { pool, q, one, withTx, todayPH } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { createRequestTx, notify } from '../services.js';
-import { RULES, AVG_WEIGHT_KG } from '../rules.js';
+import { assertDates, createRequestTx, notify, TAKEN_SQL } from '../services.js';
+import { RULES } from '../rules.js';
 
 const router = Router();
-router.use(authRequired);
+// Login is required on these paths only, so an unknown address still gets a plain 404.
+router.use(['/credits', '/wanted', '/kits', '/notifications', '/reports', '/announcements', '/me/badges', '/impact'], authRequired);
 
 const firstName = (n) => String(n || '').split(' ')[0];
 
@@ -75,6 +76,7 @@ router.get('/kits', wrap(async (_req, res) => {
 // Request a whole kit in one go: one request per line, using the first free matching item.
 router.post('/kits/:id/request', requireApproved, wrap(async (req, res) => {
   const { start_date, end_date } = req.body || {};
+  assertDates(start_date, end_date);
   const kit = await one('SELECT * FROM kits WHERE id = ? AND active = 1', [req.params.id]);
   if (!kit) throw notFound('Kit not found.');
   const lines = await q('SELECT * FROM kit_items WHERE kit_id = ? ORDER BY id', [kit.id]);
@@ -87,18 +89,18 @@ router.post('/kits/:id/request', requireApproved, wrap(async (req, res) => {
       const [cands] = await conn.query(
         `SELECT i.id FROM items i WHERE i.status = 'available' AND i.category_id = ?
             AND (? IS NULL OR i.title LIKE CONCAT('%', ?, '%')) AND (i.owner_id IS NULL OR i.owner_id <> ?)
-            AND NOT EXISTS (SELECT 1 FROM requests r WHERE r.item_id = i.id AND r.status IN ('approved','handed_over')
-                              AND r.start_date <= ? AND r.end_date >= ?)
+            AND NOT EXISTS (SELECT 1 FROM requests r WHERE r.item_id = i.id AND ${TAKEN_SQL('r')})
           ORDER BY i.is_shelf DESC, i.id`,
-        [l.category_id, l.keyword, l.keyword, req.user.id, end_date, start_date]);
+        [l.category_id, l.keyword, l.keyword, req.user.id, end_date, todayPH(), start_date]);
       const pick = cands.find((c) => !usedItems.has(c.id));
       if (!pick) { missing.push(l.label); continue; }
       usedItems.add(pick.id);
       try {
         created.push({ label: l.label, ...(await createRequestTx(conn, { borrower: req.user, itemId: pick.id, start: start_date, end: end_date, kitId: kit.id })) });
       } catch (e) {
-        // Out of credits for the rest: stop here and report what was not covered.
+        // Out of credits, or already asked for: report the line as not covered and go on.
         if (e.code === 'insufficient_credits') { missing.push(`${l.label} (not enough credits)`); continue; }
+        if (e.code === 'duplicate_request') { missing.push(`${l.label} (you already asked for it)`); continue; }
         throw e;
       }
     }
@@ -177,5 +179,4 @@ export async function impactNumbers() {
 }
 router.get('/impact', wrap(async (_req, res) => res.json(await impactNumbers())));
 
-export { AVG_WEIGHT_KG };
 export default router;

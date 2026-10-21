@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { q, one } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
+import { ownPhoto } from '../uploads.js';
 import {
   createRequest, decideRequest, cancelRequest, handOver, returnItem, saveSurvey, saveRating,
 } from '../services.js';
@@ -78,10 +79,10 @@ router.get('/requests/:id', authRequired, wrap(async (req, res) => {
 router.post('/requests/:id/approve', authRequired, wrap(async (req, res) => res.json(await decideRequest(Number(req.params.id), req.user, 'approve'))));
 router.post('/requests/:id/reject', authRequired, wrap(async (req, res) => res.json(await decideRequest(Number(req.params.id), req.user, 'reject', req.body?.reason || null))));
 router.post('/requests/:id/cancel', authRequired, wrap(async (req, res) => res.json(await cancelRequest(Number(req.params.id), req.user))));
-router.post('/requests/:id/handover', authRequired, wrap(async (req, res) => res.json(await handOver(Number(req.params.id), req.user, req.body?.photo || null))));
+router.post('/requests/:id/handover', authRequired, wrap(async (req, res) => res.json(await handOver(Number(req.params.id), req.user, ownPhoto(req.body?.photo)))));
 router.post('/requests/:id/return', authRequired, wrap(async (req, res) => {
   const { condition, note, photo } = req.body || {};
-  res.json(await returnItem(Number(req.params.id), req.user, { condition: condition || 'good', note: note || null, photo: photo || null }));
+  res.json(await returnItem(Number(req.params.id), req.user, { condition: condition || 'good', note: note || null, photo: ownPhoto(photo) }));
 }));
 router.post('/requests/:id/survey', authRequired, wrap(async (req, res) => res.json(await saveSurvey(Number(req.params.id), req.user, req.body?.would_have_bought))));
 router.post('/requests/:id/rate', authRequired, wrap(async (req, res) => res.json(await saveRating(Number(req.params.id), req.user, req.body?.stars, req.body?.comment || null))));

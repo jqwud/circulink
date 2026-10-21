@@ -290,7 +290,9 @@ router.get('/admin/impact', wrap(async (_req, res) => {
 }));
 
 const csvCell = (v) => {
-  const s = v === null || v === undefined ? '' : String(v);
+  let s = v === null || v === undefined ? '' : String(v);
+  // Text starting with = + - @ (or a tab or return) would run as a formula in Excel: keep it as text.
+  if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 router.get('/admin/export/transactions.csv', wrap(async (_req, res) => {
