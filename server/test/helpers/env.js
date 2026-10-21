@@ -13,5 +13,7 @@ if (!/_test$/.test(process.env.DB_NAME)) {
 
 process.env.UPLOAD_DIR = path.join(os.tmpdir(), 'hiraman-test-uploads');
 fs.rmSync(process.env.UPLOAD_DIR, { recursive: true, force: true });
+process.env.BACKUP_DIR = path.join(os.tmpdir(), 'hiraman-test-backups');
+fs.rmSync(process.env.BACKUP_DIR, { recursive: true, force: true });
 
 process.env.JWT_SECRET ||= 'test-only-secret';

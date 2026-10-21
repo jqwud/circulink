@@ -27,7 +27,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | **Do now** | | | | |
 | 0 | Safety net: tests on `hiraman_test` only, rule unit tests, roadmap, architecture and QA docs, setup guide refresh | B10 | S | Done (593e0a3) |
 | 1 | Quick fixes: ignore uploads in git, real file-type check and friendly 400, own-upload photo paths only, safe CSV export, health checks the DB, 404 for unknown routes, one "already booked" check, block duplicate requests, delete junk files | P1 (part), B5, B6, S3, B13, B12 (part), A2, B3, A8 | M | Done |
-| 2 | Migrations and backups: plain-SQL migration runner, guard-rail constraints, backup and restore scripts | B7, B8 | M | Planned |
+| 2 | Migrations and backups: plain-SQL migration runner, guard-rail constraints, backup and restore scripts | B7, B8 | M | Done |
 | 3 | Scheduled jobs: 7-day request expiry, 7-day ID photo deletion, unused upload cleanup, reminders | B2, B11, P1 | M | Planned |
 | 4 | UI quick fixes: onboarding on small and sideways phones, confirm steps, feedback after every action, demo login in debug only, portal dialog focus and English status labels | D2, D3, D4, D13, D11 | S–M | Planned |
 | **Do next** | | | | |
@@ -59,3 +59,9 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** 18 new tests written first; 17 failed before the fixes. After: 61/61 pass.
 - **Behavior changes users can notice:** uploads that are not real JPG, PNG or WEBP files get a clear message; asking twice for the same item and dates is refused; `/api/health` answers 503 when the database is down.
 - **Undo:** `git revert` the batch commit. No database changes.
+
+### Batch 2: Migrations and backups
+- **Goal:** change the database safely from now on, and be able to undo and restore.
+- **Files:** `database/migrations/001_guard_rails.sql` (new), `database/schema.sql` (header), `server/src/migrations.js`, `server/src/backup.js`, `server/scripts/migrate.js`, `backup.js`, `restore.js` (new), `server/src/index.js`, `server/package.json`, `.gitignore`, `server/test/helpers/*`, `server/test/migrations.test.js` (new), docs.
+- **Proof:** 69/69 tests (8 new). Pre-checks on the demo database all 0; migration applied with an automatic backup; demo data identical before and after; a negative balance is now refused by the database.
+- **Undo:** `npm run migrate:down` (removes the guard rails, backs up first), then `git revert` the batch commit. Or restore the backup taken before the migration: `npm run restore -- hiraman-<time>-before-migrate --yes`.

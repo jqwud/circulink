@@ -1,5 +1,6 @@
--- Hiraman database schema (MySQL 8 / MariaDB 10.5+)
--- Run:  mysql -u root -p < database/schema.sql
+-- Hiraman database schema (MySQL 8.0.16+ / MariaDB 10.5+): the starting point for a NEW database.
+-- Run:  mysql -u root -p < database/schema.sql      then, in server/:  npm run migrate
+-- Never edit this file to change an existing database. Add a numbered file in database/migrations instead.
 DROP DATABASE IF EXISTS hiraman;
 CREATE DATABASE hiraman CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE hiraman;

@@ -40,7 +40,8 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | `server/src/services.js` | The request life cycle and credit movements, shared by app and portal routes. `TAKEN_SQL` / `findClash` is the one definition of "this item is taken on these dates". | |
 | `server/src/uploads.js` | Photo uploads: 5 MB limit, real-type check from the file's first bytes, own-upload paths only, ID photo clean-up | |
 | `server/test/` | `rules.test.js` (unit), `loop.test.js` (the whole borrow loop against `hiraman_test`), `helpers/` | `npm test` |
-| `database/` | `schema.sql` (tables and reference data), `create-test-db.sql` | |
+| `database/` | `schema.sql` (starting point for a new database), `migrations/` (numbered changes, each with an undo part), `create-test-db.sql` | |
+| `server/scripts/` | `migrate.js`, `backup.js`, `restore.js` (run through `npm run migrate`, `backup`, `restore`) | |
 | `portal/` | React + Vite staff portal, 12 pages | `src/main.jsx` → `src/App.jsx` |
 | `app/` | Flutter resident app, 19 screens | `lib/main.dart` → `screens/gate.dart` |
 | `app/lib/core/` | API client, app state, theme, Filipino strings | |
@@ -72,11 +73,13 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | ID photos private | Stored in `uploads/private`, served only through an authenticated staff route, every view is written to `audit_log`, only the newest ID photo is kept, and `server/uploads/` is ignored by git. |
 | Residents see first names only | Phone and email are visible to staff only. |
 | Login tokens are JWTs (30 days) and the user is reloaded on every request | A suspension or role change takes effect immediately. |
+| Schema changes go through migrations | `schema.sql` creates a new database; every later change is a numbered file in `database/migrations` with an undo part, recorded in `schema_migrations`. `npm run migrate` backs up first. The server warns at start-up if a migration is missing. |
+| The database enforces the main rules too | Since migration 001: credits never below 0, end date on or after start date, 1–5 stars, and foreign keys on every link, so a bug or manual edit cannot create orphans. |
 | Tests use their own database | `server/test/helpers/env.js` forces a `*_test` database and a temporary upload folder before anything else loads. |
 
 ## Configuration
 
-`server/.env` (copy from `.env.example`): `PORT`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGIN`, optional `UPLOAD_DIR`. Never commit `.env`.
+`server/.env` (copy from `.env.example`): `PORT`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGIN`, optional `UPLOAD_DIR` and `BACKUP_DIR`. Never commit `.env`.
 
 The app's server address: set at build time by `run-phone.cmd` (`HIRAMAN_SERVER`, `HIRAMAN_SERVERS`), discovered at start-up (`AppState.findServer`), or typed on the login screen.
 

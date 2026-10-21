@@ -7,7 +7,7 @@ A risk-based test plan: test hardest where a bug would hurt residents most (cred
 | Layer | Covers | Tool | Status |
 |---|---|---|---|
 | Unit (many, fast) | `rules.js`, date and credit maths, banned words, Dart formatting | Node `node:test`; `flutter_test` | 🟡 `server/test/rules.test.js` (20 tests) |
-| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js` (19) |
+| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js`, `migrations.test.js` (27) |
 | End to end (few) | App: sign up and verify, borrow and return, share an item. Portal: verify a resident, settle a dispute | Flutter `integration_test`; Playwright | ⬜ |
 | Accessibility | Contrast, tap targets, labels, portal WCAG | Flutter `meetsGuideline`; `@axe-core/playwright` | ⬜ |
 | Load | API with 50–200 users | `autocannon` or k6 | ⬜ |
@@ -24,7 +24,7 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 3 | Business rules | Rule numbers unit-tested; 12 loop steps | Exact-number table below |
 | 4 | State and workflow | Happy-path transitions | Every refused transition; stuck states |
 | 5 | API | Status and code checks; wrong upload type → 400, 5 MB limit, unknown route → 404, health with DB (✅ batch 1) | Expired token → 401 `auth_expired`; 61st login in 15 min → 429 |
-| 6 | Data integrity | One ledger check; no duplicate requests, overdue items stay taken (✅ batch 1) | Balance = SUM(ledger) for everyone; 10 parallel borrows of one item → exactly 1 |
+| 6 | Data integrity | One ledger check; no duplicate requests, overdue items stay taken (✅ batch 1); database refuses negative credits, impossible dates, bad stars and orphan links (✅ batch 2) | Balance = SUM(ledger) for everyone; 10 parallel borrows of one item → exactly 1 |
 | 7 | Security | Role checks, private ID photo; CSV formula injection, file-signature check, own-upload photo paths (✅ batch 1) | Object-level access for every route; rate limits |
 | 8 | Privacy (RA 10173) | First names only; ID views audited | Notice and consent, 7-day ID deletion, account deletion |
 | 9 | Accessibility (WCAG 2.2 AA) | Palette contrast validated | Labels, focus, 200% text, keyboard on web |
@@ -33,7 +33,7 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 12 | Performance | API median 12–34 ms on demo data | Targets below |
 | 13 | Reliability and recovery | Connection card, Find server, retry | Airplane mode mid-borrow; MySQL stopped while the API runs; app killed during upload |
 | 14 | Localization | 278 app and 184 portal strings translated | Server-made notification text; every screen in Filipino at 320 px |
-| 15 | Installation and upgrade | `run-phone.cmd` | Upgrade keeps the login; database migrations |
+| 15 | Installation and upgrade | `run-phone.cmd`; migrations apply once, undo and redo cleanly, backup and restore round-trip (✅ batch 2) | App upgrade keeps the login |
 | 16 | Observability | Audit log, health endpoint | Request log; health that checks the database |
 | 17 | Regression | `npm test`, `flutter test` | CI on every push |
 | 18 | Exploratory | — | Charters below |
@@ -132,7 +132,7 @@ All server tests on a fresh test database · unit tests · end-to-end journeys �
 
 - [ ] No open Blocker or Major bugs
 - [ ] Smoke and full regression passed (results attached)
-- [ ] Database backup taken and restore tested
+- [ ] Database backup taken (`npm run backup`) and restore tested on a copy
 - [ ] Migrations applied on a copy first
 - [ ] Version numbers and release notes updated
 - [ ] Release APK signed with the release key

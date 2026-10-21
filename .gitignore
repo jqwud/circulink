@@ -21,3 +21,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 .idea/
+
+# Database backups contain personal data (names, phone numbers, ID photos).
+server/backups/

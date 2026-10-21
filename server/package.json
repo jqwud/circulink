@@ -8,6 +8,11 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "seed": "node seed.js",
+    "migrate": "node scripts/migrate.js up",
+    "migrate:status": "node scripts/migrate.js status",
+    "migrate:down": "node scripts/migrate.js down",
+    "backup": "node scripts/backup.js",
+    "restore": "node scripts/restore.js",
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
     "test:unit": "node --test test/rules.test.js"
   },

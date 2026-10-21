@@ -16,7 +16,7 @@ In a terminal, in the Hiraman folder, as MySQL root:
 mysql -u root -p -e "source database/schema.sql"
 ```
 
-This creates a database called `hiraman` with all the tables. **Warning:** it deletes an existing `hiraman` database first.
+This creates a database called `hiraman` with all the tables. **Warning:** it deletes an existing `hiraman` database first. Use it only for a new install; later changes come as migrations (step 3).
 
 Then give the app its own MySQL account, so the server never needs your root password. Replace `choose-a-password`:
 
@@ -40,11 +40,12 @@ Then:
 
 ```
 npm install
+npm run migrate
 npm run seed
 npm start
 ```
 
-`npm run seed` fills the database with a demo barangay (residents, items, a few requests). Run it again any time to reset the demo. When you see "Hiraman API running on http://localhost:4000", the server is up. Leave this terminal open.
+`npm run migrate` applies the database changes in `database/migrations` (it backs up the database first and does nothing if there is nothing new). `npm run seed` fills the database with a demo barangay (residents, items, a few requests). Run it again any time to reset the demo. When you see "Hiraman API running on http://localhost:4000", the server is up. Leave this terminal open.
 
 Quick check: open http://localhost:4000/api/health in a browser. You should see `{"ok":true,...}`.
 
@@ -109,6 +110,20 @@ The file is `build/app/outputs/flutter-apk/app-release.apk`. Release builds are 
 | Photos do not upload | Use JPG, PNG or WEBP under 5 MB. |
 | Portal shows a blank page | Run `npm run build` in `portal/` (or use `npm run dev`). |
 | Want to start the demo over | `cd server` then `npm run seed`. |
+| Server says the database is missing migrations | `cd server` then `npm run migrate`. |
+
+## Backups and restore
+
+```
+cd server
+npm run backup                                  # database + uploaded photos into server/backups/<name>-<time>/
+npm run restore                                 # lists backups, newest first
+npm run restore -- <backup folder> --yes       # replaces the database and photos (takes a safety backup first)
+npm run migrate:status                          # which database changes are applied
+npm run migrate:down                            # undoes the most recent change (takes a backup first)
+```
+
+Backups contain personal data (names, phone numbers, ID photos). They stay on this computer: `server/backups/` is ignored by git. Copy them somewhere safe, such as an external drive, and delete old ones you no longer need.
 
 ## Running the automated tests
 

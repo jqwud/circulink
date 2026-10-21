@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import mysql from 'mysql2/promise';
 import { config } from '../../src/config.js';
+import { migrateUp } from '../../src/migrations.js';
 
 const serverRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const schemaFile = path.join(serverRoot, '..', 'database', 'schema.sql');
@@ -14,7 +15,7 @@ const notReady = (e) => new Error(
   + '  Create it once as MySQL root:  mysql -u root -p -e "source database/create-test-db.sql"\n'
   + '  See docs/SETUP.md, "Running the automated tests".');
 
-// Drops every table in the test database and recreates them from schema.sql.
+// Drops every table in the test database, recreates them from schema.sql, then applies every migration.
 export async function resetTestDatabase() {
   if (!config.db.database.endsWith('_test')) throw new Error(`Refusing to reset "${config.db.database}".`);
   let conn;
@@ -34,6 +35,7 @@ export async function resetTestDatabase() {
   } finally {
     await conn.end();
   }
+  await migrateUp();
 }
 
 // Loads the demo residents, items and loans. The child process inherits DB_NAME from helpers/env.js.

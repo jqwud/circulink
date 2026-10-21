@@ -2,6 +2,14 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 2: Migrations and backups (2026-10-22)
+
+- **Migrations:** numbered SQL files in `database/migrations`, each with an undo part, applied by `npm run migrate` and recorded in a `schema_migrations` table. Running it again does nothing. It takes a backup first. `npm run migrate:status` and `npm run migrate:down` show and undo.
+- **Migration 001 (guard rails):** the database itself now refuses negative credit balances, requests that end before they start, ratings outside 1-5 stars, and rows pointing at missing kits, requests, users or staff. Two indexes speed up the unread count and the "is this item taken" check. Applied to the demo database; no data changed.
+- **Backups:** `npm run backup` saves the database and the uploaded photos to `server/backups/` (ignored by git, because it holds personal data). `npm run restore -- <folder> --yes` puts a backup back, after taking a safety backup of the current state.
+- The server warns at start-up when the database is missing a migration.
+- Tests build the test database from `schema.sql` plus every migration, and keep their backups in a temporary folder.
+
 ## Batch 1: Quick fixes (2026-10-22)
 
 - **Privacy:** `server/uploads/` is ignored by git, so uploaded ID photos can never be committed. Sending a new ID photo deletes the previous one.
