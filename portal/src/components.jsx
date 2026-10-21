@@ -82,16 +82,43 @@ export function Badge({ value, label }) {
   return <span className={`badge ${TONE[value] || 'muted'}`}>{label || t(String(value))}</span>;
 }
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const openModals = []; // newest last, so only the top dialog answers Escape and Tab
+
+// Keyboard users stay inside the dialog: focus moves in when it opens, Tab cycles
+// inside it, and focus goes back to where it was when it closes.
 export function Modal({ title, onClose, children, wide }) {
   const { t } = useI18n();
+  const box = useRef(null);
+  const me = useRef({});
   useEffect(() => {
-    const onKey = (e) => e.key === 'Escape' && onClose();
+    openModals.push(me.current);
+    const before = document.activeElement;
+    const target = box.current.querySelector(`.modal-body :is(${FOCUSABLE})`) || box.current.querySelector(FOCUSABLE) || box.current;
+    target.focus();
+    return () => {
+      openModals.splice(openModals.indexOf(me.current), 1);
+      if (before && document.contains(before)) before.focus();
+    };
+  }, []);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (openModals[openModals.length - 1] !== me.current || !box.current) return;
+      if (e.key === 'Escape') { onClose(); return; }
+      if (e.key !== 'Tab') return;
+      const els = [...box.current.querySelectorAll(FOCUSABLE)];
+      if (els.length === 0) { e.preventDefault(); return; }
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === box.current)) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={box} tabIndex={-1} className={`modal ${wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-label={title}>
         <header>
           <h2>{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label={t('Close')}>×</button>
@@ -99,6 +126,25 @@ export function Modal({ title, onClose, children, wide }) {
         <div className="modal-body">{children}</div>
       </div>
     </div>
+  );
+}
+
+// A second step before actions that lock someone out. Cancel gets the focus, so a stray Enter never confirms.
+export function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onClose }) {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState(false);
+  async function yes() {
+    setBusy(true);
+    try { await onConfirm(); } finally { setBusy(false); onClose(); }
+  }
+  return (
+    <Modal title={title} onClose={busy ? () => {} : onClose}>
+      <p style={{ marginTop: 0 }}>{message}</p>
+      <div className="modal-actions">
+        <button type="button" className="btn" onClick={onClose} disabled={busy}>{t('Cancel')}</button>
+        <button type="button" className={`btn ${danger ? 'danger' : 'primary'}`} onClick={yes} disabled={busy}>{confirmLabel}</button>
+      </div>
+    </Modal>
   );
 }
 

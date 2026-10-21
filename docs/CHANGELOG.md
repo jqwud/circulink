@@ -2,6 +2,16 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 4: UI quick fixes (2026-10-22)
+
+- **Onboarding fits every phone:** on a small phone Pawsa shrinks; on a phone held sideways he sits beside the words; with very large text the slide scrolls instead of cutting off. A widget test checks three screen sizes.
+- **Ask first:** removing a wanted post (app), suspending a resident and disabling a staff account (portal) now show a confirm step. In the portal, Cancel has the focus so a stray Enter never confirms.
+- **Say what happened:** short messages after posting a wanted item, marking it found, removing it, and pausing, resuming or removing a listing (app); after suspending, reinstating, disabling and enabling (portal).
+- **Demo login hint** on the app's login screen shows in debug builds only.
+- **Portal keyboard use:** dialogs move focus inside when they open, keep Tab inside, close with Escape (only the top one when two are open) and give focus back to the button that opened them.
+- **Portal English labels:** statuses, tiers, return conditions and credit history reasons show as words ("Borrowed", "Returned", "reward for lending") in English mode; credit history reasons are also translated to Filipino.
+- **Audit log wording:** reinstating a resident is now logged as `user_reinstated` (was `user_reinstateed`).
+
 ## Batch 3: Scheduled jobs (2026-10-22)
 
 - **Request expiry:** a pending request nobody answers expires 7 days after it was made (or once its end date passes); an approved request that is never picked up expires once its end date passes. The borrower's held credit is refunded (`refund_expired`) and both people are notified. New request status "Expired" in the app and portal.

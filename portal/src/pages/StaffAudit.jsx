@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { Badge, ErrorBox, Loading, Modal, PageHeader, useDateFormat, useLoad, useToast } from '../components.jsx';
+import { Badge, ConfirmModal, ErrorBox, Loading, Modal, PageHeader, useDateFormat, useLoad, useToast } from '../components.jsx';
 
 export default function StaffAudit() {
   const { t } = useI18n();
@@ -21,10 +21,15 @@ export default function StaffAudit() {
     try { await api('/admin/staff', { method: 'POST', body: form }); toast(t('Staff account added.')); setForm(null); staff.reload(); audit.reload(); }
     catch (err) { toast(err.message, 'bad'); } finally { setBusy(false); }
   }
+  const [confirming, setConfirming] = useState(null);
   async function toggle(s) {
-    try { await api(`/admin/staff/${s.id}/${s.suspended ? 'enable' : 'disable'}`, { method: 'POST' }); staff.reload(); audit.reload(); }
-    catch (err) { toast(err.message, 'bad'); }
+    try {
+      await api(`/admin/staff/${s.id}/${s.suspended ? 'enable' : 'disable'}`, { method: 'POST' });
+      toast(s.suspended ? t('Account enabled.') : t('Account disabled.')); staff.reload(); audit.reload();
+    } catch (err) { toast(err.message, 'bad'); }
   }
+  // Disabling locks a staff member out, so it asks first. Enabling happens at once.
+  const askToggle = (s) => (s.suspended ? toggle(s) : setConfirming(s));
 
   return (
     <>
@@ -44,7 +49,7 @@ export default function StaffAudit() {
                 <td><b>{s.name}</b><small>{s.email}</small></td>
                 <td>{s.role === 'lgu_admin' ? t('Admin') : t('Staff')}</td>
                 <td>{s.suspended ? <Badge value="suspended" /> : <Badge value="approved" label="OK" />}</td>
-                <td>{s.id !== user.id && <button className="btn small" onClick={() => toggle(s)}>{s.suspended ? t('Enable') : t('Disable')}</button>}</td>
+                <td>{s.id !== user.id && <button className="btn small" onClick={() => askToggle(s)}>{s.suspended ? t('Enable') : t('Disable')}</button>}</td>
               </tr>
             ))}</tbody>
           </table>
@@ -80,6 +85,17 @@ export default function StaffAudit() {
             </div>
           </form>
         </Modal>
+      )}
+
+      {confirming && (
+        <ConfirmModal
+          title={t('Disable {name}?').replace('{name}', confirming.name)}
+          message={t('They can no longer log in to the portal. You can enable the account again any time.')}
+          confirmLabel={t('Disable')}
+          danger
+          onConfirm={() => toggle(confirming)}
+          onClose={() => setConfirming(null)}
+        />
       )}
     </>
   );

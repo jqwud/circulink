@@ -6,10 +6,10 @@ A risk-based test plan: test hardest where a bug would hurt residents most (cred
 
 | Layer | Covers | Tool | Status |
 |---|---|---|---|
-| Unit (many, fast) | `rules.js`, date and credit maths, banned words, Dart formatting | Node `node:test`; `flutter_test` | 🟡 `server/test/rules.test.js` (20 tests) |
-| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js`, `migrations.test.js`, `jobs.test.js` (42) |
+| Unit (many, fast) | `rules.js`, date and credit maths, banned words, Dart formatting | Node `node:test`; `flutter_test` | 🟡 `server/test/rules.test.js` (20 tests); `app/test/onboarding_layout_test.dart` (3 screen sizes) |
+| API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js`, `migrations.test.js`, `jobs.test.js` (44) |
 | End to end (few) | App: sign up and verify, borrow and return, share an item. Portal: verify a resident, settle a dispute | Flutter `integration_test`; Playwright | ⬜ |
-| Accessibility | Contrast, tap targets, labels, portal WCAG | Flutter `meetsGuideline`; `@axe-core/playwright` | ⬜ |
+| Accessibility | Contrast, tap targets, labels, portal WCAG | Flutter `meetsGuideline`; `@axe-core/playwright` | 🟡 portal dialog focus checked by a browser script (batch 4); automated suite not yet |
 | Load | API with 50–200 users | `autocannon` or k6 | ⬜ |
 | Security | Dependencies, secrets, web scan | `npm audit`, gitleaks, OWASP ZAP baseline | 🟡 `npm audit` run manually: 0 vulnerabilities |
 
@@ -27,12 +27,12 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 6 | Data integrity | One ledger check; no duplicate requests, overdue items stay taken (✅ batch 1); database refuses negative credits, impossible dates, bad stars and orphan links (✅ batch 2) | Balance = SUM(ledger) for everyone; 10 parallel borrows of one item → exactly 1 |
 | 7 | Security | Role checks, private ID photo; CSV formula injection, file-signature check, own-upload photo paths (✅ batch 1) | Object-level access for every route; rate limits |
 | 8 | Privacy (RA 10173) | First names only; ID views audited | Notice and consent, 7-day ID deletion, account deletion |
-| 9 | Accessibility (WCAG 2.2 AA) | Palette contrast validated | Labels, focus, 200% text, keyboard on web |
-| 10 | Usability | Developer testing | Script below with real residents |
-| 11 | Compatibility | One Android phone, Chrome | Android 8–15, 320 px to tablet, Chrome, Firefox, Safari, Edge (portal) |
+| 9 | Accessibility (WCAG 2.2 AA) | Palette contrast validated; portal dialogs hold and return keyboard focus (✅ batch 4) | Labels, 200% text, keyboard on every portal page |
+| 10 | Usability | Developer testing; confirm steps before locking someone out or removing a post, a message after every action (✅ batch 4) | Script below with real residents |
+| 11 | Compatibility | One Android phone, Chrome; onboarding at 320×568 and sideways 800×380 (✅ batch 4) | Android 8–15, 320 px to tablet, Chrome, Firefox, Safari, Edge (portal) |
 | 12 | Performance | API median 12–34 ms on demo data | Targets below |
 | 13 | Reliability and recovery | Connection card, Find server, retry; one failing job does not stop the others (✅ batch 3) | Airplane mode mid-borrow; MySQL stopped while the API runs; app killed during upload |
-| 14 | Localization | 278 app and 184 portal strings translated | Server-made notification text; every screen in Filipino at 320 px |
+| 14 | Localization | 278 app and 184 portal strings translated; portal English mode shows words, not raw status codes (✅ batch 4) | Server-made notification text; every screen in Filipino at 320 px |
 | 15 | Installation and upgrade | `run-phone.cmd`; migrations apply once, undo and redo cleanly, backup and restore round-trip (✅ batch 2) | App upgrade keeps the login |
 | 16 | Observability | Audit log; health checks the database (batch 1); `/api/admin/jobs` shows each job's last run, result and error (batch 3) | Request log |
 | 17 | Regression | `npm test`, `flutter test` | CI on every push |

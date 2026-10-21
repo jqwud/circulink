@@ -209,6 +209,13 @@ const Map<String, String> kFil = <String, String>{
   // my items and add item
   "Remove this item?": "Alisin ang gamit na ito?",
   "Neighbors will no longer see it.": "Hindi na ito makikita ng mga kapitbahay.",
+  "Remove this post?": "Alisin ang post na ito?",
+  "Post removed.": "Inalis na ang post.",
+  "Posted. Neighbors can now offer to help.": "Nai-post na. Pwede nang mag-alok ng tulong ang mga kapitbahay.",
+  "Marked as found. Glad you got it!": "Natagpuan na. Mabuti at nakuha mo!",
+  "Paused. Neighbors will not see it until you resume.": "Naka-pause. Hindi ito makikita ng mga kapitbahay hanggang ituloy mo.",
+  "Back on the list. Neighbors can borrow it again.": "Balik na sa listahan. Pwede na ulit itong hiramin.",
+  "Item removed.": "Inalis na ang gamit.",
   "You have not shared anything yet. Items that sit idle at home can help a neighbor.": "Wala ka pang naibabahagi. Ang mga gamit na nakatambak sa bahay ay makakatulong sa kapitbahay.",
   "Add a photo": "Magdagdag ng litrato",
   "Item name": "Pangalan ng gamit",

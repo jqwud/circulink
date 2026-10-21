@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
-import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, useLoad, useToast, useDateFormat } from '../components.jsx';
+import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, useLoad, useToast, useDateFormat } from '../components.jsx';
 
 export default function Residents() {
   const { t } = useI18n();
@@ -14,12 +14,16 @@ export default function Residents() {
   const [openId, setOpenId] = useState(null);
   const detail = useLoad(() => (openId ? api(`/admin/users/${openId}`) : Promise.resolve(null)), [openId]);
 
+  const [confirming, setConfirming] = useState(null);
+
   async function toggle(u) {
     try {
       await api(`/admin/users/${u.id}/${u.suspended ? 'reinstate' : 'suspend'}`, { method: 'POST' });
-      toast(t('Done.')); reload(); detail.reload();
+      toast(u.suspended ? t('Reinstated.') : t('Suspended.')); reload(); detail.reload();
     } catch (e) { toast(e.message, 'bad'); }
   }
+  // Suspending locks a resident out, so it asks first. Reinstating is safe and happens at once.
+  const askToggle = (u) => (u.suspended ? toggle(u) : setConfirming(u));
 
   return (
     <>
@@ -80,17 +84,28 @@ export default function Residents() {
               <h3 style={{ marginTop: 18 }}>{t('Credit history')}</h3>
               {detail.data.ledger.length === 0 ? <p className="muted">{t('Nothing here yet.')}</p> : (
                 <ul style={{ margin: 0, paddingLeft: 18 }}>
-                  {detail.data.ledger.map((l, i) => <li key={i}><b>{l.amount > 0 ? '+' : ''}{l.amount}</b> {l.reason.replace(/_/g, ' ')} <span className="muted">· {fmt(l.created_at)}</span></li>)}
+                  {detail.data.ledger.map((l, i) => <li key={i}><b>{l.amount > 0 ? '+' : ''}{l.amount}</b> {t(l.reason)} <span className="muted">· {fmt(l.created_at)}</span></li>)}
                 </ul>
               )}
               <div className="modal-actions">
-                <button className={`btn ${detail.data.user.suspended ? '' : 'danger'}`} onClick={() => toggle(detail.data.user)}>
+                <button className={`btn ${detail.data.user.suspended ? '' : 'danger'}`} onClick={() => askToggle(detail.data.user)}>
                   {detail.data.user.suspended ? t('Reinstate') : t('Suspend')}
                 </button>
               </div>
             </>
           )}
         </Modal>
+      )}
+
+      {confirming && (
+        <ConfirmModal
+          title={t('Suspend {name}?').replace('{name}', confirming.name)}
+          message={t('They cannot use Hiraman until you reinstate them.')}
+          confirmLabel={t('Suspend')}
+          danger
+          onConfirm={() => toggle(confirming)}
+          onClose={() => setConfirming(null)}
+        />
       )}
     </>
   );

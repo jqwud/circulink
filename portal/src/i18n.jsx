@@ -89,6 +89,28 @@ const FIL = {
   'At least 8 characters': 'Hindi bababa sa 8 character', 'Disable': 'I-disable', 'Enable': 'I-enable', 'Audit log': 'Audit log', 'Who': 'Sino', 'What': 'Ano', 'When': 'Kailan',
   'Staff accounts are created by an admin. Every action is written to the audit log.': 'Admin ang gumagawa ng account ng staff. Nakatala sa audit log ang bawat aksyon.',
   'Staff account added.': 'Naidagdag ang account ng staff.',
+  'Account disabled.': 'Na-disable ang account.', 'Account enabled.': 'Na-enable ang account.',
+  'Disable {name}?': 'I-disable si {name}?', 'They can no longer log in to the portal. You can enable the account again any time.': 'Hindi na sila makakapag-log in sa portal. Pwede mong i-enable ulit ang account kahit kailan.',
+  // residents
+  'Suspend {name}?': 'I-suspend si {name}?', 'They cannot use Hiraman until you reinstate them.': 'Hindi nila magagamit ang Hiraman hanggang i-reinstate mo sila.',
+  'Suspended.': 'Na-suspend.', 'Reinstated.': 'Na-reinstate.',
+  // credit history reasons
+  'starter': 'panimulang credits', 'borrow_hold': 'nakalaan para sa hiram', 'refund_rejected': 'ibinalik: hindi inaprubahan',
+  'refund_cancelled': 'ibinalik: kinansela', 'refund_expired': 'ibinalik: nag-expire', 'refund_item_removed': 'ibinalik: inalis ang gamit',
+  'lend_reward': 'gantimpala sa pagpapahiram', 'late_penalty': 'parusa sa late na pagbabalik',
+};
+
+// English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),
+// so English mode shows "Borrowed" instead of "handed_over".
+const EN = {
+  'pending': 'Pending', 'approved': 'Approved', 'rejected': 'Rejected', 'unverified': 'Not verified', 'cancelled': 'Cancelled',
+  'handed_over': 'Borrowed', 'closed': 'Returned', 'disputed': 'Disputed', 'expired': 'Expired', 'available': 'Available',
+  'paused': 'Paused', 'removed': 'Removed', 'open': 'Open', 'in_mediation': 'In mediation', 'resolved': 'Resolved',
+  'low': 'Low', 'medium': 'Medium', 'high': 'High', 'good': 'Good', 'damaged': 'Damaged', 'lost': 'Lost', 'new': 'New',
+  'fair': 'Fair', 'worn': 'Worn', 'suspended': 'Suspended',
+  'starter': 'starter credits', 'borrow_hold': 'held for a borrow', 'refund_rejected': 'returned: not approved',
+  'refund_cancelled': 'returned: cancelled', 'refund_expired': 'returned: request expired', 'refund_item_removed': 'returned: item removed',
+  'lend_reward': 'reward for lending', 'late_penalty': 'late return penalty',
 };
 
 const Ctx = createContext(null);
@@ -97,7 +119,7 @@ const KEY = 'hiraman_portal_lang';
 export function I18nProvider({ children }) {
   const [lang, setLangState] = useState(() => localStorage.getItem(KEY) || 'fil');
   const setLang = useCallback((l) => { localStorage.setItem(KEY, l); setLangState(l); document.documentElement.lang = l === 'fil' ? 'fil' : 'en'; }, []);
-  const t = useCallback((s) => (lang === 'fil' && FIL[s]) || s, [lang]);
+  const t = useCallback((s) => (lang === 'fil' && FIL[s]) || EN[s] || s, [lang]);
   return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>;
 }
 

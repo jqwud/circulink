@@ -49,21 +49,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: PageView(
                 controller: _controller,
                 onPageChanged: (int i) => setState(() => _index = i),
-                children: slides
-                    .map((_Slide s) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              PawsaImage(pose: s.pose, size: 250),
-                              const SizedBox(height: 24),
-                              Text(s.title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: HiColors.ink)),
-                              const SizedBox(height: 12),
-                              Text(s.body, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, color: HiColors.muted, height: 1.4)),
-                            ],
-                          ),
-                        ))
-                    .toList(),
+                children: slides.map(_slideView).toList(),
               ),
             ),
             Row(
@@ -88,6 +74,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
+}
+
+/// One slide. Pawsa shrinks to the space available; on a phone held sideways he sits beside the text.
+/// If the text still does not fit (very large text settings), the slide scrolls instead of cutting off.
+Widget _slideView(_Slide s) {
+  return LayoutBuilder(
+    builder: (BuildContext context, BoxConstraints c) {
+      final bool sideways = c.maxWidth > c.maxHeight * 1.3;
+      final double art = (sideways ? c.maxHeight * 0.85 : c.maxHeight * 0.45).clamp(90.0, 250.0);
+      final TextAlign align = sideways ? TextAlign.start : TextAlign.center;
+      final Widget words = Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: sideways ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+        children: <Widget>[
+          Text(s.title, textAlign: align, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: HiColors.ink)),
+          const SizedBox(height: 12),
+          Text(s.body, textAlign: align, style: const TextStyle(fontSize: 16, color: HiColors.muted, height: 1.4)),
+        ],
+      );
+      final Widget content = sideways
+          ? Row(children: <Widget>[PawsaImage(pose: s.pose, size: art), const SizedBox(width: 24), Expanded(child: words)])
+          : Column(mainAxisSize: MainAxisSize.min, children: <Widget>[PawsaImage(pose: s.pose, size: art), const SizedBox(height: 20), words]);
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: ConstrainedBox(constraints: BoxConstraints(minHeight: c.maxHeight), child: Center(child: content)),
+      );
+    },
+  );
 }
 
 class _Slide {

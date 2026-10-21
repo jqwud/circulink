@@ -29,7 +29,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 1 | Quick fixes: ignore uploads in git, real file-type check and friendly 400, own-upload photo paths only, safe CSV export, health checks the DB, 404 for unknown routes, one "already booked" check, block duplicate requests, delete junk files | P1 (part), B5, B6, S3, B13, B12 (part), A2, B3, A8 | M | Done |
 | 2 | Migrations and backups: plain-SQL migration runner, guard-rail constraints, backup and restore scripts | B7, B8 | M | Done |
 | 3 | Scheduled jobs: 7-day request expiry, 7-day ID photo deletion, unused upload cleanup, reminders | B2, B11, P1 | M | Done |
-| 4 | UI quick fixes: onboarding on small and sideways phones, confirm steps, feedback after every action, demo login in debug only, portal dialog focus and English status labels | D2, D3, D4, D13, D11 | S–M | Planned |
+| 4 | UI quick fixes: onboarding on small and sideways phones, confirm steps, feedback after every action, demo login in debug only, portal dialog focus and English status labels | D2, D3, D4, D13, D11 | S–M | Done |
 | **Do next** | | | | |
 | 5 | Daily check-in, fair lateness, request timeline | B1, D5 | L | Planned |
 | 6 | Dispute outcomes with ledger rows | B4 | M | Planned |
@@ -71,3 +71,10 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Files:** `database/migrations/002_jobs_and_expiry.sql` (new), `server/src/jobs.js` (new; reminders moved here from `services.js`), `server/src/db.js`, `rules.js`, `services.js`, `index.js`, `routes/admin.js`, `routes/requests.js`, app status and wallet labels, portal status label, tests `jobs.test.js` (new), `migrations.test.js`, `rules.test.js`.
 - **Proof:** 84/84 tests (15 new, using a clock moved 6 and 8 days ahead). Migration applied to the demo database with a backup first; data unchanged.
 - **Undo:** `npm run migrate:down` (expired requests become cancelled; the decision dates and job history are dropped), then `git revert` the batch commit.
+
+### Batch 4: UI quick fixes
+- **Goal:** screens fit every phone, risky taps ask first, every action says what happened, and the portal works by keyboard and speaks plain English.
+- **Files:** app `screens/onboarding_screen.dart`, `wanted_screen.dart`, `my_items_screen.dart`, `auth_screens.dart`, `core/strings_fil.dart`, `test/onboarding_layout_test.dart` (new); portal `src/components.jsx`, `src/i18n.jsx`, `src/pages/Residents.jsx`, `src/pages/StaffAudit.jsx`; server `routes/admin.js` (audit wording), `test/api-basics.test.js`.
+- **Proof:** onboarding widget test at 320×568, 800×380 and 400×860 failed before (overflow of 227 and 251 px) and passes after; `flutter analyze` clean, `flutter test` 5/5. Server 85/85 (1 new test, failed first on "user_reinstateed"). A browser script against `hiraman_test` passed 22/22 portal checks: focus moves into dialogs, Tab and Shift+Tab stay inside, Escape closes only the top dialog and focus returns, Suspend and Disable ask first, Cancel changes nothing, every action shows a message, no raw "handed_over" style words in English. Demo database identical before and after.
+- **Behavior changes users can notice:** removing a wanted post, suspending a resident and disabling a staff account now ask "Are you sure?" first (reinstate and enable still happen at once); a short message confirms posting, pausing, resuming and removing; the demo login hint no longer appears in release builds; the portal shows "Borrowed", "Returned", "reward for lending" and so on instead of raw words; the audit log says "user reinstated" instead of "user reinstateed" (older rows keep the old word).
+- **Undo:** `git revert` the batch commit. No database changes.

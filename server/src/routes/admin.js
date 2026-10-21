@@ -102,12 +102,12 @@ router.post('/admin/users/:id/reject', wrap(async (req, res) => {
   res.json({ id: u.id, verification_status: 'rejected' });
 }));
 
-for (const [action, value] of [['suspend', 1], ['reinstate', 0]]) {
+for (const [action, value, logged] of [['suspend', 1, 'user_suspended'], ['reinstate', 0, 'user_reinstated']]) {
   router.post(`/admin/users/:id/${action}`, wrap(async (req, res) => {
     const u = await one('SELECT * FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
     if (!u) throw notFound('Resident not found.');
     await q('UPDATE users SET suspended = ? WHERE id = ?', [value, u.id]);
-    await audit(req.user.id, `user_${action}ed`, `user #${u.id} ${u.name}`);
+    await audit(req.user.id, logged, `user #${u.id} ${u.name}`);
     res.json({ id: u.id, suspended: !!value });
   }));
 }

@@ -84,3 +84,17 @@ describe('CSV export', () => {
     assert.ok(!/(^|,)"?=SUM/m.test(csv.text), 'no cell starts with =');
   });
 });
+
+describe('suspending a resident', () => {
+  test('locks them out until reinstated, and the audit log names each step in plain words', async () => {
+    const elena = await s.login('elena');
+    const { id } = await one("SELECT id FROM users WHERE email = 'elena@hiraman.test'");
+    assert.equal((await s.api('POST', `/admin/users/${id}/suspend`, staff)).status, 200);
+    const locked = await s.api('GET', '/wanted', elena);
+    assert.equal(locked.status, 403); assert.equal(locked.json.code, 'suspended');
+    assert.equal((await s.api('POST', `/admin/users/${id}/reinstate`, staff)).status, 200);
+    assert.equal((await s.api('GET', '/wanted', elena)).status, 200);
+    const [rows] = await pool.query('SELECT action FROM audit_log WHERE target LIKE ? ORDER BY id', [`user #${id} %`]);
+    assert.deepEqual(rows.map((r) => r.action), ['user_suspended', 'user_reinstated']);
+  });
+});

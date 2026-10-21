@@ -56,6 +56,7 @@ class WantedScreen extends StatelessWidget {
     try {
       await context.app.api.post('/wanted', <String, dynamic>{'title': t, 'details': d.isEmpty ? null : d, 'needed_by': needed == null ? null : ymd(needed!)});
       await context.app.bump();
+      if (context.mounted) showMessage(context, context.tx('Posted. Neighbors can now offer to help.'));
     } catch (e) {
       if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
     }
@@ -71,9 +72,14 @@ class WantedScreen extends StatelessWidget {
   }
 
   Future<void> _close(BuildContext context, Map<String, dynamic> w, bool fulfilled) async {
+    if (!fulfilled) {
+      final bool ok = await confirmDialog(context, title: context.tx('Remove this post?'), message: context.tx('Neighbors will no longer see it.'), confirmLabel: context.tx('Remove'), danger: true);
+      if (!ok || !context.mounted) return;
+    }
     try {
       await context.app.api.patch('/wanted/${w['id']}/close', <String, dynamic>{'fulfilled': fulfilled});
       await context.app.bump();
+      if (context.mounted) showMessage(context, fulfilled ? context.tx('Marked as found. Glad you got it!') : context.tx('Post removed.'));
     } catch (e) {
       if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
     }

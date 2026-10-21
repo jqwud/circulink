@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
@@ -111,11 +112,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              context.t('Demo resident: ana@hiraman.test, password hiraman123'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: HiColors.muted, fontSize: 12),
-            ),
+            // Demo data only exists on test servers, so the hint shows in debug builds only.
+            if (kDebugMode)
+              Text(
+                context.t('Demo resident: ana@hiraman.test, password hiraman123'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: HiColors.muted, fontSize: 12),
+              ),
           ],
         ),
       ),

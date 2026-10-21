@@ -17,6 +17,9 @@ class MyItemsScreen extends StatelessWidget {
     try {
       await context.app.api.patch('/items/${it['id']}', <String, dynamic>{'status': status});
       await context.app.bump();
+      if (context.mounted) {
+        showMessage(context, status == 'paused' ? context.tx('Paused. Neighbors will not see it until you resume.') : context.tx('Back on the list. Neighbors can borrow it again.'));
+      }
     } catch (e) {
       if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
     }
@@ -28,6 +31,7 @@ class MyItemsScreen extends StatelessWidget {
     try {
       await context.app.api.delete('/items/${it['id']}');
       await context.app.bump();
+      if (context.mounted) showMessage(context, context.tx('Item removed.'));
     } catch (e) {
       if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
     }
