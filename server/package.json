@@ -8,10 +8,11 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "seed": "node seed.js",
-    "test": "node test/loop.test.js"
+    "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
+    "test:unit": "node --test test/rules.test.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

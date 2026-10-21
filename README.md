@@ -11,19 +11,20 @@ Pawsa the energetic pusa is the mascot. Everything works in **Filipino and Engli
 | `app/` | The **resident mobile app** (Flutter, Android). Browse, borrow, lend, credits, wanted board, event kits. |
 | `portal/` | The **LGU web portal** (React). Verify residents, manage listings and the Barangay Shelf, see transactions, reports and community impact. |
 | `server/` | The **API** (Node.js + Express) that both use. |
-| `database/` | The **MySQL** schema (`schema.sql`). |
+| `database/` | The **MySQL** schema (`schema.sql`) and the test-database setup (`create-test-db.sql`). |
 | `brand/` | Pawsa, the icon and the colors. One source for both the app and the portal. |
-| `docs/` | `SETUP.md` (how to run it) and `BUILD_NOTES.md` (how we built it, for the instructor). |
+| `docs/` | `SETUP.md` (how to run it), `ARCHITECTURE.md` (how it fits together), `QA_PLAN.md` (how it is tested), `IMPROVEMENT_ROADMAP.md` and `CHANGELOG.md` (what is being improved), `BUILD_NOTES.md` (how we built it, for the instructor). |
 
 ## Quick start (about 20 minutes)
 
 Read **`docs/SETUP.md`**. It is written step by step for Windows. In short:
 
-1. Install Node.js (LTS) and make sure MySQL is running.
-2. `mysql -u root -p < database/schema.sql`
+1. Install Node.js 22 LTS or newer and make sure MySQL is running.
+2. `mysql -u root -p -e "source database/schema.sql"` (creates the `hiraman` database; see SETUP for a dedicated app account).
 3. In `server/`: copy `.env.example` to `.env`, then `npm install`, `npm run seed`, `npm start`.
 4. In `portal/`: `npm install`, `npm run build`. Open http://localhost:4000 for the LGU portal.
-5. In `app/`: follow the Flutter steps in `docs/SETUP.md` and run it on your Android phone.
+5. In `app/`: plug in your Android phone and double-click `run-phone.cmd`, or run `flutter run -d chrome`.
+6. Tests: `cd server && npm test` (uses its own `hiraman_test` database; create it once with `database/create-test-db.sql`).
 
 ## Demo accounts (password for all: `hiraman123`)
 

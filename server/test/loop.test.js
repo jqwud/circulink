@@ -1,14 +1,14 @@
-// End-to-end test of the Hiraman borrow loop against a real MySQL database.
-// Run:  npm test      (it reseeds the demo data first, so it also resets your demo database)
+// End-to-end test of the Hiraman borrow loop against a real MySQL test database (hiraman_test).
+// Run:  npm test      (it rebuilds hiraman_test each time; your demo database is never touched)
+import './helpers/env.js';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { test } from 'node:test';
 import { createApp } from '../src/app.js';
 import { pool } from '../src/db.js';
+import { resetTestDatabase, seedTestDatabase } from './helpers/db.js';
 
-const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-execFileSync('node', ['seed.js'], { cwd: root, stdio: 'ignore' });
+await resetTestDatabase();
+seedTestDatabase();
 
 const server = createApp().listen(0);
 const base = `http://127.0.0.1:${server.address().port}/api`;
@@ -29,11 +29,8 @@ const login = async (email) => (await api('POST', '/auth/login', null, { email: 
 const credits = async (t) => (await api('GET', '/me', t)).json.credits;
 const day = (n) => new Date(Date.now() + n * 86400000).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
-let passed = 0;
-const step = async (name, fn) => {
-  try { await fn(); passed++; console.log(`  ok   ${name}`); }
-  catch (e) { console.log(`  FAIL ${name}\n       ${e.message}`); process.exitCode = 1; }
-};
+// Steps run one after another, in order, because each builds on the state the previous one left.
+const step = (name, fn) => test(name, fn);
 
 const admin = await login('admin');
 const staff = await login('staff');
@@ -41,7 +38,6 @@ const ana = await login('ana');       // 4 credits, owns chairs (low) and speake
 const ben = await login('ben');       // 1 credit
 const carlo = await login('carlo');
 const dina = await login('dina');
-console.log('\nHiraman loop test');
 
 // ---- registration and verification ----
 let newTok; let newId;
@@ -241,6 +237,5 @@ await step('kit: one request creates several loans; wanted board and announcemen
   assert.ok((await api('GET', '/announcements', ana)).json.some((a) => a.title === 'Test'));
 });
 
-console.log(`\n${passed} steps passed${process.exitCode ? ', some FAILED' : ''}`);
 server.close();
 await pool.end();
