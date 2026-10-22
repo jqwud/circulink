@@ -4,10 +4,12 @@ import { bad, forbidden, notFound } from './errors.js';
 import { RULES, DISPUTE_OUTCOMES, creditCost, handledByStaff, autoApproves, photoRequired } from './rules.js';
 
 // ---------- small helpers ----------
-export async function notify(conn, userId, type, title, body = null, refId = null) {
+// title and body are the English text (kept for older app versions). `params` holds the values, so the
+// app can write the sentence in the reader's language with friendly dates (app/lib/core/notification_text.dart).
+export async function notify(conn, userId, type, title, body = null, refId = null, params = null) {
   await conn.query(
-    'INSERT INTO notifications (user_id, type, title, body, ref_id) VALUES (?,?,?,?,?)',
-    [userId, type, title, body, refId],
+    'INSERT INTO notifications (user_id, type, title, body, params, ref_id) VALUES (?,?,?,?,?,?)',
+    [userId, type, title, body, params ? JSON.stringify(params) : null, refId],
   );
 }
 
@@ -143,11 +145,14 @@ export async function createRequestTx(conn, { borrower, itemId, start, end, kitI
   if (item.owner_id) {
     const first = borrower.name.split(' ')[0];
     if (status === 'pending' && !staffHandled) {
-      await notify(conn, item.owner_id, 'request_new', `${first} wants to borrow ${item.title}`, `${start} to ${end}. Open Requests to approve or reject.`, requestId);
+      await notify(conn, item.owner_id, 'request_new', `${first} wants to borrow ${item.title}`, `${start} to ${end}. Open Requests to approve or reject.`, requestId,
+        { name: first, item: item.title, start, end });
     } else if (status === 'approved') {
-      await notify(conn, item.owner_id, 'request_auto', `${first} is borrowing ${item.title}`, `${start} to ${end}. Hand it over at ${staffHandled ? 'the barangay hall' : 'the pickup point'}.`, requestId);
+      await notify(conn, item.owner_id, 'request_auto', `${first} is borrowing ${item.title}`, `${start} to ${end}. Hand it over at ${staffHandled ? 'the barangay hall' : 'the pickup point'}.`, requestId,
+        { name: first, item: item.title, start, end, hall: staffHandled });
     } else {
-      await notify(conn, item.owner_id, 'request_staff', `${first} requested ${item.title}`, 'The barangay will handle approval and handover for this item.', requestId);
+      await notify(conn, item.owner_id, 'request_staff', `${first} requested ${item.title}`, 'The barangay will handle approval and handover for this item.', requestId,
+        { name: first, item: item.title });
     }
   }
   return { id: requestId, status, credit_cost: cost, handled_by_staff: staffHandled, item_title: item.title };
@@ -166,14 +171,16 @@ export function decideRequest(requestId, actor, decision, reason = null) {
       if (await findClash(conn, r.item_id, r.start_date, r.end_date, r.id)) throw bad('Those dates were booked by another request.', 'dates_booked');
       await conn.query("UPDATE requests SET status = 'approved', approved_at = NOW() WHERE id = ?", [r.id]);
       await notify(conn, r.borrower_id, 'request_approved', `Approved: ${r.item_title}`,
-        r.handled_by_staff ? 'Pick it up at the barangay hall.' : 'Open the request to call or message the owner and agree on the pickup.', r.id);
+        r.handled_by_staff ? 'Pick it up at the barangay hall.' : 'Open the request to call or message the owner and agree on the pickup.', r.id,
+        { item: r.item_title, hall: !!r.handled_by_staff });
     } else {
       await conn.query("UPDATE requests SET status = 'rejected', note = COALESCE(?, note) WHERE id = ?", [reason, r.id]);
       if (r.credits_held) {
         await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_rejected', r.id);
         await conn.query('UPDATE requests SET credits_held = 0 WHERE id = ?', [r.id]);
       }
-      await notify(conn, r.borrower_id, 'request_rejected', `Not approved: ${r.item_title}`, reason || 'Your credits were returned.', r.id);
+      await notify(conn, r.borrower_id, 'request_rejected', `Not approved: ${r.item_title}`, reason || 'Your credits were returned.', r.id,
+        { item: r.item_title, reason: reason || null });
     }
     if (actor.role !== 'resident') await audit(actor.id, `request_${decision}`, `request #${r.id}`, conn);
     return { id: r.id, status: decision === 'approve' ? 'approved' : 'rejected' };
@@ -190,7 +197,7 @@ export function cancelRequest(requestId, actor) {
       await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_cancelled', r.id);
       await conn.query('UPDATE requests SET credits_held = 0 WHERE id = ?', [r.id]);
     }
-    if (r.owner_id) await notify(conn, r.owner_id, 'request_cancelled', `Cancelled: ${r.item_title}`, 'The borrower cancelled the request.', r.id);
+    if (r.owner_id) await notify(conn, r.owner_id, 'request_cancelled', `Cancelled: ${r.item_title}`, 'The borrower cancelled the request.', r.id, { item: r.item_title });
     return { id: r.id, status: 'cancelled' };
   });
 }
@@ -210,7 +217,8 @@ export function changeRequestDates(requestId, actor, start, end) {
     if (await findClash(conn, r.item_id, start, end, r.id)) throw bad('Those dates are already booked. Try other dates.', 'dates_booked');
     await conn.query('UPDATE requests SET start_date = ?, end_date = ? WHERE id = ?', [start, end, r.id]);
     if (r.owner_id && !r.handled_by_staff) {
-      await notify(conn, r.owner_id, 'request_dates_changed', `New dates for ${r.item_title}`, `${start} to ${end}. Open Requests to approve or reject.`, r.id);
+      await notify(conn, r.owner_id, 'request_dates_changed', `New dates for ${r.item_title}`, `${start} to ${end}. Open Requests to approve or reject.`, r.id,
+        { item: r.item_title, start, end });
     }
     return { id: r.id, start_date: start, end_date: end };
   });
@@ -224,7 +232,8 @@ export function handOver(requestId, actor, photo = null) {
     if (r.status !== 'approved') throw bad('Only an approved request can be handed over.', 'bad_state');
     if (photoRequired(r) && !photo) throw bad('A condition photo is required for this item.', 'photo_required');
     await conn.query("UPDATE requests SET status = 'handed_over', handed_over_at = NOW(), handover_photo = ?, checkin_since = ? WHERE id = ?", [photo, todayPH(), r.id]);
-    await notify(conn, r.borrower_id, 'handover', `You have ${r.item_title}`, `Please return it by ${r.end_date}. Check in once a day in the app until you return it.`, r.id);
+    await notify(conn, r.borrower_id, 'handover', `You have ${r.item_title}`, `Please return it by ${r.end_date}. Check in once a day in the app until you return it.`, r.id,
+      { item: r.item_title, end: r.end_date });
     if (actor.role !== 'resident') await audit(actor.id, 'handover_confirmed', `request #${r.id}`, conn);
     return { id: r.id, status: 'handed_over' };
   });
@@ -242,14 +251,14 @@ async function normalReturnCredits(conn, r, onTime) {
           AND l.created_at >= (NOW() - INTERVAL 30 DAY)`, [r.owner_id, r.borrower_id]);
     if (cap.n < RULES.pairRewardCapPerMonth) {
       out.lender_reward = await addCredits(conn, r.owner_id, RULES.lenderReward, 'lend_reward', r.id);
-      await notify(conn, r.owner_id, 'credit_earned', `+${RULES.lenderReward} credit`, `Thank you for lending ${r.item_title}.`, r.id);
+      await notify(conn, r.owner_id, 'credit_earned', `+${RULES.lenderReward} credit`, `Thank you for lending ${r.item_title}.`, r.id, { n: RULES.lenderReward, item: r.item_title });
     } else {
-      await notify(conn, r.owner_id, 'credit_capped', 'Thanks for lending again', 'You reached the monthly reward limit for this neighbor, so no credit this time.', r.id);
+      await notify(conn, r.owner_id, 'credit_capped', 'Thanks for lending again', 'You reached the monthly reward limit for this neighbor, so no credit this time.', r.id, { item: r.item_title });
     }
   }
   if (!onTime) {
     out.late_penalty = -(await addCredits(conn, r.borrower_id, -RULES.latePenalty, 'late_penalty', r.id));
-    await notify(conn, r.borrower_id, 'late_return', 'Returned late', `${RULES.latePenalty} credit was taken. Please return on time next time.`, r.id);
+    await notify(conn, r.borrower_id, 'late_return', 'Returned late', `${RULES.latePenalty} credit was taken. Please return on time next time.`, r.id, { n: RULES.latePenalty, item: r.item_title });
   }
   return out;
 }
@@ -274,7 +283,7 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
         [onTime, photo, note, r.id]);
       result.status = 'closed';
       Object.assign(result, await normalReturnCredits(conn, r, onTime));
-      await notify(conn, r.borrower_id, 'return_confirmed', `Return confirmed: ${r.item_title}`, 'Quick question: would you have bought or rented this otherwise?', r.id);
+      await notify(conn, r.borrower_id, 'return_confirmed', `Return confirmed: ${r.item_title}`, 'Quick question: would you have bought or rented this otherwise?', r.id, { item: r.item_title });
     } else {
       // Damaged or lost goes to barangay mediation. No lender reward until it is settled.
       await conn.query(
@@ -283,7 +292,7 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
       await conn.query(
         'INSERT INTO reports (reporter_id, target_type, target_id, reason, details) VALUES (?,?,?,?,?)',
         [actor.id, 'request', r.id, `item_${condition}`, note || `Item reported ${condition} at return.`]);
-      await notify(conn, r.borrower_id, 'dispute', `Return of ${r.item_title} needs review`, 'The barangay will contact you to settle this.', r.id);
+      await notify(conn, r.borrower_id, 'dispute', `Return of ${r.item_title} needs review`, 'The barangay will contact you to settle this.', r.id, { item: r.item_title });
       result.status = 'disputed';
     }
     if (actor.role !== 'resident') await audit(actor.id, `return_${condition}`, `request #${r.id}`, conn);
@@ -294,13 +303,14 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
 // ---------- removing an item ----------
 // The item stops being listed. Its waiting and booked requests are rejected and their credits refunded.
 // `conn` is an open transaction. The caller decides whether an item out on loan may be removed.
-export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.', by = 'staff' } = {}) {
+// `reason` tells the app which sentence to show: removed (by staff), lost, or owner_left.
+export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.', by = 'staff', reason = 'removed' } = {}) {
   await conn.query("UPDATE items SET status = 'removed', removed_by = ? WHERE id = ?", [by, item.id]);
   const [open] = await conn.query("SELECT * FROM requests WHERE item_id = ? AND id <> ? AND status IN ('pending','approved') FOR UPDATE", [item.id, exceptRequestId]);
   for (const r of open) {
     await conn.query("UPDATE requests SET status = 'rejected', credits_held = 0 WHERE id = ?", [r.id]);
     if (r.credits_held) await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_item_removed', r.id);
-    await notify(conn, r.borrower_id, 'request_rejected', `Item removed: ${item.title}`, why, r.id);
+    await notify(conn, r.borrower_id, 'request_rejected', `Item removed: ${item.title}`, why, r.id, { item: item.title, removed: reason });
   }
   return open.length;
 }
@@ -325,7 +335,7 @@ export async function deleteAccountTx(conn, userId, actor, { newPasswordHash, re
     if (r.credits_held) await addCredits(conn, u.id, r.credit_cost, 'refund_cancelled', r.id);
   }
   const [items] = await conn.query("SELECT * FROM items WHERE owner_id = ? AND status <> 'removed' FOR UPDATE", [u.id]);
-  for (const item of items) await removeItemTx(conn, item, { why: 'The owner left Hiraman. Your credits were returned.', by: 'owner' });
+  for (const item of items) await removeItemTx(conn, item, { why: 'The owner left Hiraman. Your credits were returned.', by: 'owner', reason: 'owner_left' });
   await conn.query('UPDATE items SET description = NULL, photo_url = NULL WHERE owner_id = ?', [u.id]);
 
   if (u.id_photo_path) removeFile(u.id_photo_path);
@@ -362,13 +372,17 @@ export async function settleDisputeTx(conn, requestId, outcome, actor) {
   }
   if (rule.removeItem) {
     const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [r.item_id]);
-    await removeItemTx(conn, item, { exceptRequestId: r.id, why: 'The item was lost. Your credits were returned.' });
+    await removeItemTx(conn, item, { exceptRequestId: r.id, why: 'The item was lost. Your credits were returned.', reason: 'lost' });
   }
   await conn.query("UPDATE requests SET status = 'closed', dispute_outcome = ?, settled_at = NOW() WHERE id = ?", [outcome, r.id]);
   const words = { fine: 'It was fine after all.', accident: 'It was an accident.', borrower_fault: 'The borrower was responsible.', lost: 'The item was lost.' }[outcome];
   const change = (n) => (n > 0 ? `+${n}` : String(n));
-  await notify(conn, r.borrower_id, 'dispute_settled', `Settled: ${r.item_title}`, `${words} Your credits: ${change(result.borrower)}.`, r.id);
-  if (r.owner_id) await notify(conn, r.owner_id, 'dispute_settled', `Settled: ${r.item_title}`, `${words} Your credits: ${change(result.owner)}.`, r.id);
+  await notify(conn, r.borrower_id, 'dispute_settled', `Settled: ${r.item_title}`, `${words} Your credits: ${change(result.borrower)}.`, r.id,
+    { item: r.item_title, outcome, credits: change(result.borrower) });
+  if (r.owner_id) {
+    await notify(conn, r.owner_id, 'dispute_settled', `Settled: ${r.item_title}`, `${words} Your credits: ${change(result.owner)}.`, r.id,
+      { item: r.item_title, outcome, credits: change(result.owner) });
+  }
   await audit(actor.id, `dispute_${outcome}`, `request #${r.id}`, conn);
   return result;
 }
@@ -397,12 +411,13 @@ export function checkIn(requestId, actor, answer, note = null) {
       await conn.query('UPDATE requests SET borrower_returned_at = NOW() WHERE id = ?', [r.id]);
       if (r.owner_id) {
         await notify(conn, r.owner_id, 'borrower_returned', `${first} says ${r.item_title} is back`,
-          r.handled_by_staff ? 'The barangay will check it and confirm the return.' : 'Check the item, then tap Confirm return.', r.id);
+          r.handled_by_staff ? 'The barangay will check it and confirm the return.' : 'Check the item, then tap Confirm return.', r.id,
+          { name: first, item: r.item_title, hall: !!r.handled_by_staff });
       }
     } else if (answer === 'problem') {
       await conn.query('INSERT INTO reports (reporter_id, target_type, target_id, reason, details) VALUES (?,?,?,?,?)',
         [actor.id, 'request', r.id, 'checkin_problem', text]);
-      if (r.owner_id) await notify(conn, r.owner_id, 'checkin_problem', `${first} reported a problem with ${r.item_title}`, text, r.id);
+      if (r.owner_id) await notify(conn, r.owner_id, 'checkin_problem', `${first} reported a problem with ${r.item_title}`, text, r.id, { name: first, item: r.item_title, note: text });
     }
     return { id: r.id, day: today, answer };
   });

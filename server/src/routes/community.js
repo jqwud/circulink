@@ -44,7 +44,7 @@ router.post('/wanted/:id/offer', requireApproved, wrap(async (req, res) => {
   if (!w) throw notFound('This post is closed.');
   if (w.user_id === req.user.id) throw bad('This is your own post.', 'own_item');
   await withTx((conn) => notify(conn, w.user_id, 'wanted_offer', `${firstName(req.user.name)} can help: ${w.title}`,
-    'Check My Items or message them at the barangay pickup point.', w.id));
+    'Check My Items or message them at the barangay pickup point.', w.id, { name: firstName(req.user.name), wanted: w.title }));
   res.json({ ok: true });
 }));
 
@@ -112,7 +112,7 @@ router.post('/kits/:id/request', requireApproved, wrap(async (req, res) => {
 
 // ---------- notifications ----------
 router.get('/notifications', wrap(async (req, res) => {
-  res.json(await q('SELECT id, type, title, body, ref_id, read_at, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 100', [req.user.id]));
+  res.json(await q('SELECT id, type, title, body, params, ref_id, read_at, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 100', [req.user.id]));
 }));
 router.post('/notifications/read', wrap(async (req, res) => {
   await q('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL', [req.user.id]);

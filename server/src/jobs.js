@@ -27,15 +27,14 @@ export async function runReminders(now = new Date()) {
     const exists = await one(
       'SELECT id FROM notifications WHERE user_id = ? AND type = ? AND ref_id = ? AND DATE(created_at) = ?', [r.borrower_id, type, r.id, today]);
     if (!exists) {
-      await q('INSERT INTO notifications (user_id, type, title, body, ref_id) VALUES (?,?,?,?,?)',
-        [r.borrower_id, type, title, `Return by ${r.end_date}. Pawsa is counting on you!`, r.id]);
+      await notify(pool, r.borrower_id, type, title, `Return by ${r.end_date}. Pawsa is counting on you!`, r.id, { item: r.title, end: r.end_date });
       sent++;
     }
     if (type === 'overdue' && r.owner_id) {
       const told = await one("SELECT id FROM notifications WHERE user_id = ? AND type = 'owner_overdue' AND ref_id = ?", [r.owner_id, r.id]);
       if (!told) {
-        await q('INSERT INTO notifications (user_id, type, title, body, ref_id) VALUES (?,?,?,?,?)',
-          [r.owner_id, 'owner_overdue', `Not back yet: ${r.title}`, `It was due on ${r.end_date}. The borrower has been reminded.`, r.id]);
+        await notify(pool, r.owner_id, 'owner_overdue', `Not back yet: ${r.title}`, `It was due on ${r.end_date}. The borrower has been reminded.`, r.id,
+          { item: r.title, end: r.end_date });
         sent++;
       }
     }
@@ -55,14 +54,14 @@ export async function runCheckins(now = new Date()) {
     const missed = checkinState(r, today).missed_days;
     if (missed >= 1 && r.checkin_reminded_on !== today) {
       await notify(pool, r.borrower_id, 'checkin_missed', `Please check in: ${r.item_title}`,
-        `You have not checked in for ${missed} day${missed === 1 ? '' : 's'}. Open the request and tap one answer.`, r.id);
+        `You have not checked in for ${missed} day${missed === 1 ? '' : 's'}. Open the request and tap one answer.`, r.id, { item: r.item_title, days: missed });
       await q('UPDATE requests SET checkin_reminded_on = ? WHERE id = ?', [today, r.id]);
       reminded++;
     }
     if (missed >= RULES.checkinAlertAfterMissedDays && !r.checkin_alerted_on) {
       if (r.owner_id) {
         await notify(pool, r.owner_id, 'checkin_alert', `No check-in for ${missed} days: ${r.item_title}`,
-          'The borrower has been reminded. The barangay can see this too.', r.id);
+          'The borrower has been reminded. The barangay can see this too.', r.id, { item: r.item_title, days: missed });
       }
       await q('UPDATE requests SET checkin_alerted_on = ? WHERE id = ?', [today, r.id]);
       alerted++;
@@ -93,9 +92,10 @@ export async function expireRequests(now = new Date()) {
         : `It was not picked up by ${r.end_date}.`;
       await conn.query("UPDATE requests SET status = 'expired', credits_held = 0 WHERE id = ?", [r.id]);
       if (r.credits_held) await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_expired', r.id);
+      const params = { item: r.item_title, why: r.status === 'pending' ? 'no_answer' : 'not_picked_up', days: RULES.pendingExpiryDays, end: r.end_date };
       await notify(conn, r.borrower_id, 'request_expired', `Request expired: ${r.item_title}`,
-        `${why}${r.credits_held ? ' Your credit was returned.' : ''}`, r.id);
-      if (r.owner_id) await notify(conn, r.owner_id, 'request_expired', `Request expired: ${r.item_title}`, why, r.id);
+        `${why}${r.credits_held ? ' Your credit was returned.' : ''}`, r.id, { ...params, refunded: !!r.credits_held });
+      if (r.owner_id) await notify(conn, r.owner_id, 'request_expired', `Request expired: ${r.item_title}`, why, r.id, { ...params, refunded: false });
       return true;
     });
     if (done) expired++;

@@ -37,7 +37,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 8 | Privacy notice, consent, delete account, My data | P2 | M | Done |
 | 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Done |
 | 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Done |
-| 11 | Notifications in the user's language | D6 | M | Planned |
+| 11 | Notifications in the user's language | D6 | M | Done |
 | 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Planned |
 | 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Planned |
 | 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Planned |
@@ -105,6 +105,13 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** server 160/160; `flutter analyze` clean, `flutter test` 5/5; portal builds; no missing Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-165943-before-migrate`); row counts unchanged; the seven puroks are in the new table.
 - **Behavior changes users can notice:** the date picker greys out booked days (including an overdue loan up to today) and stops a range at 14 days; owners can edit an item (not its tier while a loan is active); borrowers can change the dates of a waiting request; the purok list comes from the server and staff add or remove puroks in Rules; help, wallet and verification texts use the server's numbers; a phone number can be cleared and must look like one; staff cannot approve someone without an ID photo or restore an item its owner deleted; searching for % or _ no longer matches everything.
 - **Undo:** `npm run migrate:down` (drops the puroks table and the removal column), then `git revert` the batch commit.
+
+### Batch 11: Notifications in the reader's language
+- **Goal:** Filipino readers get Filipino notices with friendly dates, in the place they look most.
+- **Files:** `database/migrations/009_notification_params.sql` (new), `server/src/services.js` (`notify` stores `params`), every place that sends a notice (`services.js`, `jobs.js`, `routes/admin.js`, `routes/auth.js`, `routes/community.js`, `routes/requests.js`); app `core/notification_text.dart` (new), `notifications_screen.dart`, `strings_fil.dart` (62 sentences); tests `server/test/notifications.test.js` (new), `app/test/notification_text_test.dart` (new, 4).
+- **Proof:** server 164/164 (the new test runs the main flows and finds no notice without values except staff announcements); Flutter 9/9 (Filipino and English sentences, friendly dates, every type fills its blanks, old rows keep their text); `flutter analyze` clean. Migration applied to the demo database with a backup first; row counts unchanged.
+- **Behavior changes users can notice:** notices appear in the app's language with dates like "Okt 21, 2026" instead of "2026-10-21". Older notices and staff announcements show as they were sent.
+- **Undo:** `npm run migrate:down` (drops the values; the English text stays), then `git revert` the batch commit.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

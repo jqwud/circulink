@@ -7,7 +7,7 @@ import { HttpError, bad, wrap } from '../errors.js';
 import { authRequired, signToken, publicUser } from '../auth.js';
 import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
 import { PRIVACY_VERSION, privacyNotice } from '../privacy.js';
-import { audit } from '../services.js';
+import { audit, notify } from '../services.js';
 
 const router = Router();
 const limiter = rateLimit({
@@ -232,8 +232,7 @@ router.post('/me/id-photo', authRequired, privateUpload, wrap(async (req, res) =
   if (req.user.id_photo_path && req.user.id_photo_path !== req.file.filename) removePrivateFile(req.user.id_photo_path);
   const staff = await q("SELECT id FROM users WHERE role IN ('lgu_staff','lgu_admin')");
   for (const s of staff) {
-    await q('INSERT INTO notifications (user_id, type, title, body, ref_id) VALUES (?,?,?,?,?)',
-      [s.id, 'verification_new', `${req.user.name} sent an ID for verification`, null, req.user.id]);
+    await notify(pool, s.id, 'verification_new', `${req.user.name} sent an ID for verification`, null, req.user.id, { name: req.user.name });
   }
   res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
 }));

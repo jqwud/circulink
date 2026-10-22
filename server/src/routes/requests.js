@@ -153,7 +153,10 @@ router.post('/requests/:id/messages', authRequired, wrap(async (req, res) => {
   const from = req.user.role === 'resident' ? first(req.user.name) : 'Barangay staff';
   for (const userId of [r.borrower_id, r.owner_id].filter((u) => u && u !== req.user.id)) {
     const waiting = await one("SELECT id FROM notifications WHERE user_id = ? AND type = 'message' AND ref_id = ? AND read_at IS NULL", [userId, r.id]);
-    if (!waiting) await notify({ query: q }, userId, 'message', `${from} wrote about ${r.item_title}`, body.slice(0, 120), r.id);
+    if (!waiting) {
+      await notify({ query: q }, userId, 'message', `${from} wrote about ${r.item_title}`, body.slice(0, 120), r.id,
+        { name: from, staff: req.user.role !== 'resident', item: r.item_title, preview: body.slice(0, 120) });
+    }
   }
   res.status(201).json({ id: ins.insertId, body, mine: true, staff: req.user.role !== 'resident', from });
 }));

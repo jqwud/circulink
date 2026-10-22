@@ -89,7 +89,7 @@ router.post('/admin/users/:id/approve', wrap(async (req, res) => {
     // Starter credits are given once.
     const [[given]] = await conn.query("SELECT COUNT(*) n FROM credit_ledger WHERE user_id = ? AND reason = 'starter'", [u.id]);
     const starter = given.n ? 0 : await addCredits(conn, u.id, RULES.starterCredits, 'starter');
-    await notify(conn, u.id, 'verified', 'Welcome to Hiraman!', `Your account is verified. You have ${RULES.starterCredits} starter credits.`);
+    await notify(conn, u.id, 'verified', 'Welcome to Hiraman!', `Your account is verified. You have ${RULES.starterCredits} starter credits.`, null, { n: RULES.starterCredits });
     await audit(req.user.id, 'verification_approved', `user #${u.id} ${u.name}`, conn);
     return { id: u.id, verification_status: 'approved', starter_credits: starter };
   });
@@ -103,7 +103,7 @@ router.post('/admin/users/:id/reject', wrap(async (req, res) => {
   if (!u) throw notFound('Resident not found.');
   await withTx(async (conn) => {
     await conn.query("UPDATE users SET verification_status = 'rejected', reject_reason = ?, verification_decided_at = NOW() WHERE id = ?", [reason.slice(0, 255), u.id]);
-    await notify(conn, u.id, 'verification_rejected', 'Verification needs a fix', reason, null);
+    await notify(conn, u.id, 'verification_rejected', 'Verification needs a fix', reason, null, { reason });
     await audit(req.user.id, 'verification_rejected', `user #${u.id} ${u.name}: ${reason}`, conn);
   });
   res.json({ id: u.id, verification_status: 'rejected' });
@@ -160,7 +160,10 @@ router.post('/admin/items/:id/remove', wrap(async (req, res) => {
   await withTx(async (conn) => {
     // Pending requests are rejected and credits go back.
     await removeItemTx(conn, item);
-    if (item.owner_id) await notify(conn, item.owner_id, 'item_removed', `Your listing was removed: ${item.title}`, req.body?.reason || 'It did not follow the community rules.');
+    if (item.owner_id) {
+      await notify(conn, item.owner_id, 'item_removed', `Your listing was removed: ${item.title}`, req.body?.reason || 'It did not follow the community rules.', null,
+        { item: item.title, reason: req.body?.reason || null });
+    }
     await audit(req.user.id, 'item_removed', `item #${item.id} ${item.title}${req.body?.reason ? ': ' + req.body.reason : ''}`, conn);
   });
   res.json({ id: item.id, status: 'removed' });
@@ -269,7 +272,7 @@ router.patch('/admin/reports/:id', wrap(async (req, res) => {
       [status || null, mediator_notes ?? null, outcome ?? null, status || '', req.user.id, status || '', rp.id]);
     if (status === 'resolved') {
       if (settling) settled = await settleDisputeTx(conn, rp.target_id, settle, req.user);
-      await notify(conn, rp.reporter_id, 'report_resolved', 'Your report was resolved', outcome || rp.outcome, rp.id);
+      await notify(conn, rp.reporter_id, 'report_resolved', 'Your report was resolved', outcome || rp.outcome, rp.id, { outcome: outcome || rp.outcome });
     }
     await audit(req.user.id, `report_${status || 'updated'}`, `report #${rp.id}`, conn);
   });
@@ -307,6 +310,7 @@ router.post('/admin/announcements', wrap(async (req, res) => {
       [req.user.id, aud, title.trim().slice(0, 140), message.trim().slice(0, 500)]);
     const [targets] = await conn.query(
       `SELECT id FROM users WHERE role='resident' AND verification_status='approved' AND suspended = 0 ${aud === 'all' ? '' : 'AND purok = ?'}`, aud === 'all' ? [] : [aud]);
+    // Written by staff in their own words: shown as is, so no params.
     for (const t of targets) await notify(conn, t.id, 'announcement', title.trim().slice(0, 140), message.trim().slice(0, 255), r.insertId);
     await audit(req.user.id, 'announcement_sent', `${title.trim()} to ${aud} (${targets.length})`, conn);
     return targets.length;

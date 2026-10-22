@@ -32,7 +32,7 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 11 | Compatibility | One Android phone, Chrome; onboarding at 320×568 and sideways 800×380 (✅ batch 4) | Android 8–15, 320 px to tablet, Chrome, Firefox, Safari, Edge (portal) |
 | 12 | Performance | API median 12–34 ms on demo data | Targets below |
 | 13 | Reliability and recovery | Connection card, Find server, retry; one failing job does not stop the others (✅ batch 3) | Airplane mode mid-borrow; MySQL stopped while the API runs; app killed during upload |
-| 14 | Localization | 278 app and 184 portal strings translated; portal English mode shows words, not raw status codes (✅ batch 4) | Server-made notification text; every screen in Filipino at 320 px |
+| 14 | Localization | 278 app and 184 portal strings translated; portal English mode shows words, not raw status codes (✅ batch 4); notifications written in the reader's language from stored values (✅ batch 11, `notifications.test.js`, `notification_text_test.dart`) | Every screen in Filipino at 320 px |
 | 15 | Installation and upgrade | `run-phone.cmd`; migrations apply once, undo and redo cleanly, backup and restore round-trip (✅ batch 2) | App upgrade keeps the login |
 | 16 | Observability | Audit log; health checks the database (batch 1); `/api/admin/jobs` shows each job's last run, result and error (batch 3) | Request log |
 | 17 | Regression | `npm test`, `flutter test` | CI on every push |

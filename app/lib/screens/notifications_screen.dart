@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
+import '../core/notification_text.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'request_detail.dart';
@@ -87,6 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             children: rows.map((Map<String, dynamic> n) {
               final String type = str(n['type']);
               final bool unread = n['read_at'] == null;
+              final ({String title, String body}) text = notificationText(n, ctx.app.tr, ctx.lang);
               final bool opens = n['ref_id'] != null && !_noRequest.contains(type);
               return HiCard(
                 color: unread ? HiColors.primarySoft : Colors.white,
@@ -103,8 +105,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(str(n['title']), style: const TextStyle(fontWeight: FontWeight.w800)),
-                          if (str(n['body']).isNotEmpty) Text(str(n['body']), style: const TextStyle(color: HiColors.muted)),
+                          Text(text.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                          if (text.body.isNotEmpty) Text(text.body, style: const TextStyle(color: HiColors.muted)),
                           const SizedBox(height: 2),
                           Text(fmtDate(str(n['created_at']), ctx.lang), style: const TextStyle(color: HiColors.muted, fontSize: 11)),
                         ],

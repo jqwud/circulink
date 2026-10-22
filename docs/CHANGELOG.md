@@ -2,6 +2,13 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 11: Notifications in the reader's language (2026-10-22)
+
+- Every notice now stores its values (`notifications.params`: item, dates, names, numbers). The app writes the sentence in Filipino or English with friendly dates (`app/lib/core/notification_text.dart`); 62 notice sentences have Filipino text.
+- The English `title` and `body` are still stored, for older app versions and older rows. Staff announcements are shown exactly as written.
+- The reminder job and the "new ID to review" notice now go through the same `notify` helper.
+- Migration 009 adds `notifications.params`.
+
 ## Batch 10: One source of truth, better forms, small data rules (2026-10-22)
 
 - **Rules from the server:** `/meta` now carries the rule numbers and the puroks; help, wallet, verification and date texts are built from them (`context.tv` fills `{n}` in a translated sentence). The condition-photo rule is decided once on the server (`photo_required`).
