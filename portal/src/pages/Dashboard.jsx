@@ -15,6 +15,7 @@ export default function Dashboard() {
     { n: s.pending_verifications, label: 'IDs waiting for review', to: '/verification' },
     { n: s.staff_requests_waiting, label: 'Staff approvals waiting', to: '/transactions' },
     { n: s.overdue, label: 'Overdue items', to: '/transactions', bad: true },
+    { n: s.missed_checkins, label: 'Loans with no check-in for 2+ days', to: '/transactions', bad: true },
     { n: s.open_reports, label: 'Open reports', to: '/reports', bad: true },
   ].filter((a) => a.n > 0);
 

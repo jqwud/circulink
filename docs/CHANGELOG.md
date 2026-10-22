@@ -2,6 +2,17 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 5: Daily check-in, fair lateness, request timeline (2026-10-22)
+
+- **Daily check-in:** while a borrower has an item they answer once a day: Still with me, I returned it, or There's a problem. The app shows a check-in card on the request and on Home. The handover day itself needs no check-in.
+- **Fair lateness:** "I returned it" saves the moment, and on-time is judged by that day. An owner who confirms late no longer costs the borrower a credit.
+- **Missed check-ins:** one missed day sends the borrower a reminder (at most one a day); two missed days in a row alert the owner once and appear on the portal dashboard and in a new "Missed check-ins" tab. No credit penalty. A check-in starts the count again.
+- **There's a problem:** tells the owner and opens a report for barangay staff.
+- **Timeline:** every request shows Requested, Approved, Borrowed, Borrower says returned and Return confirmed with dates, the credits on hold, and the day an unanswered or uncollected request expires.
+- **Reminders:** due and overdue reminders stop once the borrower says the item is back; such a loan is no longer shown as overdue.
+- Migration 003 adds `request_checkins` and the columns `approved_at`, `borrower_returned_at`, `checkin_since`, `checkin_reminded_on`, `checkin_alerted_on` to `requests`. Loans already out start their check-ins on the day the migration runs.
+- Portal: report reasons and check-in states shown as words.
+
 ## Batch 4: UI quick fixes (2026-10-22)
 
 - **Onboarding fits every phone:** on a small phone Pawsa shrinks; on a phone held sideways he sits beside the words; with very large text the slide scrolls instead of cutting off. A widget test checks three screen sizes.

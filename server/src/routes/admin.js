@@ -7,7 +7,7 @@ import { pool, q, one, withTx, todayPH } from '../db.js';
 import { config } from '../config.js';
 import { bad, notFound, wrap } from '../errors.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
-import { addCredits, audit, notify } from '../services.js';
+import { OUT_LOANS_SQL, addCredits, audit, checkinState, notify } from '../services.js';
 import { runReminders } from '../jobs.js';
 import { RULES, PROHIBITED, AVG_WEIGHT_KG } from '../rules.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
@@ -31,7 +31,8 @@ router.get('/admin/stats', wrap(async (_req, res) => {
     shelf_items: await n("SELECT COUNT(*) n FROM items WHERE is_shelf=1 AND status<>'removed'"),
     loans_this_week: await n('SELECT COUNT(*) n FROM requests WHERE created_at >= (NOW() - INTERVAL 7 DAY)'),
     active_loans: await n("SELECT COUNT(*) n FROM requests WHERE status='handed_over'"),
-    overdue: await n("SELECT COUNT(*) n FROM requests WHERE status='handed_over' AND end_date < ?", [today]),
+    overdue: await n("SELECT COUNT(*) n FROM requests WHERE status='handed_over' AND borrower_returned_at IS NULL AND end_date < ?", [today]),
+    missed_checkins: (await q(OUT_LOANS_SQL)).filter((r) => checkinState(r, today).missed_days >= RULES.checkinAlertAfterMissedDays).length,
     staff_requests_waiting: await n("SELECT COUNT(*) n FROM requests WHERE status='pending' AND handled_by_staff=1"),
     open_reports: await n("SELECT COUNT(*) n FROM reports WHERE status <> 'resolved'"),
     completed_loans: impact.completed_loans,
@@ -173,7 +174,8 @@ router.get('/admin/requests', wrap(async (req, res) => {
   const where = ['1=1'];
   const params = [];
   if (req.query.status) { where.push('r.status = ?'); params.push(req.query.status); }
-  if (req.query.overdue === '1') { where.push("r.status = 'handed_over' AND r.end_date < CURDATE()"); }
+  if (req.query.overdue === '1') { where.push("r.status = 'handed_over' AND r.borrower_returned_at IS NULL AND r.end_date < CURDATE()"); }
+  if (req.query.checkins === '1') { where.push("r.status = 'handed_over' AND r.borrower_returned_at IS NULL"); }
   if (req.query.staff === '1') where.push('r.handled_by_staff = 1');
   if (req.query.q) { where.push('(i.title LIKE ? OR b.name LIKE ?)'); params.push(like(req.query.q), like(req.query.q)); }
   const rows = await q(
@@ -182,7 +184,9 @@ router.get('/admin/requests', wrap(async (req, res) => {
   // The portal gets full names and contact numbers so staff can follow up on late items.
   const full = await q('SELECT id, name, phone FROM users WHERE id IN (?)', [rows.length ? [...new Set(rows.map((r) => r.borrower_id))] : [0]]);
   const byId = Object.fromEntries(full.map((u) => [u.id, u]));
-  res.json(rows.map((r) => ({ ...mapRequest(r), borrower_full_name: byId[r.borrower_id]?.name, borrower_phone: byId[r.borrower_id]?.phone })));
+  let out = rows.map((r) => ({ ...mapRequest(r), borrower_full_name: byId[r.borrower_id]?.name, borrower_phone: byId[r.borrower_id]?.phone }));
+  if (req.query.checkins === '1') out = out.filter((r) => r.checkin.missed_days >= RULES.checkinAlertAfterMissedDays);
+  res.json(out);
 }));
 
 router.post('/admin/run-reminders', wrap(async (_req, res) => res.json(await runReminders())));

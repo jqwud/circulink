@@ -70,7 +70,8 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | Cost | low or medium owned / high owned / shelf | 1 / 2 / 0 | ✅ unit |
 | Pair cap | 3rd on-time loan, same pair, within 30 days · next loan on day 31 | +0 and `credit_capped` · +1 | 🟡 first case |
 | Penalty floor | late return with 0 credits | stays 0, no ledger row | ⬜ |
-| On time | confirmed on the end date · the day after | on time · late −1 | 🟡 |
+| On time | confirmed on the end date · the day after · borrower said "I returned it" before the end, owner confirmed after | on time · late −1 · on time | ✅ `checkins.test.js` |
+| Check-ins | handover day · 1 missed day · 2 missed days · a check-in after that | nothing due · 1 reminder · owner alerted once, staff count · count starts again | ✅ `checkins.test.js` |
 | Order of operations | late and capped return | owner +0, borrower −1, both notified | ⬜ |
 | Kit with too few credits | 1 credit, 3 lines costing 1 | 1 booked, 2 "not enough credits" | ⬜ |
 
@@ -84,7 +85,9 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | closed / disputed | 400 | 400 | 400 | 400 | allowed |
 | rejected / cancelled / expired | 400 | 400 | 400 | 400 | 400 |
 
-Fixed by batch 3 (✅): pending forever and approved-never-collected now expire. Still stuck (batches 5 and 6): handed over never confirmed, disputed never resolved.
+Fixed by batch 3 (✅): pending forever and approved-never-collected now expire. Fixed by batch 5 (✅): a loan that is out is watched by daily check-ins, and a borrower who returned it is no longer charged for a slow confirmation. Still stuck (batch 6): disputed never resolved with credits.
+
+Check-in (`POST /requests/:id/checkin`): borrower only (403), only while `handed_over` (400 `bad_state`), not after "I returned it" (400 `already_returned`), "There's a problem" needs a note (400 `note_required`).
 
 ## Permissions
 

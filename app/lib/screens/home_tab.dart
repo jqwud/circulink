@@ -10,6 +10,7 @@ import '../widgets/pawsa.dart';
 import 'item_detail.dart';
 import 'kits_screen.dart';
 import 'notifications_screen.dart';
+import 'request_detail.dart';
 import 'verification_screen.dart';
 import 'wallet_screen.dart';
 
@@ -24,11 +25,13 @@ class HomeTab extends StatelessWidget {
       api.get('/announcements'),
       api.get('/items', query: <String, String>{'shelf': '1'}),
       api.get('/items', query: <String, String>{'owner': 'others'}),
+      api.get('/requests', query: <String, String>{'as': 'borrower'}),
     ]);
     return <String, dynamic>{
       'news': listOf(results[0]),
       'shelf': listOf(results[1]),
       'items': listOf(results[2]).where((Map<String, dynamic> i) => !boolOf(i['is_shelf'])).take(6).toList(),
+      'checkins': listOf(results[3]).where((Map<String, dynamic> r) => boolOf(mapOf(r['checkin'])['due_today'])).toList(),
     };
   }
 
@@ -42,6 +45,7 @@ class HomeTab extends StatelessWidget {
         final List<Map<String, dynamic>> news = listOf(data['news']);
         final List<Map<String, dynamic>> shelf = listOf(data['shelf']);
         final List<Map<String, dynamic>> items = listOf(data['items']);
+        final List<Map<String, dynamic>> checkins = listOf(data['checkins']);
         return ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -108,6 +112,23 @@ class HomeTab extends StatelessWidget {
                 ],
               ),
             ),
+            // Things the borrower has today: one card per item that needs today's check-in.
+            ...checkins.map((Map<String, dynamic> r) => HiCard(
+                  color: HiColors.sunSoft,
+                  borderColor: HiColors.sun,
+                  onTap: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => RequestDetailScreen(requestId: intOf(r['id'])))),
+                  child: Row(children: <Widget>[
+                    const Icon(Icons.notifications_active_outlined, color: HiColors.warn),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+                        Text('${ctx.t('Daily check-in')}: ${str(mapOf(r['item'])['title'])}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                        Text(ctx.t('Is the item still with you? Tap to answer.'), style: const TextStyle(color: HiColors.ink)),
+                      ]),
+                    ),
+                    const Icon(Icons.chevron_right, color: HiColors.ink),
+                  ]),
+                )),
             if (!app.isApproved) _VerifyBanner(status: app.verification, reason: str(app.user?['reject_reason'])),
             if (news.isNotEmpty) ...<Widget>[
               SectionTitle(ctx.t('From your barangay')),

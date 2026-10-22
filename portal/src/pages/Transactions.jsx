@@ -18,7 +18,7 @@ export default function Transactions() {
   const [tab, setTab] = useState('action');
   const [text, setText] = useState('');
 
-  const path = tab === 'overdue' ? '/admin/requests?overdue=1' : tab === 'all' ? `/admin/requests${text ? `?q=${encodeURIComponent(text)}` : ''}` : '/admin/requests?staff=1';
+  const path = tab === 'overdue' ? '/admin/requests?overdue=1' : tab === 'checkins' ? '/admin/requests?checkins=1' : tab === 'all' ? `/admin/requests${text ? `?q=${encodeURIComponent(text)}` : ''}` : '/admin/requests?staff=1';
   const { data, loading, error, reload } = useLoad(() => api(path), [path]);
   const all = useLoad(() => api('/admin/requests?overdue=1'), [tab]);
 
@@ -58,6 +58,7 @@ export default function Transactions() {
       <Tabs value={tab} onChange={setTab} tabs={[
         { value: 'action', label: t('Needs action'), count: counts.action },
         { value: 'overdue', label: t('Overdue'), count: counts.overdue },
+        { value: 'checkins', label: t('Missed check-ins'), count: tab === 'checkins' ? rows.length : 0 },
         { value: 'all', label: t('Every transaction') },
       ]} />
       {tab === 'all' && (
@@ -78,7 +79,9 @@ export default function Transactions() {
                     <td>{r.borrower_full_name}<small>{r.borrower.purok}{r.borrower_phone ? ` · ${r.borrower_phone}` : ''}</small></td>
                     <td>{r.owner?.name || t('Shelf')}</td>
                     <td>{fmt(r.start_date)} – {fmt(r.end_date)}{r.overdue && <small style={{ color: 'var(--c-danger)', fontWeight: 700 }}>{daysLate(r.end_date)} {t('day(s) late')}</small>}</td>
-                    <td><Badge value={r.status} />{r.overdue && <> <Badge value="overdue" label={t('Overdue')} /></>}{r.return_condition && r.return_condition !== 'good' && <> <Badge value="disputed" label={t(r.return_condition)} /></>}</td>
+                    <td><Badge value={r.status} />{r.overdue && <> <Badge value="overdue" label={t('Overdue')} /></>}{r.return_condition && r.return_condition !== 'good' && <> <Badge value="disputed" label={t(r.return_condition)} /></>}
+                      {r.borrower_returned_at && r.status === 'handed_over' && <> <Badge value="info" label={t('Borrower says returned')} /></>}
+                      {r.checkin?.missed_days >= 2 && <> <Badge value="overdue" label={`${t('No check-in')}: ${r.checkin.missed_days} ${t('days')}`} /></>}</td>
                     <td><div className="cell-actions">
                       {act1 === 'decide' && <>
                         <button className="btn small primary" disabled={busy} onClick={() => act(`/requests/${r.id}/approve`)}>{t('Approve')}</button>

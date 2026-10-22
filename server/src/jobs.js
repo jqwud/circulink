@@ -2,10 +2,10 @@
 // it only acts on rows that still qualify, re-checked inside a locked transaction.
 import fs from 'node:fs';
 import path from 'node:path';
-import { q, one, withTx, todayPH, phTimestamp } from './db.js';
+import { pool, q, one, withTx, todayPH, phTimestamp } from './db.js';
 import { config } from './config.js';
 import { RULES } from './rules.js';
-import { addCredits, audit, loadRequest, notify } from './services.js';
+import { OUT_LOANS_SQL, addCredits, audit, checkinState, loadRequest, notify } from './services.js';
 import { removePrivateFile } from './uploads.js';
 
 const MINUTE = 60 * 1000;
@@ -13,12 +13,13 @@ const DAY = 24 * 60 * MINUTE;
 
 // ---------- reminders: due tomorrow, due today, overdue ----------
 // The borrower is reminded once per day. The owner hears once when their item becomes overdue.
+// Nobody is reminded about an item the borrower already said they returned.
 export async function runReminders(now = new Date()) {
   const today = todayPH(now);
   const rows = await q(
     `SELECT r.id, r.borrower_id, r.end_date, i.title, i.owner_id, DATEDIFF(r.end_date, ?) AS days_left
        FROM requests r JOIN items i ON i.id = r.item_id
-      WHERE r.status = 'handed_over' AND r.end_date <= DATE_ADD(?, INTERVAL 1 DAY)`, [today, today]);
+      WHERE r.status = 'handed_over' AND r.borrower_returned_at IS NULL AND r.end_date <= DATE_ADD(?, INTERVAL 1 DAY)`, [today, today]);
   let sent = 0;
   for (const r of rows) {
     const type = r.days_left > 0 ? 'due_tomorrow' : r.days_left === 0 ? 'due_today' : 'overdue';
@@ -40,6 +41,34 @@ export async function runReminders(now = new Date()) {
     }
   }
   return { checked: rows.length, sent };
+}
+
+// ---------- daily check-ins ----------
+// One missed day: a reminder to the borrower (at most one a day). Two missed days in a row: the owner is
+// told once, and staff see the loan on the dashboard. A check-in starts the count again. No credit penalty.
+export async function runCheckins(now = new Date()) {
+  const today = todayPH(now);
+  const rows = await q(OUT_LOANS_SQL);
+  let reminded = 0;
+  let alerted = 0;
+  for (const r of rows) {
+    const missed = checkinState(r, today).missed_days;
+    if (missed >= 1 && r.checkin_reminded_on !== today) {
+      await notify(pool, r.borrower_id, 'checkin_missed', `Please check in: ${r.item_title}`,
+        `You have not checked in for ${missed} day${missed === 1 ? '' : 's'}. Open the request and tap one answer.`, r.id);
+      await q('UPDATE requests SET checkin_reminded_on = ? WHERE id = ?', [today, r.id]);
+      reminded++;
+    }
+    if (missed >= RULES.checkinAlertAfterMissedDays && !r.checkin_alerted_on) {
+      if (r.owner_id) {
+        await notify(pool, r.owner_id, 'checkin_alert', `No check-in for ${missed} days: ${r.item_title}`,
+          'The borrower has been reminded. The barangay can see this too.', r.id);
+      }
+      await q('UPDATE requests SET checkin_alerted_on = ? WHERE id = ?', [today, r.id]);
+      alerted++;
+    }
+  }
+  return { checked: rows.length, reminded, alerted };
 }
 
 // ---------- request expiry ----------
@@ -120,6 +149,7 @@ export async function cleanupUploads(now = new Date()) {
 // ---------- the runner ----------
 export const JOBS = [
   { name: 'reminders', everyMs: 60 * MINUTE, run: runReminders },
+  { name: 'checkins', everyMs: 60 * MINUTE, run: runCheckins },
   { name: 'expire_requests', everyMs: 60 * MINUTE, run: expireRequests },
   { name: 'delete_old_id_photos', everyMs: 60 * MINUTE, run: deleteOldIdPhotos },
   { name: 'cleanup_uploads', everyMs: DAY, run: cleanupUploads },

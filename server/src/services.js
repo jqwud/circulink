@@ -28,6 +28,30 @@ export async function addCredits(conn, userId, amount, reason, requestId = null)
 
 const isoDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) && !Number.isNaN(Date.parse(s));
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
+export const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+
+// ---------- daily check-ins ----------
+// Loans that are out and not yet reported back by the borrower, with what the check-in rules need.
+export const OUT_LOANS_SQL = `
+  SELECT r.id, r.borrower_id, r.handled_by_staff, r.handed_over_at, r.checkin_since, r.borrower_returned_at,
+         r.checkin_reminded_on, r.checkin_alerted_on, i.title AS item_title, i.owner_id,
+         (SELECT MAX(k.day) FROM request_checkins k WHERE k.request_id = r.id) AS last_checkin_day
+    FROM requests r JOIN items i ON i.id = r.item_id
+   WHERE r.status = 'handed_over' AND r.borrower_returned_at IS NULL`;
+
+// Where a loan stands with its daily check-ins. Counting starts the day after the handover (or after the
+// last check-in, or the day check-ins began for loans already out), so the handover day itself is never "missed".
+export function checkinState(r, today = todayPH()) {
+  const returned = !!r.borrower_returned_at;
+  const handedDay = r.handed_over_at ? String(r.handed_over_at).slice(0, 10) : null;
+  const base = [r.checkin_since, handedDay, r.last_checkin_day].filter(Boolean).sort().at(-1) || today;
+  return {
+    due_today: !returned && base < today,
+    missed_days: returned ? 0 : Math.max(0, daysBetween(base, today) - 1),
+    last_day: r.last_checkin_day || null,
+    last_answer: r.last_checkin_answer || null,
+  };
+}
 
 // Borrow dates: real dates, not in the past (Philippine time), in order, at most maxLoanDays long.
 export function assertDates(start, end) {
@@ -96,9 +120,9 @@ export async function createRequestTx(conn, { borrower, itemId, start, end, kitI
   const staffHandled = handledByStaff(item);
   const status = autoApproves(item) ? 'approved' : 'pending';
   const [ins] = await conn.query(
-    `INSERT INTO requests (item_id, borrower_id, kit_id, start_date, end_date, status, credit_cost, credits_held, handled_by_staff, note)
-     VALUES (?,?,?,?,?,?,?,?,?,?)`,
-    [itemId, borrower.id, kitId, start, end, status, cost, cost > 0 ? 1 : 0, staffHandled ? 1 : 0, note]);
+    `INSERT INTO requests (item_id, borrower_id, kit_id, start_date, end_date, status, credit_cost, credits_held, handled_by_staff, note, approved_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?, IF(? = 'approved', NOW(), NULL))`,
+    [itemId, borrower.id, kitId, start, end, status, cost, cost > 0 ? 1 : 0, staffHandled ? 1 : 0, note, status]);
   const requestId = ins.insertId;
   if (cost > 0) await addCredits(conn, borrower.id, -cost, 'borrow_hold', requestId);
 
@@ -126,7 +150,7 @@ export function decideRequest(requestId, actor, decision, reason = null) {
     if (decision === 'approve') {
       // Re-check that nobody else got these dates while we waited, and that the item is not still out.
       if (await findClash(conn, r.item_id, r.start_date, r.end_date, r.id)) throw bad('Those dates were booked by another request.', 'dates_booked');
-      await conn.query("UPDATE requests SET status = 'approved' WHERE id = ?", [r.id]);
+      await conn.query("UPDATE requests SET status = 'approved', approved_at = NOW() WHERE id = ?", [r.id]);
       await notify(conn, r.borrower_id, 'request_approved', `Approved: ${r.item_title}`,
         r.handled_by_staff ? 'Pick it up at the barangay hall.' : 'Message the owner and agree on the pickup point.', r.id);
     } else {
@@ -164,8 +188,8 @@ export function handOver(requestId, actor, photo = null) {
     assertCanManage(r, actor);
     if (r.status !== 'approved') throw bad('Only an approved request can be handed over.', 'bad_state');
     if (r.tier !== 'low' && !photo) throw bad('A condition photo is required for this item.', 'photo_required');
-    await conn.query("UPDATE requests SET status = 'handed_over', handed_over_at = NOW(), handover_photo = ? WHERE id = ?", [photo, r.id]);
-    await notify(conn, r.borrower_id, 'handover', `You have ${r.item_title}`, `Please return it by ${r.end_date}.`, r.id);
+    await conn.query("UPDATE requests SET status = 'handed_over', handed_over_at = NOW(), handover_photo = ?, checkin_since = ? WHERE id = ?", [photo, todayPH(), r.id]);
+    await notify(conn, r.borrower_id, 'handover', `You have ${r.item_title}`, `Please return it by ${r.end_date}. Check in once a day in the app until you return it.`, r.id);
     if (actor.role !== 'resident') await audit(actor.id, 'handover_confirmed', `request #${r.id}`, conn);
     return { id: r.id, status: 'handed_over' };
   });
@@ -181,8 +205,9 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
     if (r.status !== 'handed_over') throw bad('This item is not out on loan.', 'bad_state');
     if (r.tier !== 'low' && condition === 'good' && !photo) throw bad('A condition photo is required for this item.', 'photo_required');
 
-    const today = todayPH();
-    const onTime = today <= r.end_date ? 1 : 0;
+    // Lateness is judged by the day the borrower said "I returned it", so a slow confirmation never costs them.
+    const returnedDay = r.borrower_returned_at ? String(r.borrower_returned_at).slice(0, 10) : todayPH();
+    const onTime = returnedDay <= r.end_date ? 1 : 0;
     const result = { id: r.id, on_time: !!onTime, lender_reward: 0, late_penalty: 0 };
 
     if (condition === 'good') {
@@ -221,6 +246,41 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
     }
     if (actor.role !== 'resident') await audit(actor.id, `return_${condition}`, `request #${r.id}`, conn);
     return result;
+  });
+}
+
+// ---------- daily check-in while the item is out ----------
+// One answer per day; answering again the same day replaces it. "I returned it" records the moment
+// lateness is judged by. "There's a problem" tells the owner and opens a report for staff.
+export function checkIn(requestId, actor, answer, note = null) {
+  return withTx(async (conn) => {
+    const r = await loadRequest(conn, requestId);
+    if (r.borrower_id !== actor.id) throw forbidden('Only the borrower can check in.', 'cannot_manage');
+    if (!['with_me', 'returned', 'problem'].includes(answer)) throw bad('Choose one of the check-in answers.', 'bad_checkin');
+    if (r.status !== 'handed_over') throw bad('You can check in only while you have the item.', 'bad_state');
+    if (r.borrower_returned_at) throw bad('You already said you returned this item.', 'already_returned');
+    const text = String(note || '').trim().slice(0, 300) || null;
+    if (answer === 'problem' && !text) throw bad('Tell us briefly what happened.', 'note_required');
+
+    const today = todayPH();
+    await conn.query(
+      `INSERT INTO request_checkins (request_id, day, answer, note) VALUES (?,?,?,?)
+       ON DUPLICATE KEY UPDATE answer = VALUES(answer), note = VALUES(note), created_at = CURRENT_TIMESTAMP`,
+      [r.id, today, answer, text]);
+    await conn.query('UPDATE requests SET checkin_alerted_on = NULL WHERE id = ?', [r.id]);
+    const first = actor.name.split(' ')[0];
+    if (answer === 'returned') {
+      await conn.query('UPDATE requests SET borrower_returned_at = NOW() WHERE id = ?', [r.id]);
+      if (r.owner_id) {
+        await notify(conn, r.owner_id, 'borrower_returned', `${first} says ${r.item_title} is back`,
+          r.handled_by_staff ? 'The barangay will check it and confirm the return.' : 'Check the item, then tap Confirm return.', r.id);
+      }
+    } else if (answer === 'problem') {
+      await conn.query('INSERT INTO reports (reporter_id, target_type, target_id, reason, details) VALUES (?,?,?,?,?)',
+        [actor.id, 'request', r.id, 'checkin_problem', text]);
+      if (r.owner_id) await notify(conn, r.owner_id, 'checkin_problem', `${first} reported a problem with ${r.item_title}`, text, r.id);
+    }
+    return { id: r.id, day: today, answer };
   });
 }
 

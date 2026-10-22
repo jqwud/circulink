@@ -38,7 +38,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.error_outline;
       case 'due_tomorrow':
       case 'due_today':
+      case 'checkin_missed':
         return Icons.schedule;
+      case 'checkin_alert':
+      case 'checkin_problem':
+        return Icons.error_outline;
+      case 'borrower_returned':
+        return Icons.assignment_return;
       default:
         return Icons.notifications_none;
     }

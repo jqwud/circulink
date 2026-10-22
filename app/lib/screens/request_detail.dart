@@ -103,6 +103,41 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     );
   }
 
+  Future<void> _checkin(String answer, {String? note, String? done, String? doneTitle}) =>
+      _run(() => _post('checkin', <String, dynamic>{'answer': answer, 'note': note}), done: done, doneTitle: doneTitle);
+
+  Future<void> _sayReturned() async {
+    final bool ok = await confirmDialog(context,
+        title: context.tx('Did you give it back?'),
+        message: context.tx('We save the time now, so a late confirmation by the owner never costs you a credit.'),
+        confirmLabel: context.tx('Yes, I returned it'));
+    if (!ok || !mounted) return;
+    await _checkin('returned', done: context.tx('The owner will check the item and confirm.'), doneTitle: context.tx('Return noted'));
+  }
+
+  Future<void> _reportProblem() async {
+    final TextEditingController note = TextEditingController();
+    final bool? ok = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: Text(ctx.tx("What's the problem?")),
+        content: TextField(controller: note, maxLines: 3, maxLength: 300, decoration: InputDecoration(labelText: ctx.tx('Tell us briefly what happened'), border: const OutlineInputBorder())),
+        actions: <Widget>[
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tx('Cancel'))),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tx('Send'), style: const TextStyle(fontWeight: FontWeight.w800))),
+        ],
+      ),
+    );
+    final String text = note.text.trim();
+    note.dispose();
+    if (ok != true || !mounted) return;
+    if (text.isEmpty) {
+      showMessage(context, context.tx('Tell us briefly what happened'), bad: true);
+      return;
+    }
+    await _checkin('problem', note: text, done: context.tx('The owner and the barangay were told. They will contact you.'), doneTitle: context.tx('Problem sent'));
+  }
+
   Future<void> _survey() async {
     final String? answer = await showDialog<String>(
       context: context,
@@ -230,13 +265,16 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
               _row(context.t('Dates'), fmtRange(str(r['start_date']), str(r['end_date']), context.lang)),
               _row(asOwner ? context.t('Borrower') : context.t('Lender'), otherName),
               if (str(r['pickup_point']).isNotEmpty) _row(context.t('Pickup'), str(r['pickup_point'])),
+              if (asOwner && status == 'handed_over' && str(r['borrower_returned_at']).isEmpty) _row(context.t('Last check-in'), _lastCheckin(context, mapOf(r['checkin']))),
               if (str(r['return_condition']).isNotEmpty) _row(context.t('Condition at return'), _conditionText(context, str(r['return_condition']))),
               if (r['on_time'] != null && (status == 'closed' || status == 'disputed')) _row(context.t('Returned'), boolOf(r['on_time']) ? context.t('On time') : context.t('Late')),
               if (str(r['note']).isNotEmpty) _row(context.t('Note'), str(r['note'])),
             ],
           ),
         ),
-        _guide(context, status, asOwner, staff),
+        _Timeline(request: r),
+        if (asBorrower && status == 'handed_over' && str(r['borrower_returned_at']).isEmpty) _checkinCard(context, r),
+        _guide(context, r, asOwner, staff),
         const SizedBox(height: 4),
         ...actions,
         const SizedBox(height: 12),
@@ -249,6 +287,59 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  String _lastCheckin(BuildContext context, Map<String, dynamic> c) {
+    final int missed = intOf(c['missed_days']);
+    if (missed >= 2) return '${context.t('None for')} $missed ${context.t('days')}';
+    if (str(c['last_day']).isEmpty) return context.t('None yet');
+    return '${fmtDate(str(c['last_day']), context.lang)} · ${_answerText(context, str(c['last_answer']))}';
+  }
+
+  String _answerText(BuildContext context, String a) {
+    switch (a) {
+      case 'with_me':
+        return context.t('Still with me');
+      case 'problem':
+        return context.t("There's a problem");
+      default:
+        return context.t('I returned it');
+    }
+  }
+
+  /// While the item is out the borrower answers once a day. "I returned it" can be tapped any time.
+  Widget _checkinCard(BuildContext context, Map<String, dynamic> r) {
+    final Map<String, dynamic> c = mapOf(r['checkin']);
+    final bool due = boolOf(c['due_today']);
+    final int missed = intOf(c['missed_days']);
+    final bool doneToday = str(c['last_day']) == ymd(DateTime.now());
+    final String text = due
+        ? (missed > 0 ? context.t('You missed a check-in. Please answer now.') : context.t('Is the item still with you?'))
+        : (doneToday ? '${context.t('Thanks, you checked in today:')} ${_answerText(context, str(c['last_answer']))}.' : context.t('Your first check-in is tomorrow.'));
+    return HiCard(
+      color: due ? HiColors.sunSoft : HiColors.card,
+      borderColor: due ? HiColors.sun : HiColors.line,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(children: <Widget>[
+            Icon(due ? Icons.notifications_active_outlined : Icons.event_available, color: due ? HiColors.warn : HiColors.accent),
+            const SizedBox(width: 8),
+            Text(context.t('Daily check-in'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          ]),
+          const SizedBox(height: 6),
+          Text(text, style: const TextStyle(color: HiColors.ink)),
+          const SizedBox(height: 10),
+          if (!doneToday) ...<Widget>[
+            PrimaryButton(label: context.t('Still with me'), icon: Icons.check, busy: _busy, onPressed: () => _checkin('with_me')),
+            const SizedBox(height: 8),
+          ],
+          SoftButton(label: context.t('I returned it'), icon: Icons.assignment_return, onPressed: _busy ? null : _sayReturned),
+          const SizedBox(height: 8),
+          SoftButton(label: context.t("There's a problem"), icon: Icons.report_gmailerrorred, onPressed: _busy ? null : _reportProblem),
+        ],
+      ),
     );
   }
 
@@ -277,16 +368,24 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   }
 
   /// A plain sentence that says what happens next.
-  Widget _guide(BuildContext context, String status, bool asOwner, bool staff) {
+  Widget _guide(BuildContext context, Map<String, dynamic> r, bool asOwner, bool staff) {
+    final String status = str(r['status']);
+    final String saidReturned = str(r['borrower_returned_at']);
     String? text;
-    if (staff && (status == 'pending' || status == 'approved' || status == 'handed_over')) {
+    if (status == 'handed_over' && saidReturned.isNotEmpty) {
+      final String when = fmtDate(saidReturned, context.lang);
+      text = asOwner
+          ? '${context.t('The borrower says it was returned on')} $when. ${staff ? context.t('The barangay will confirm the return.') : context.t('Check the item, then tap Confirm return.')}'
+          : '${context.t('You said you returned it on')} $when. ${context.t('Waiting for the return to be confirmed.')}';
+    } else if (staff && (status == 'pending' || status == 'approved' || status == 'handed_over')) {
       text = context.t('This item is handled at the barangay hall. LGU staff approve, hand over and take it back.');
     } else if (status == 'pending') {
       text = asOwner ? context.t('Approve or reject this request.') : context.t('Waiting for the owner to approve. Your credit is held.');
+      if (str(r['expires_on']).isNotEmpty) text = '$text ${context.t('If nobody answers, it expires on')} ${fmtDate(str(r['expires_on']), context.lang)}.';
     } else if (status == 'approved') {
       text = asOwner ? context.t('Meet at the pickup point, then tap Confirm handover.') : context.t('Approved! Meet the owner at the pickup point to get the item.');
     } else if (status == 'handed_over') {
-      text = asOwner ? context.t('When the item comes back, tap Confirm return.') : context.t('Please return it by the end date to avoid losing a credit.');
+      text = asOwner ? context.t('When the item comes back, tap Confirm return.') : context.t('Please return it by the end date. When you give it back, tap I returned it.');
     } else if (status == 'disputed') {
       text = context.t('The barangay is reviewing this return.');
     }
@@ -297,6 +396,78 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       Expanded(child: Text(text, style: const TextStyle(color: HiColors.info, fontWeight: FontWeight.w600))),
     ]));
   }
+}
+
+/// Where the request stands: requested, approved, borrowed, returned, with dates and held credits.
+class _Timeline extends StatelessWidget {
+  final Map<String, dynamic> request;
+  const _Timeline({required this.request});
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, dynamic> r = request;
+    final String status = str(r['status']);
+    final String lang = context.lang;
+    String when(String key) => str(r[key]).isEmpty ? '' : fmtDate(str(r[key]), lang);
+    final bool ended = <String>['rejected', 'cancelled', 'expired'].contains(status);
+    final List<_Step> steps = <_Step>[
+      _Step(context.t('Requested'), when('created_at'), true),
+      if (!ended || str(r['approved_at']).isNotEmpty) _Step(context.t('Approved'), when('approved_at'), str(r['approved_at']).isNotEmpty),
+      if (ended) _Step(statusLabel(context, status), '', true, stop: true),
+      if (!ended) _Step(context.t('Borrowed'), when('handed_over_at'), str(r['handed_over_at']).isNotEmpty),
+      if (!ended && str(r['borrower_returned_at']).isNotEmpty) _Step(context.t('Borrower says returned'), when('borrower_returned_at'), true),
+      if (!ended) _Step(context.t('Return confirmed'), when('returned_at'), str(r['returned_at']).isNotEmpty),
+    ];
+    final int cost = intOf(r['credit_cost']);
+    return HiCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(context.t('Progress'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          const SizedBox(height: 8),
+          for (int i = 0; i < steps.length; i++) _stepRow(steps[i], last: i == steps.length - 1, next: !steps[i].done && (i == 0 || steps[i - 1].done)),
+          if (boolOf(r['credits_held']) && cost > 0) ...<Widget>[
+            const SizedBox(height: 6),
+            Text('${context.t('Credits on hold')}: $cost', style: const TextStyle(color: HiColors.muted, fontWeight: FontWeight.w700)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _stepRow(_Step s, {required bool last, required bool next}) {
+    final Color color = s.stop ? HiColors.danger : (s.done ? HiColors.accent : (next ? HiColors.warn : HiColors.lineStrong));
+    final IconData icon = s.stop ? Icons.cancel : (s.done ? Icons.check_circle : (next ? Icons.radio_button_checked : Icons.radio_button_unchecked));
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Column(children: <Widget>[
+            Icon(icon, size: 20, color: color),
+            if (!last) Expanded(child: Container(width: 2, color: s.done ? HiColors.accent : HiColors.line)),
+          ]),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Wrap(spacing: 8, children: <Widget>[
+                Text(s.label, style: TextStyle(fontWeight: FontWeight.w800, color: s.done || next ? HiColors.ink : HiColors.muted)),
+                if (s.date.isNotEmpty) Text(s.date, style: const TextStyle(color: HiColors.muted)),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Step {
+  final String label;
+  final String date;
+  final bool done;
+  final bool stop;
+  const _Step(this.label, this.date, this.done, {this.stop = false});
 }
 
 class _ReturnSheet extends StatefulWidget {

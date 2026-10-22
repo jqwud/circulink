@@ -11,6 +11,7 @@ export const RULES = {
   pendingExpiryDays: 7,       // a request nobody answers expires this many days after it was made
   idPhotoRetentionDays: 7,    // ID photos are deleted this many days after staff approve or reject
   unusedUploadGraceHours: 24, // a photo nobody attached to anything is deleted after this long
+  checkinAlertAfterMissedDays: 2, // missed daily check-ins in a row before the owner and staff are alerted
 };
 
 // Words that are not allowed in listings (weapons, medicines, hazardous items).

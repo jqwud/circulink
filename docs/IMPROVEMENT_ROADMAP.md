@@ -31,7 +31,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 3 | Scheduled jobs: 7-day request expiry, 7-day ID photo deletion, unused upload cleanup, reminders | B2, B11, P1 | M | Done |
 | 4 | UI quick fixes: onboarding on small and sideways phones, confirm steps, feedback after every action, demo login in debug only, portal dialog focus and English status labels | D2, D3, D4, D13, D11 | S–M | Done |
 | **Do next** | | | | |
-| 5 | Daily check-in, fair lateness, request timeline | B1, D5 | L | Planned |
+| 5 | Daily check-in, fair lateness, request timeline | B1, D5 | L | Done |
 | 6 | Dispute outcomes with ledger rows | B4 | M | Planned |
 | 7 | Phone numbers after approval and a request thread | D1 | L | Planned |
 | 8 | Privacy notice, consent, delete account, My data | P2 | M | Planned |
@@ -59,6 +59,13 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** 18 new tests written first; 17 failed before the fixes. After: 61/61 pass.
 - **Behavior changes users can notice:** uploads that are not real JPG, PNG or WEBP files get a clear message; asking twice for the same item and dates is refused; `/api/health` answers 503 when the database is down.
 - **Undo:** `git revert` the batch commit. No database changes.
+
+### Batch 5: Daily check-in, fair lateness, request timeline
+- **Goal:** a borrower is never charged for a slow confirmation, owners know their item is safe, and everyone can see where a request stands.
+- **Files:** `database/migrations/003_checkins_and_timeline.sql` (new), `server/src/services.js` (check-in, approval time, lateness from "I returned it"), `jobs.js` (`runCheckins`), `rules.js`, `routes/requests.js` (`POST /requests/:id/checkin`, timeline fields), `routes/admin.js` (dashboard count, "Missed check-ins" filter); app `request_detail.dart` (check-in card, timeline), `home_tab.dart` (check-in cards), `widgets/common.dart`, `notifications_screen.dart`, `strings_fil.dart`; portal `Dashboard.jsx`, `Transactions.jsx`, `Reports.jsx`, `components.jsx`, `i18n.jsx`; tests `checkins.test.js` (new, 16), `jobs.test.js`, `rules.test.js`.
+- **Proof:** server 101/101; `flutter analyze` clean, `flutter test` 5/5; portal builds; every new app and portal string has Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-161451-before-migrate`); row counts unchanged; the 2 loans already out start their check-in count on the migration day.
+- **Behavior changes users can notice:** borrowers see a daily check-in card (Still with me / I returned it / There's a problem) on the request and on Home; lateness is judged by the day the borrower tapped "I returned it"; a missed day sends a reminder, two missed days alert the owner and show on the portal dashboard; owners see the last check-in; every request shows a progress timeline, held credits and its expiry date; overdue reminders stop once the borrower says the item is back.
+- **Undo:** `npm run migrate:down` (drops the check-ins and the new columns, backs up first), then `git revert` the batch commit.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

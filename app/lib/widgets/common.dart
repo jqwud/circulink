@@ -602,6 +602,14 @@ class RequestCard extends StatelessWidget {
             const SizedBox(height: 6),
             StatusChip(context.t('Overdue'), tone: Tone.bad),
           ],
+          if (!asOwner && boolOf(mapOf(request['checkin'])['due_today'])) ...<Widget>[
+            const SizedBox(height: 6),
+            StatusChip(context.t('Check in today'), tone: Tone.warn),
+          ],
+          if (asOwner && status == 'handed_over' && str(request['borrower_returned_at']).isNotEmpty) ...<Widget>[
+            const SizedBox(height: 6),
+            StatusChip(context.t('Borrower says returned'), tone: Tone.info),
+          ],
         ],
       ),
     );

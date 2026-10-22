@@ -98,6 +98,13 @@ const FIL = {
   'starter': 'panimulang credits', 'borrow_hold': 'nakalaan para sa hiram', 'refund_rejected': 'ibinalik: hindi inaprubahan',
   'refund_cancelled': 'ibinalik: kinansela', 'refund_expired': 'ibinalik: nag-expire', 'refund_item_removed': 'ibinalik: inalis ang gamit',
   'lend_reward': 'gantimpala sa pagpapahiram', 'late_penalty': 'parusa sa late na pagbabalik',
+  // daily check-ins
+  'Loans with no check-in for 2+ days': 'Mga hiram na walang check-in nang 2+ araw', 'Missed check-ins': 'Hindi nasagot na check-in',
+  'Borrower says returned': 'Sabi ng humiram, naibalik na', 'No check-in': 'Walang check-in', 'days': 'araw',
+  // report reasons
+  'item_damaged': 'nasira ang gamit', 'item_lost': 'nawala ang gamit', 'item_condition': 'kondisyon ng gamit', 'checkin_problem': 'problemang sinabi sa check-in',
+  'Item is not as described': 'Iba ang gamit sa paglalarawan', 'Unsafe or prohibited item': 'Mapanganib o bawal na gamit', 'Did not show up': 'Hindi sumipot',
+  'Rude or unsafe behavior': 'Bastos o mapanganib na asal', 'Something else': 'Iba pa',
 };
 
 // English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),
@@ -111,6 +118,7 @@ const EN = {
   'starter': 'starter credits', 'borrow_hold': 'held for a borrow', 'refund_rejected': 'returned: not approved',
   'refund_cancelled': 'returned: cancelled', 'refund_expired': 'returned: request expired', 'refund_item_removed': 'returned: item removed',
   'lend_reward': 'reward for lending', 'late_penalty': 'late return penalty',
+  'item_damaged': 'Item damaged', 'item_lost': 'Item lost', 'item_condition': 'Item condition', 'checkin_problem': 'Problem reported at check-in',
 };
 
 const Ctx = createContext(null);

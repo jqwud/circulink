@@ -42,7 +42,7 @@ export default function Reports() {
               {data.map((r) => (
                 <tr key={r.id}>
                   <td><b>{r.target?.label || `${r.target_type} #${r.target_id}`}</b><small>{r.target_type}</small></td>
-                  <td>{r.reason.replace(/_/g, ' ')}<small>{r.details}</small></td>
+                  <td>{t(r.reason)}<small>{r.details}</small></td>
                   <td>{r.reporter}</td>
                   <td>{fmt(r.created_at)}</td>
                   <td><Badge value={r.status} /></td>
@@ -57,7 +57,7 @@ export default function Reports() {
       {sel && (
         <Modal title={sel.target?.label || `${sel.target_type} #${sel.target_id}`} onClose={() => setSel(null)} wide>
           <dl className="kv">
-            <dt>{t('Reason')}</dt><dd>{sel.reason.replace(/_/g, ' ')}</dd>
+            <dt>{t('Reason')}</dt><dd>{t(sel.reason)}</dd>
             <dt>{t('Details')}</dt><dd>{sel.details || '–'}</dd>
             <dt>{t('Reporter')}</dt><dd>{sel.reporter}</dd>
             {sel.target?.borrower && <><dt>{t('Borrower')}</dt><dd>{sel.target.borrower}{sel.target.borrower_phone ? ` · ${sel.target.borrower_phone}` : ''}</dd></>}
