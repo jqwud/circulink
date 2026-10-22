@@ -2,6 +2,16 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 9: Account safety (2026-10-22)
+
+- **Passwords:** new passwords need at least 8 characters. Residents and staff can change their password (the current one is needed); other sessions end and this device stays logged in.
+- **Staff-assisted reset:** staff give a resident a temporary password at the hall (admins can do it for staff); it is shown once, every session of that account ends, and the person must choose a new password at the next login. Written to the audit log.
+- **Real logout:** logging out ends the session on the server (every device of that account), not just on the phone.
+- **Sessions:** staff 12 hours, residents 14 days, renewed once a day while the app is used. The app keeps the login in encrypted storage (`flutter_secure_storage`) and moves an older saved login there once.
+- **Limits:** 5 wrong passwords for one email lock it for 15 minutes; each logged-in person may make up to 300 changes per 15 minutes (`WRITE_LIMIT`); reading is never limited.
+- **Safer defaults:** the server refuses to start with `NODE_ENV=production` and no real `JWT_SECRET`; `CORS_ORIGIN` lists the web addresses allowed to call the API (empty = this server and localhost); a taken email at sign-up gets a neutral message (`signup_failed`).
+- Migration 007 adds `users.token_version` and `users.must_change_password`.
+
 ## Batch 8: Privacy (2026-10-22)
 
 - **Privacy notice** (RA 10173) in Filipino and English: what is collected, why, who sees it, how long it is kept, your rights, and the barangay's Data Protection Officer (`DPO_NAME`, `DPO_EMAIL`, `DPO_PHONE` in `.env`). Served at `GET /api/privacy` and shown in the app.

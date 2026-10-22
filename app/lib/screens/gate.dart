@@ -7,6 +7,7 @@ import '../widgets/pawsa.dart';
 import 'auth_screens.dart';
 import 'home_shell.dart';
 import 'onboarding_screen.dart';
+import 'password_screen.dart';
 import 'privacy_screens.dart';
 
 /// Decides what to show: loading, first-time intro, login, or the app.
@@ -22,6 +23,8 @@ class Gate extends StatelessWidget {
     }
     // Residents who joined before the privacy notice existed (or before it changed) agree once.
     if (app.user?['role'] == 'resident' && app.user?['privacy_ok'] == false) return const PrivacyScreen(mustAccept: true);
+    // After a staff-assisted reset the person picks their own password first.
+    if (app.user?['must_change_password'] == true) return const ChangePasswordScreen(forced: true);
     return const HomeShell();
   }
 }

@@ -5,7 +5,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { pool, q, one, withTx, todayPH } from '../db.js';
 import { config } from '../config.js';
-import { bad, notFound, wrap } from '../errors.js';
+import { bad, forbidden, notFound, wrap } from '../errors.js';
+import { temporaryPassword } from './auth.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
 import { OUT_LOANS_SQL, addCredits, audit, checkinState, deleteAccountTx, notify, removeItemTx, settleDisputeTx } from '../services.js';
 import { removePrivateFile } from '../uploads.js';
@@ -116,6 +117,21 @@ for (const [action, value, logged] of [['suspend', 1, 'user_suspended'], ['reins
     res.json({ id: u.id, suspended: !!value });
   }));
 }
+
+// Staff-assisted password reset, done at the hall after checking the person in front of them.
+// Staff can reset residents; only an admin can reset a staff account; nobody resets their own here.
+// The temporary password is shown once and must be changed at the next login. Older sessions end.
+router.post('/admin/users/:id/reset-password', wrap(async (req, res) => {
+  const u = await one('SELECT * FROM users WHERE id = ? AND deleted_at IS NULL', [req.params.id]);
+  if (!u) throw notFound('Account not found.');
+  if (u.role !== 'resident' && req.user.role !== 'lgu_admin') throw forbidden('Only an admin can reset a staff password.', 'admin_only');
+  if (u.id === req.user.id) throw bad('Use Change password for your own account.', 'self');
+  const temp = temporaryPassword();
+  await q('UPDATE users SET password_hash = ?, must_change_password = 1, token_version = token_version + 1 WHERE id = ?',
+    [await bcrypt.hash(temp, 10), u.id]);
+  await audit(req.user.id, 'password_reset', `user #${u.id} ${u.name}`);
+  res.json({ temporary_password: temp });
+}));
 
 // Deleting a resident's account (admin only), usually after they asked from the app.
 router.post('/admin/users/:id/delete', requireAdmin, wrap(async (req, res) => {

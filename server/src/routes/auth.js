@@ -1,17 +1,52 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import { pool, q, one, withTx } from '../db.js';
-import { bad, wrap } from '../errors.js';
+import { HttpError, bad, wrap } from '../errors.js';
 import { authRequired, signToken, publicUser } from '../auth.js';
 import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
 import { PRIVACY_VERSION, privacyNotice } from '../privacy.js';
 import { audit } from '../services.js';
 
 const router = Router();
-const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false });
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false,
+  handler: (_req, res) => res.status(429).json({ error: 'Too many tries from this network. Please wait a few minutes.', code: 'too_many_requests' }),
+});
 
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
+
+export const PASSWORD_MIN = 8;
+function checkPassword(p) {
+  if (typeof p !== 'string' || p.length < PASSWORD_MIN || p.length > 200) {
+    throw bad(`Password must be at least ${PASSWORD_MIN} characters.`, 'bad_password');
+  }
+}
+
+// After 5 wrong passwords for one email within 15 minutes, that email is locked for 15 minutes, whatever
+// the network. Kept in memory: a restart clears it, which is fine for one barangay server.
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const failures = new Map();   // email -> { count, first, lockedUntil }
+function loginLocked(email, now = Date.now()) {
+  const f = failures.get(email);
+  return !!f && f.lockedUntil > now;
+}
+function loginFailed(email, now = Date.now()) {
+  let f = failures.get(email);
+  if (!f || now - f.first > LOGIN_WINDOW_MS) f = { count: 0, first: now, lockedUntil: 0 };
+  f.count += 1;
+  if (f.count >= LOGIN_MAX_FAILURES) f.lockedUntil = now + LOGIN_WINDOW_MS;
+  failures.set(email, f);
+  if (failures.size > 10000) for (const [k, v] of failures) if (v.lockedUntil < now && now - v.first > LOGIN_WINDOW_MS) failures.delete(k);
+}
+
+// A temporary password that is easy to read aloud and type: no 0/O or 1/l/I.
+function temporaryPassword() {
+  const letters = 'abcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from({ length: 10 }, () => letters[crypto.randomInt(letters.length)]).join('');
+}
 
 // The privacy notice. Public: people read it before they sign up.
 router.get('/privacy', (req, res) => res.json(privacyNotice(req.query.lang)));
@@ -20,30 +55,67 @@ router.post('/auth/register', limiter, wrap(async (req, res) => {
   const { name, email, password, phone, purok, language, accept_privacy: acceptPrivacy } = req.body || {};
   if (!name || name.trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
   if (!emailOk(email)) throw bad('Please enter a valid email.', 'bad_email');
-  if (!password || password.length < 6) throw bad('Password must be at least 6 characters.', 'bad_password');
+  checkPassword(password);
   if (acceptPrivacy !== true) throw bad('Please read and accept the privacy notice.', 'privacy_required');
   const hash = await bcrypt.hash(password, 10);
-  const [r] = await pool.query(
-    `INSERT INTO users (name, email, phone, password_hash, purok, language, privacy_version, privacy_accepted_at)
-     VALUES (?,?,?,?,?,?,?, NOW())`,
-    [name.trim(), email.trim().toLowerCase(), phone || null, hash, purok || null, language === 'en' ? 'en' : 'fil', PRIVACY_VERSION]);
+  let r;
+  try {
+    [r] = await pool.query(
+      `INSERT INTO users (name, email, phone, password_hash, purok, language, privacy_version, privacy_accepted_at)
+       VALUES (?,?,?,?,?,?,?, NOW())`,
+      [name.trim(), email.trim().toLowerCase(), phone || null, hash, purok || null, language === 'en' ? 'en' : 'fil', PRIVACY_VERSION]);
+  } catch (e) {
+    // The same answer whether or not the email is taken, so sign-up cannot be used to find out who is a member.
+    if (e.code === 'ER_DUP_ENTRY') throw bad('We could not create an account with these details. If you signed up before, log in or ask the barangay to reset your password.', 'signup_failed');
+    throw e;
+  }
   const user = await one('SELECT * FROM users WHERE id = ?', [r.insertId]);
   res.status(201).json({ token: signToken(user), user: publicUser(user) });
 }));
 
 router.post('/auth/login', limiter, wrap(async (req, res) => {
   const { email, password } = req.body || {};
-  const user = await one('SELECT * FROM users WHERE email = ?', [String(email || '').trim().toLowerCase()]);
+  const key = String(email || '').trim().toLowerCase();
+  if (loginLocked(key)) {
+    throw new HttpError(429, 'Too many wrong passwords. Wait 15 minutes, or ask the barangay to reset your password.', 'too_many_attempts');
+  }
+  const user = await one('SELECT * FROM users WHERE email = ?', [key]);
   const ok = user && (await bcrypt.compare(String(password || ''), user.password_hash));
-  if (!ok) throw bad('Wrong email or password.', 'bad_login');
+  if (!ok) {
+    loginFailed(key);
+    throw bad('Wrong email or password.', 'bad_login');
+  }
+  failures.delete(key);
   if (user.suspended) throw bad('This account is suspended. Please contact the barangay.', 'suspended');
   res.json({ token: signToken(user), user: publicUser(user) });
 }));
 
 router.get('/me', authRequired, wrap(async (req, res) => {
   const unread = await one('SELECT COUNT(*) AS n FROM notifications WHERE user_id = ? AND read_at IS NULL', [req.user.id]);
-  res.json(publicUser(req.user, { unread_notifications: unread.n }));
+  // A resident who keeps using the app gets a fresh 14-day token once a day.
+  const renew = req.user.role === 'resident' && Date.now() / 1000 - (req.tokenIssuedAt || 0) > 24 * 3600;
+  res.json(publicUser(req.user, { unread_notifications: unread.n, ...(renew ? { token: signToken(req.user) } : {}) }));
 }));
+
+// Logging out ends every session of this account (all devices), not just this one.
+router.post('/auth/logout', authRequired, wrap(async (req, res) => {
+  await q('UPDATE users SET token_version = token_version + 1 WHERE id = ?', [req.user.id]);
+  res.json({ ok: true });
+}));
+
+// Changing the password needs the current one. Other sessions end; this device gets a new token.
+router.post('/me/password', authRequired, wrap(async (req, res) => {
+  const { current, new_password: next } = req.body || {};
+  if (!(await bcrypt.compare(String(current || ''), req.user.password_hash))) throw bad('Your current password is not right.', 'wrong_password');
+  checkPassword(next);
+  await q('UPDATE users SET password_hash = ?, must_change_password = 0, token_version = token_version + 1 WHERE id = ?',
+    [await bcrypt.hash(next, 10), req.user.id]);
+  const fresh = await one('SELECT * FROM users WHERE id = ?', [req.user.id]);
+  await audit(req.user.id, 'password_changed', `user #${req.user.id}`);
+  res.json({ token: signToken(fresh), user: publicUser(fresh) });
+}));
+
+export { temporaryPassword };
 
 router.patch('/me', authRequired, wrap(async (req, res) => {
   const { name, phone, purok, language } = req.body || {};

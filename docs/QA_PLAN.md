@@ -23,9 +23,9 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 2 | Functional | Main loop | Title 1, 2, 120, 121 characters; emoji names; double-submit borrow; every role against every admin route |
 | 3 | Business rules | Rule numbers unit-tested; 12 loop steps | Exact-number table below |
 | 4 | State and workflow | Happy-path transitions | Every refused transition; stuck states |
-| 5 | API | Status and code checks; wrong upload type → 400, 5 MB limit, unknown route → 404, health with DB (✅ batch 1) | Expired token → 401 `auth_expired`; 61st login in 15 min → 429 |
+| 5 | API | Status and code checks; wrong upload type → 400, 5 MB limit, unknown route → 404, health with DB (✅ batch 1); ended session → 401 `auth_expired`, locked email → 429 `too_many_attempts`, too many changes → 429 `too_many_requests` (✅ batch 9) | 61st login from one network in 15 min → 429 |
 | 6 | Data integrity | One ledger check; no duplicate requests, overdue items stay taken (✅ batch 1); database refuses negative credits, impossible dates, bad stars and orphan links (✅ batch 2) | Balance = SUM(ledger) for everyone; 10 parallel borrows of one item → exactly 1 |
-| 7 | Security | Role checks, private ID photo; CSV formula injection, file-signature check, own-upload photo paths (✅ batch 1) | Object-level access for every route; rate limits |
+| 7 | Security | Role checks, private ID photo; CSV formula injection, file-signature check, own-upload photo paths (✅ batch 1); logout and password change end sessions, staff reset, failed-login lockout, per-person write limit, origin list, production secret check (✅ batch 9, `accounts.test.js`) | Object-level access for every route |
 | 8 | Privacy (RA 10173) | First names only; ID views audited; 7-day ID deletion (✅ batch 3); notice, consent at sign-up and ID upload, My data, account deletion (✅ batch 8, `privacy.test.js`) | Legal review of the notice text; DPO details filled in |
 | 9 | Accessibility (WCAG 2.2 AA) | Palette contrast validated; portal dialogs hold and return keyboard focus (✅ batch 4) | Labels, 200% text, keyboard on every portal page |
 | 10 | Usability | Developer testing; confirm steps before locking someone out or removing a post, a message after every action (✅ batch 4) | Script below with real residents |

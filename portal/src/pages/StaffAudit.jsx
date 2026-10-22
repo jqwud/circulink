@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { Badge, ConfirmModal, ErrorBox, Loading, Modal, PageHeader, useDateFormat, useLoad, useToast } from '../components.jsx';
+import { Badge, ConfirmModal, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, useDateFormat, useLoad, useToast } from '../components.jsx';
 
 export default function StaffAudit() {
   const { t } = useI18n();
@@ -49,7 +49,10 @@ export default function StaffAudit() {
                 <td><b>{s.name}</b><small>{s.email}</small></td>
                 <td>{s.role === 'lgu_admin' ? t('Admin') : t('Staff')}</td>
                 <td>{s.suspended ? <Badge value="suspended" /> : <Badge value="approved" label="OK" />}</td>
-                <td>{s.id !== user.id && <button className="btn small" onClick={() => askToggle(s)}>{s.suspended ? t('Enable') : t('Disable')}</button>}</td>
+                <td>{s.id !== user.id && <div className="cell-actions">
+                  <button className="btn small" onClick={() => askToggle(s)}>{s.suspended ? t('Enable') : t('Disable')}</button>
+                  <ResetPasswordButton person={s} small />
+                </div>}</td>
               </tr>
             ))}</tbody>
           </table>

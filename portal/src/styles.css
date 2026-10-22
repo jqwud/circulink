@@ -159,3 +159,5 @@ dl.kv dt { color: var(--c-muted); } dl.kv dd { margin: 0; font-weight: 700; }
 .thread li { background: var(--c-surface-muted); border-radius: var(--r-md); padding: 8px 12px; }
 .thread li.staff { background: #e3efff; }
 .thread li p { margin: 4px 0 0; white-space: pre-wrap; }
+
+.temp-password { font: 800 28px/1.2 ui-monospace, Consolas, monospace; letter-spacing: .12em; text-align: center; background: var(--c-surface-muted); border-radius: var(--r-md); padding: 14px; margin: 0 0 10px; user-select: all; }

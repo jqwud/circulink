@@ -36,8 +36,19 @@ export function AuthProvider({ children }) {
     setUser(res.user);
   }, []);
 
-  const logout = useCallback(() => { setToken(null); setUser(null); }, []);
-  return <Ctx.Provider value={{ user, ready, login, logout }}>{children}</Ctx.Provider>;
+  // Logging out ends the session on the server too, so the token cannot be reused on this computer.
+  const logout = useCallback(async () => {
+    try { if (getToken()) await api('/auth/logout', { method: 'POST' }); } catch { /* offline: forget it anyway */ }
+    setToken(null); setUser(null);
+  }, []);
+
+  // Other sessions end; this browser gets a new token.
+  const changePassword = useCallback(async (current, next) => {
+    const res = await api('/me/password', { method: 'POST', body: { current, new_password: next } });
+    setToken(res.token);
+    setUser(res.user);
+  }, []);
+  return <Ctx.Provider value={{ user, ready, login, logout, changePassword }}>{children}</Ctx.Provider>;
 }
 
 export const useAuth = () => useContext(Ctx);

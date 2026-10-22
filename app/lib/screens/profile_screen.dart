@@ -12,6 +12,7 @@ import '../widgets/pawsa.dart';
 import 'auth_screens.dart';
 import 'help_screen.dart';
 import 'impact_screen.dart';
+import 'password_screen.dart';
 import 'privacy_screens.dart';
 import 'my_items_screen.dart';
 import 'verification_screen.dart';
@@ -120,6 +121,7 @@ class ProfileScreen extends StatelessWidget {
         _tile(context, Icons.stars_rounded, context.t('My credits'), () => _push(context, const WalletScreen())),
         _tile(context, Icons.eco_outlined, context.t('Our community impact'), () => _push(context, const ImpactScreen())),
         _tile(context, Icons.edit_outlined, context.t('Edit profile'), () => _editProfile(context)),
+        _tile(context, Icons.lock_outline, context.t('Change password'), () => _push(context, const ChangePasswordScreen())),
         _tile(context, Icons.help_outline, context.t('Help and rules'), () => _push(context, const HelpScreen())),
         _tile(context, Icons.settings_ethernet, context.t('Server address'), () => showServerDialog(context)),
         SectionTitle(context.t('Privacy')),

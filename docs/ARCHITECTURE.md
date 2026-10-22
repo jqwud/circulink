@@ -66,6 +66,7 @@ There are no push notifications: reminders and alerts are rows in `notifications
 - **Who manages a loan:** the item owner for their own low and medium items; LGU staff for high-tier and Barangay Shelf items (`handledByStaff` in `rules.js`).
 - **Daily check-ins** (`request_checkins`): one answer per loan per day. "I returned it" stores `borrower_returned_at`, and on-time is judged by that day, not by when the owner confirms. The `checkins` job reminds the borrower after a missed day and alerts the owner after 2 (`RULES.checkinAlertAfterMissedDays`); staff see the count on the dashboard.
 - **Contact:** after approval the two neighbors see each other's phone number until 7 days after the loan closes (`contactOpen` in `services.js`); each request has a message thread (`request_messages`) for borrower, owner and staff.
+- **Sessions:** login tokens carry the account's `token_version`; logout, a password change, a staff reset or account deletion raise it, which ends older sessions. Staff tokens last 12 hours, resident tokens 14 days and are renewed daily by `GET /me`. The app stores the token with `flutter_secure_storage`.
 - **Privacy:** the notice lives in `server/src/privacy.js` (both languages, `PRIVACY_VERSION`). Consent is recorded on the user at sign-up and before the first ID upload. "My data" is `GET /me/data`. Deleting an account (`deleteAccountTx`) anonymizes the user row instead of removing it, so loans, ledger rows and totals still add up.
 - **Disputes** are settled by staff with one of four outcomes (`DISPUTE_OUTCOMES` in `rules.js`, applied by `settleDisputeTx`); each credit change is a ledger row (`settle_*`), and "lost" removes the item.
 - **On a good return:** the lender earns 1 credit if it was on time and they have not hit the 2-per-30-days cap with this borrower; a late borrower loses 1 credit (never below 0).
@@ -88,7 +89,7 @@ There are no push notifications: reminders and alerts are rows in `notifications
 
 ## Configuration
 
-`server/.env` (copy from `.env.example`): `PORT`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `CORS_ORIGIN`, optional `UPLOAD_DIR`, `BACKUP_DIR`, `HALL_PHONE` (shown for items the barangay handles) and `DPO_NAME`, `DPO_EMAIL`, `DPO_PHONE` (the Data Protection Officer in the privacy notice). Never commit `.env`.
+`server/.env` (copy from `.env.example`): `PORT`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET` (required with `NODE_ENV=production`), `CORS_ORIGIN` (allowed web origins; empty = this server and localhost), optional `WRITE_LIMIT`, `UPLOAD_DIR`, `BACKUP_DIR`, `HALL_PHONE` (shown for items the barangay handles) and `DPO_NAME`, `DPO_EMAIL`, `DPO_PHONE` (the Data Protection Officer in the privacy notice). Never commit `.env`.
 
 The app's server address: set at build time by `run-phone.cmd` (`HIRAMAN_SERVER`, `HIRAMAN_SERVERS`), discovered at start-up (`AppState.findServer`), or typed on the login screen.
 

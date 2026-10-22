@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, useLoad, useToast, useDateFormat } from '../components.jsx';
+import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, useLoad, useToast, useDateFormat } from '../components.jsx';
 
 export default function Residents() {
   const { t } = useI18n();
@@ -102,6 +102,7 @@ export default function Residents() {
                 </ul>
               )}
               <div className="modal-actions">
+                <ResetPasswordButton person={detail.data.user} />
                 {user.role === 'lgu_admin' && (
                   <button className="btn danger" onClick={() => setDeleting(detail.data.user)}>
                     {detail.data.user.deletion_requested ? t('Delete account (requested)') : t('Delete account')}

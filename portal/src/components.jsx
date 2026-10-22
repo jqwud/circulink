@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { Link } from 'react-router-dom';
 import { blobUrl } from './api.js';
 import { useI18n } from './i18n.jsx';
+import { useAuth } from './auth.jsx';
+import { api } from './api.js';
 
 // ---------- data loading ----------
 export function useLoad(fn, deps = []) {
@@ -145,6 +147,70 @@ export function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, 
         <button type="button" className={`btn ${danger ? 'danger' : 'primary'}`} onClick={yes} disabled={busy}>{confirmLabel}</button>
       </div>
     </Modal>
+  );
+}
+
+// Change your own password. `forced` after an admin reset: it cannot be closed, only completed (or log out).
+export function PasswordModal({ forced, onClose }) {
+  const { t } = useI18n();
+  const toast = useToast();
+  const { changePassword, logout } = useAuth();
+  const [f, setF] = useState({ current: '', next: '', again: '' });
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  async function save(e) {
+    e.preventDefault();
+    if (f.next.length < 8) { toast(t('The new password needs at least 8 characters.'), 'bad'); return; }
+    if (f.next !== f.again) { toast(t('The two new passwords are not the same.'), 'bad'); return; }
+    setBusy(true);
+    try { await changePassword(f.current, f.next); toast(t('Password changed. Other sessions were logged out.')); onClose?.(); }
+    catch (err) { toast(err.message, 'bad'); } finally { setBusy(false); }
+  }
+  return (
+    <Modal title={forced ? t('Choose your own password') : t('Change password')} onClose={forced ? () => {} : onClose}>
+      {forced && <p className="muted" style={{ marginTop: 0 }}>{t('An admin gave you a temporary password. Pick a new one that only you know.')}</p>}
+      <form onSubmit={save}>
+        <div className="field"><label htmlFor="pw1">{forced ? t('Temporary password') : t('Current password')}</label><input id="pw1" type="password" autoComplete="current-password" value={f.current} onChange={set('current')} required /></div>
+        <div className="field"><label htmlFor="pw2">{t('New password')}</label><input id="pw2" type="password" autoComplete="new-password" minLength={8} placeholder={t('At least 8 characters')} value={f.next} onChange={set('next')} required /></div>
+        <div className="field"><label htmlFor="pw3">{t('New password again')}</label><input id="pw3" type="password" autoComplete="new-password" value={f.again} onChange={set('again')} required /></div>
+        <div className="modal-actions">
+          {forced ? <button type="button" className="btn" onClick={logout}>{t('Log out')}</button> : <button type="button" className="btn" onClick={onClose}>{t('Cancel')}</button>}
+          <button className="btn primary" disabled={busy}>{t('Save new password')}</button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+// Staff-assisted password reset: confirm, then show the temporary password once.
+export function ResetPasswordButton({ person, small }) {
+  const { t } = useI18n();
+  const toast = useToast();
+  const [step, setStep] = useState(null);   // 'confirm' | { temp }
+  async function reset() {
+    try { const r = await api(`/admin/users/${person.id}/reset-password`, { method: 'POST' }); setStep({ temp: r.temporary_password }); }
+    catch (e) { toast(e.message, 'bad'); setStep(null); }
+  }
+  return (
+    <>
+      <button type="button" className={`btn ${small ? 'small' : ''}`} onClick={() => setStep('confirm')}>{t('Reset password')}</button>
+      {step === 'confirm' && (
+        <ConfirmModal
+          title={t('Reset the password of {name}?').replace('{name}', person.name)}
+          message={t('Do this only with the person in front of you, after checking their ID. They will be logged out everywhere and must pick a new password when they log in.')}
+          confirmLabel={t('Reset password')}
+          onConfirm={reset}
+          onClose={() => setStep((s) => (s === 'confirm' ? null : s))}
+        />
+      )}
+      {step?.temp && (
+        <Modal title={t('Temporary password')} onClose={() => setStep(null)}>
+          <p className="temp-password" aria-live="polite">{step.temp}</p>
+          <p className="muted">{t('Give it to the person now. It is shown only once. They must change it when they log in.')}</p>
+          <div className="modal-actions"><button className="btn primary" onClick={() => setStep(null)}>{t('Done')}</button></div>
+        </Modal>
+      )}
+    </>
   );
 }
 

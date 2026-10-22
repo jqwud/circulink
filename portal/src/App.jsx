@@ -3,7 +3,7 @@ import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useAuth } from './auth.jsx';
 import { useI18n } from './i18n.jsx';
 import { api } from './api.js';
-import { Loading } from './components.jsx';
+import { Loading, PasswordModal } from './components.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Verification from './pages/Verification.jsx';
@@ -32,6 +32,7 @@ function Shell() {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [counts, setCounts] = useState({});
+  const [pw, setPw] = useState(false);
   const loc = useLocation();
 
   useEffect(() => setOpen(false), [loc.pathname]);
@@ -75,7 +76,10 @@ function Shell() {
         <div className="me">
           <b>{user.name}</b>
           <span className="muted">{user.role === 'lgu_admin' ? t('Admin') : t('Staff')}</span>
-          <div style={{ marginTop: 10 }}><button className="btn small" onClick={logout}>{t('Log out')}</button></div>
+          <div className="row" style={{ marginTop: 10 }}>
+            <button className="btn small" onClick={logout}>{t('Log out')}</button>
+            <button className="btn small" onClick={() => setPw(true)}>{t('Change password')}</button>
+          </div>
         </div>
       </aside>
       <main className="main">
@@ -98,6 +102,7 @@ function Shell() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      {(pw || user.must_change_password) && <PasswordModal forced={user.must_change_password} onClose={() => setPw(false)} />}
     </div>
   );
 }

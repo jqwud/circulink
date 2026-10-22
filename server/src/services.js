@@ -309,7 +309,7 @@ export async function deleteAccountTx(conn, userId, actor, { newPasswordHash, re
   if (u.id_photo_path) removeFile(u.id_photo_path);
   await conn.query(
     `UPDATE users SET name = 'Deleted user', email = ?, phone = NULL, purok = NULL, password_hash = ?, id_photo_path = NULL,
-       reject_reason = NULL, suspended = 1, deletion_requested_at = NULL, deleted_at = NOW() WHERE id = ?`,
+       reject_reason = NULL, suspended = 1, deletion_requested_at = NULL, deleted_at = NOW(), token_version = token_version + 1 WHERE id = ?`,
     [`deleted-${u.id}@hiraman.invalid`, newPasswordHash, u.id]);
   await conn.query('DELETE FROM request_messages WHERE sender_id = ?', [u.id]);
   await conn.query('DELETE FROM wanted_posts WHERE user_id = ?', [u.id]);

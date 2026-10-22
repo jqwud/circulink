@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -94,7 +95,7 @@ class AppState extends ChangeNotifier {
     api.baseUrl = _prefs!.getString('server') ?? api.baseUrl;
     lang = _prefs!.getString('lang') ?? 'fil';
     seenOnboarding = _prefs!.getBool('seen_onboarding') ?? false;
-    api.token = _prefs!.getString('token');
+    api.token = await _readToken();
     api.onUnauthorized = _expired;
 
     await findServer();
@@ -132,7 +133,7 @@ class AppState extends ChangeNotifier {
     }
     api.token = str(body['token']);
     user = u;
-    await _prefs?.setString('token', api.token!);
+    await _saveToken(api.token!);
     await _prefs?.setString('user', jsonEncode(u));
     await loadMeta();
     notifyListeners();
@@ -157,8 +158,14 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> refreshMe() async {
-    final dynamic r = await api.get('/me');
-    user = mapOf(r);
+    final Map<String, dynamic> r = mapOf(await api.get('/me'));
+    // The server sends a fresh token once a day while the app is used, so active people stay logged in.
+    final String renewed = str(r.remove('token'));
+    if (renewed.isNotEmpty) {
+      api.token = renewed;
+      await _saveToken(renewed);
+    }
+    user = r;
     await _prefs?.setString('user', jsonEncode(user));
     notifyListeners();
   }
@@ -210,14 +217,63 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Logging out ends the session on the server too, so the token cannot be used again.
   Future<void> logout() async {
+    try {
+      if (api.token != null) await api.post('/auth/logout');
+    } catch (_) {
+      // Offline: the token is still forgotten on this phone.
+    }
     await _clear();
     notifyListeners();
+  }
+
+  /// Other sessions end; this phone gets a new token.
+  Future<void> changePassword(String current, String next) async {
+    final Map<String, dynamic> body = mapOf(await api.post('/me/password', <String, dynamic>{'current': current, 'new_password': next}));
+    api.token = str(body['token']);
+    await _saveToken(api.token!);
+    user = <String, dynamic>{...?user, ...mapOf(body['user'])};
+    await _prefs?.setString('user', jsonEncode(user));
+    notifyListeners();
+  }
+
+  // The login token lives in the phone's encrypted storage (Android Keystore). Older versions kept it in
+  // plain preferences: it is moved over once. If secure storage is unavailable, preferences are the fallback.
+  static const FlutterSecureStorage _secure = FlutterSecureStorage();
+
+  Future<String?> _readToken() async {
+    try {
+      final String? saved = await _secure.read(key: 'token').timeout(const Duration(seconds: 3));
+      if (saved != null) return saved;
+      final String? old = _prefs?.getString('token');
+      if (old != null) {
+        await _secure.write(key: 'token', value: old);
+        await _prefs?.remove('token');
+      }
+      return old;
+    } catch (_) {
+      return _prefs?.getString('token');
+    }
+  }
+
+  Future<void> _saveToken(String token) async {
+    try {
+      await _secure.write(key: 'token', value: token);
+      await _prefs?.remove('token');
+    } catch (_) {
+      await _prefs?.setString('token', token);
+    }
   }
 
   Future<void> _clear() async {
     api.token = null;
     user = null;
+    try {
+      await _secure.delete(key: 'token');
+    } catch (_) {
+      // Nothing saved there.
+    }
     await _prefs?.remove('token');
     await _prefs?.remove('user');
   }

@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import jwt from 'jsonwebtoken';
+import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -13,13 +15,43 @@ import requestRoutes from './routes/requests.js';
 import communityRoutes from './routes/community.js';
 import adminRoutes from './routes/admin.js';
 
-// options.checkDb lets tests simulate a database that is down.
+// May a web page on `origin` call the API? No origin: the phone app or a page of this server.
+// `setting` is CORS_ORIGIN: a comma-separated list, * for any, or empty for localhost only.
+export function corsAllowed(origin, setting = config.corsOrigin) {
+  if (!origin) return true;
+  const list = String(setting || '').split(',').map((x) => x.trim()).filter(Boolean);
+  if (list.includes('*')) return true;
+  if (list.length) return list.includes(origin);
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+}
+
+// options.checkDb lets tests simulate a database that is down; options.writeLimit sets the per-person limit.
 export function createApp(options = {}) {
   const app = express();
   const checkDb = options.checkDb || (() => pool.query('SELECT 1'));
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-  app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin.split(',') }));
+  app.use(cors({ origin: (origin, done) => done(null, corsAllowed(origin)) }));
   app.use(express.json({ limit: '200kb' }));
+
+  // Each logged-in person may make a limited number of changes (POST, PATCH, DELETE) per 15 minutes, so one
+  // account cannot flood others with requests, messages or uploads. Reading is never limited. Login and
+  // sign-up have their own limits (routes/auth.js).
+  const writeLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: options.writeLimit ?? config.writeLimit,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => ['GET', 'HEAD', 'OPTIONS'].includes(req.method) || !req.headers.authorization,
+    keyGenerator: (req) => {
+      try {
+        return `user:${jwt.verify(String(req.headers.authorization).slice(7), config.jwtSecret).id}`;
+      } catch {
+        return `ip:${ipKeyGenerator(req.ip)}`;
+      }
+    },
+    handler: (_req, res) => res.status(429).json({ error: 'Too many changes in a short time. Please wait a few minutes.', code: 'too_many_requests' }),
+  });
+  app.use('/api', writeLimit);
 
   // Public item photos only. ID photos live in uploads/private and are never served here.
   app.use('/uploads/public', express.static(path.join(config.uploadDir, 'public'), { maxAge: '7d' }));

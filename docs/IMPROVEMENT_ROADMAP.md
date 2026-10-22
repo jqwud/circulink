@@ -35,7 +35,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 6 | Dispute outcomes with ledger rows | B4 | M | Done |
 | 7 | Phone numbers after approval and a request thread | D1 | L | Done |
 | 8 | Privacy notice, consent, delete account, My data | P2 | M | Done |
-| 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Planned |
+| 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Done |
 | 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Planned |
 | 11 | Notifications in the user's language | D6 | M | Planned |
 | 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Planned |
@@ -89,6 +89,15 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Behavior changes users can notice:** sign-up needs a ticked "I have read the privacy notice" box; sending an ID needs a ticked consent box; residents who joined earlier see the notice once and tap "I agree" (or log out); Profile has Privacy notice, My data (copy everything) and Delete my account (a request the resident can take back); admins delete accounts from Residents (refused while a loan is active), which removes the name, contacts, ID photo, messages and notes but keeps the anonymous loan records.
 - **For the barangay:** fill in `DPO_NAME`, `DPO_EMAIL` and `DPO_PHONE` in `server/.env`; until then the notice says to ask at the hall's help desk. Have the barangay's legal or DPO contact review the notice text in `server/src/privacy.js`.
 - **Undo:** `npm run migrate:down` (drops the consent and deletion columns; deleted accounts stay anonymized), then `git revert` the batch commit.
+
+### Batch 9: Account safety
+- **Goal:** a lost phone or a forgotten password is no longer a month-long risk or a database job, and nobody can flood the system.
+- **Files:** `database/migrations/007_account_safety.sql` (new), `server/src/auth.js` (token version, 12-hour staff and 14-day resident sessions), `config.js` (secret required in production, origin list, write limit), `app.js` (`corsAllowed`, per-person write limit), `routes/auth.js` (8-character passwords, neutral sign-up, failed-login lockout, `POST /auth/logout`, `POST /me/password`, daily token renewal), `routes/admin.js` (`POST /admin/users/:id/reset-password`), `services.js`, `.env.example`; app `password_screen.dart` (new), `state.dart` (token in `flutter_secure_storage`, real logout, renewal), `gate.dart`, `profile_screen.dart`, `auth_screens.dart`, `strings_fil.dart`, `pubspec.yaml`, both widget tests (secure storage mock); portal `auth.jsx`, `App.jsx`, `components.jsx` (`PasswordModal`, `ResetPasswordButton`), `Residents.jsx`, `StaffAudit.jsx`, `i18n.jsx`, `styles.css`; tests `accounts.test.js` (new, 13).
+- **Proof:** server 146/146; `flutter analyze` clean, `flutter test` 5/5; portal builds; no missing Filipino text. Migration applied to the demo database with a backup first; row counts unchanged.
+- **Behavior changes users can notice:** new passwords need 8 characters (old ones still work); logging out or changing the password ends every session of that account; 5 wrong passwords lock that email for 15 minutes; staff sessions last 12 hours and resident sessions 14 days, renewed daily while the app is used; staff can give a resident a temporary password at the hall (admins for staff), which must be changed at the next login; each person may make up to 300 changes per 15 minutes (`WRITE_LIMIT`); a taken email at sign-up gets a neutral message; the phone keeps its login in encrypted storage; with `NODE_ENV=production` the server will not start without a real `JWT_SECRET`.
+- **Settings to check:** `CORS_ORIGIN` empty now means "this server and localhost only". An existing `.env` with `CORS_ORIGIN=*` keeps allowing every website; change it to empty or to a list.
+- **New library:** `flutter_secure_storage` (approved in the decisions).
+- **Undo:** `npm run migrate:down` (drops the token version and the reset flag), then `git revert` the batch commit.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

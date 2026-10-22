@@ -1,11 +1,13 @@
 // Onboarding must fit small phones and phones held sideways: no overflow, and the title on screen.
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hiraman/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> showOnboarding(WidgetTester tester, Size size) async {
   SharedPreferences.setMockInitialValues(<String, Object>{'lang': 'fil'});
+  FlutterSecureStorage.setMockInitialValues(<String, String>{});
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);

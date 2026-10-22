@@ -155,8 +155,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-    if (_name.text.trim().length < 2 || !_email.text.contains('@') || _password.text.length < 6) {
-      setState(() => _error = context.tx('Please fill in your name, a valid email and a password of at least 6 characters.'));
+    if (_name.text.trim().length < 2 || !_email.text.contains('@') || _password.text.length < 8) {
+      setState(() => _error = context.tx('Please fill in your name, a valid email and a password of at least 8 characters.'));
       return;
     }
     if (!_agreed) {
@@ -207,7 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               onChanged: (String? v) => setState(() => _purok = v ?? _purok),
             ),
             const SizedBox(height: 14),
-            TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: context.t('Password'), helperText: context.t('At least 6 characters'), border: const OutlineInputBorder())),
+            TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: context.t('Password'), helperText: context.t('At least 8 characters'), border: const OutlineInputBorder())),
             const SizedBox(height: 8),
             CheckboxListTile(
               value: _agreed,

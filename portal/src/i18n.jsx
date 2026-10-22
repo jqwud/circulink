@@ -117,6 +117,20 @@ const FIL = {
   'Account deletion requests': 'Mga hiling na burahin ang account', 'Deletion requested': 'Hiniling na burahin',
   'Delete account': 'Burahin ang account', 'Delete account (requested)': 'Burahin ang account (hiniling)', 'Account deleted.': 'Nabura ang account.',
   "Delete {name}'s account?": 'Burahin ang account ni {name}?',
+  // passwords
+  'Change password': 'Palitan ang password', 'Choose your own password': 'Pumili ng sarili mong password',
+  'An admin gave you a temporary password. Pick a new one that only you know.': 'Binigyan ka ng admin ng pansamantalang password. Pumili ng bago na ikaw lang ang nakakaalam.',
+  'Temporary password': 'Pansamantalang password', 'Current password': 'Kasalukuyang password', 'New password': 'Bagong password',
+  'New password again': 'Ulitin ang bagong password', 'Save new password': 'I-save ang bagong password',
+  'The new password needs at least 8 characters.': 'Kailangan ng hindi bababa sa 8 na character ang bagong password.',
+  'The two new passwords are not the same.': 'Hindi magkapareho ang dalawang bagong password.',
+  'Password changed. Other sessions were logged out.': 'Napalitan ang password. Na-log out ang ibang session.',
+  'Reset password': 'I-reset ang password', 'Reset the password of {name}?': 'I-reset ang password ni {name}?',
+  'Do this only with the person in front of you, after checking their ID. They will be logged out everywhere and must pick a new password when they log in.':
+    'Gawin lang ito kapag kaharap mo ang tao at nasuri na ang ID niya. Mala-log out siya sa lahat ng device at kailangang pumili ng bagong password pag nag-log in.',
+  'Give it to the person now. It is shown only once. They must change it when they log in.':
+    'Ibigay ito sa tao ngayon. Isang beses lang ito ipapakita. Kailangan niya itong palitan pag nag-log in.',
+  'Done': 'Tapos',
   'Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.':
     'Permanenteng aalisin ang pangalan, contact, litrato ng ID at mga mensahe nila. Mananatili ang mga tala ng hiraman nang walang pangalan nila. Hindi na ito maibabalik.',
 };
