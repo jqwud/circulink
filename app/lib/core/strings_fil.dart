@@ -382,6 +382,14 @@ const Map<String, String> kFil = <String, String>{
   "You missed a check-in. Please answer now.": "May hindi ka nasagot na check-in. Pakisagot ngayon.",
   "You said you returned it on": "Sabi mo, naibalik mo ito noong",
   "Your first check-in is tomorrow.": "Bukas ang una mong check-in.",
+  "Dispute settled: accident": "Naayos ang hidwaan: aksidente",
+  "Dispute settled: damaged by the borrower": "Naayos ang hidwaan: sinira ng humiram",
+  "Dispute settled: item lost": "Naayos ang hidwaan: nawala ang gamit",
+  "Settled": "Naayos",
+  "It was fine after all": "Maayos naman pala",
+  "An accident, nobody to blame": "Aksidente, walang may kasalanan",
+  "Damaged by the borrower": "Sinira ng humiram",
+  "The item was lost": "Nawala ang gamit",
 };
 
 /// Messages from the server, by error code, in Filipino.
@@ -430,4 +438,6 @@ const Map<String, String> kErrorFil = <String, String>{
   'bad_checkin': 'Pumili ng isa sa mga sagot sa check-in.',
   'note_required': 'Sabihin nang maikli kung ano ang nangyari.',
   'already_returned': 'Nasabi mo nang naibalik mo ang gamit na ito.',
+  'settle_required': 'Piliin kung paano naayos ang hidwaan.',
+  'bad_outcome': 'Piliin kung paano naayos ang hidwaan.',
 };

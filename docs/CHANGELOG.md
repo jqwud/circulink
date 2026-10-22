@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 6: Dispute outcomes (2026-10-22)
+
+- **Staff choose how a dispute ends:** fine after all (the normal return rules), an accident (owner +1), damaged by the borrower (owner +1, borrower −2) or lost (owner +2, borrower −2, item removed). Nobody goes below 0. The numbers live in `DISPUTE_OUTCOMES` in `rules.js`.
+- Resolving a report about a disputed loan now requires an outcome (`settle_required`); the loan is closed and settled in the same step, and a second resolve never pays twice.
+- A lost item is removed and its other waiting or booked requests are rejected with their credits refunded.
+- Both neighbors are notified, the request shows "Settled: ...", and the wallet names the settlement rows.
+- "Credits on hold" is shown only while a request is pending, approved or out.
+- Migration 004 adds `requests.dispute_outcome` and `requests.settled_at`.
+
 ## Batch 5: Daily check-in, fair lateness, request timeline (2026-10-22)
 
 - **Daily check-in:** while a borrower has an item they answer once a day: Still with me, I returned it, or There's a problem. The app shows a check-in card on the request and on Home. The handover day itself needs no check-in.

@@ -9,18 +9,30 @@ export default function Reports() {
   const fmt = useDateFormat();
   const [tab, setTab] = useState('open');
   const { data, loading, error, reload } = useLoad(() => api(tab === 'all' ? '/admin/reports' : `/admin/reports?status=${tab}`), [tab]);
+  const rules = useLoad(() => api('/admin/rules'), []);
   const [sel, setSel] = useState(null);
   const [notes, setNotes] = useState('');
   const [outcome, setOutcome] = useState('');
-  const [closeLoan, setCloseLoan] = useState(true);
+  const [settle, setSettle] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const open = (r) => { setSel(r); setNotes(r.mediator_notes || ''); setOutcome(r.outcome || ''); setCloseLoan(true); };
+  const open = (r) => { setSel(r); setNotes(r.mediator_notes || ''); setOutcome(r.outcome || ''); setSettle(''); };
+  // A report about a disputed loan settles the loan too, so staff choose an outcome; credits follow it.
+  const settling = sel?.target?.request_status === 'disputed' && sel.status !== 'resolved';
+  const outcomes = rules.data?.dispute_outcomes || {};
+  const effect = (k) => {
+    const o = outcomes[k];
+    if (!o) return '';
+    if (o.normalRules) return t('Normal return rules: the lender earns 1 if it was on time; a late borrower loses 1.');
+    const n = (x) => (x > 0 ? `+${x}` : String(x));
+    return `${t('Owner')} ${n(o.owner)}, ${t('Borrower')} ${n(o.borrower)}${o.removeItem ? `, ${t('the item is removed')}` : ''}. ${t('Never below 0.')}`;
+  };
 
   async function save(status) {
     setBusy(true);
     try {
-      await api(`/admin/reports/${sel.id}`, { method: 'PATCH', body: { status, mediator_notes: notes, outcome, close_request: status === 'resolved' && closeLoan } });
+      if (status === 'resolved' && settling && !settle) { toast(t('Choose how the dispute was settled.'), 'bad'); return; }
+      await api(`/admin/reports/${sel.id}`, { method: 'PATCH', body: { status, mediator_notes: notes, outcome, settle: settling ? settle : undefined } });
       toast(t('Case updated.')); setSel(null); reload();
     } catch (e) { toast(e.message, 'bad'); } finally { setBusy(false); }
   }
@@ -66,10 +78,16 @@ export default function Reports() {
           </dl>
           <div className="field" style={{ marginTop: 14 }}><label htmlFor="mn">{t('Mediator notes')}</label><textarea id="mn" value={notes} onChange={(e) => setNotes(e.target.value)} disabled={sel.status === 'resolved'} /></div>
           <div className="field"><label htmlFor="oc">{t('Outcome')}</label><textarea id="oc" value={outcome} onChange={(e) => setOutcome(e.target.value)} disabled={sel.status === 'resolved'} /></div>
-          {sel.target_type === 'request' && sel.status !== 'resolved' && (
-            <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontWeight: 600 }}>
-              <input type="checkbox" style={{ width: 'auto' }} checked={closeLoan} onChange={(e) => setCloseLoan(e.target.checked)} /> {t('Also mark the loan as closed')}
-            </label>
+          {settling && (
+            <fieldset className="field settle">
+              <legend>{t('How was it settled?')}</legend>
+              {['fine', 'accident', 'borrower_fault', 'lost'].map((k) => (
+                <label key={k} className="choice">
+                  <input type="radio" name="settle" value={k} checked={settle === k} onChange={() => setSettle(k)} />
+                  <span><b>{t(`settle_${k}`)}</b><small>{effect(k)}</small></span>
+                </label>
+              ))}
+            </fieldset>
           )}
           {sel.status !== 'resolved' && (
             <div className="modal-actions">

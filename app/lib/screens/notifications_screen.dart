@@ -45,6 +45,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.error_outline;
       case 'borrower_returned':
         return Icons.assignment_return;
+      case 'dispute_settled':
+        return Icons.gavel;
       default:
         return Icons.notifications_none;
     }

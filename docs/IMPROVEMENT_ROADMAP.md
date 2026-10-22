@@ -32,7 +32,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 4 | UI quick fixes: onboarding on small and sideways phones, confirm steps, feedback after every action, demo login in debug only, portal dialog focus and English status labels | D2, D3, D4, D13, D11 | S–M | Done |
 | **Do next** | | | | |
 | 5 | Daily check-in, fair lateness, request timeline | B1, D5 | L | Done |
-| 6 | Dispute outcomes with ledger rows | B4 | M | Planned |
+| 6 | Dispute outcomes with ledger rows | B4 | M | Done |
 | 7 | Phone numbers after approval and a request thread | D1 | L | Planned |
 | 8 | Privacy notice, consent, delete account, My data | P2 | M | Planned |
 | 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Planned |
@@ -66,6 +66,13 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** server 101/101; `flutter analyze` clean, `flutter test` 5/5; portal builds; every new app and portal string has Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-161451-before-migrate`); row counts unchanged; the 2 loans already out start their check-in count on the migration day.
 - **Behavior changes users can notice:** borrowers see a daily check-in card (Still with me / I returned it / There's a problem) on the request and on Home; lateness is judged by the day the borrower tapped "I returned it"; a missed day sends a reminder, two missed days alert the owner and show on the portal dashboard; owners see the last check-in; every request shows a progress timeline, held credits and its expiry date; overdue reminders stop once the borrower says the item is back.
 - **Undo:** `npm run migrate:down` (drops the check-ins and the new columns, backs up first), then `git revert` the batch commit.
+
+### Batch 6: Dispute outcomes
+- **Goal:** every dispute ends with a clear, recorded result, and the credits follow the decision in the roadmap.
+- **Files:** `database/migrations/004_dispute_outcomes.sql` (new), `server/src/rules.js` (`DISPUTE_OUTCOMES`), `services.js` (`settleDisputeTx`, shared `removeItemTx`, the normal return rules in one function), `routes/admin.js` (resolving a report on a disputed loan needs `settle`; `/admin/rules` lists the outcomes), `routes/requests.js`; app `request_detail.dart`, `wallet_screen.dart`, `notifications_screen.dart`, `strings_fil.dart`; portal `Reports.jsx`, `i18n.jsx`, `styles.css`; tests `disputes.test.js` (new, 10), `rules.test.js`, `loop.test.js`.
+- **Proof:** server 112/112 (11 new; the loop test now settles its dispute instead of just closing it); `flutter analyze` clean, `flutter test` 5/5; portal builds; no missing Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-162223-before-migrate`); row counts unchanged (the demo has no disputes).
+- **Behavior changes users can notice:** staff can no longer close a disputed loan without choosing an outcome (the old "Also mark the loan as closed" box is gone); the chosen outcome moves credits, removes a lost item and refunds its other bookings; both neighbors get a "Settled" notification; the request and the wallet show the outcome. "Credits on hold" now shows only while a request is active.
+- **Undo:** `npm run migrate:down` (drops the outcome columns; ledger rows stay), then `git revert` the batch commit.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

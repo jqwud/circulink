@@ -140,7 +140,12 @@ await step('damaged return goes to mediation: no lender reward, report is opened
   const rep = reports.find((x) => x.target_type === 'request' && x.target_id === r2);
   assert.ok(rep, 'report exists');
   assert.equal((await api('PATCH', `/admin/reports/${rep.id}`, staff, { status: 'resolved' })).status, 400); // outcome required
-  assert.equal((await api('PATCH', `/admin/reports/${rep.id}`, staff, { status: 'resolved', outcome: 'Borrower will repair it.', close_request: true })).status, 200);
+  const noSettle = await api('PATCH', `/admin/reports/${rep.id}`, staff, { status: 'resolved', outcome: 'Borrower will repair it.' });
+  assert.equal(noSettle.status, 400); assert.equal(noSettle.json.code, 'settle_required');
+  const done = await api('PATCH', `/admin/reports/${rep.id}`, staff, { status: 'resolved', outcome: 'Borrower will repair it.', settle: 'borrower_fault' });
+  assert.equal(done.status, 200);
+  assert.equal(await credits(ana), before + 1);   // owner +1 for damage by the borrower
+  assert.equal((await api('GET', `/requests/${r2}`, ana)).json.status, 'closed');
 });
 
 // ---- rejection and cancel refund credits ----

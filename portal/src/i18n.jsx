@@ -105,6 +105,11 @@ const FIL = {
   'item_damaged': 'nasira ang gamit', 'item_lost': 'nawala ang gamit', 'item_condition': 'kondisyon ng gamit', 'checkin_problem': 'problemang sinabi sa check-in',
   'Item is not as described': 'Iba ang gamit sa paglalarawan', 'Unsafe or prohibited item': 'Mapanganib o bawal na gamit', 'Did not show up': 'Hindi sumipot',
   'Rude or unsafe behavior': 'Bastos o mapanganib na asal', 'Something else': 'Iba pa',
+  // settling a dispute
+  'How was it settled?': 'Paano ito naayos?', 'Choose how the dispute was settled.': 'Piliin kung paano naayos ang hidwaan.',
+  'settle_fine': 'Maayos naman pala', 'settle_accident': 'Aksidente, walang may kasalanan', 'settle_borrower_fault': 'Sinira ng humiram', 'settle_lost': 'Nawala ang gamit',
+  'Normal return rules: the lender earns 1 if it was on time; a late borrower loses 1.': 'Karaniwang patakaran: +1 sa nagpahiram kung nasa oras; -1 sa humiram kung late.',
+  'the item is removed': 'aalisin ang gamit', 'Never below 0.': 'Hindi bababa sa 0.',
 };
 
 // English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),
@@ -119,6 +124,7 @@ const EN = {
   'refund_cancelled': 'returned: cancelled', 'refund_expired': 'returned: request expired', 'refund_item_removed': 'returned: item removed',
   'lend_reward': 'reward for lending', 'late_penalty': 'late return penalty',
   'item_damaged': 'Item damaged', 'item_lost': 'Item lost', 'item_condition': 'Item condition', 'checkin_problem': 'Problem reported at check-in',
+  'settle_fine': 'It was fine after all', 'settle_accident': 'An accident, nobody to blame', 'settle_borrower_fault': 'Damaged by the borrower', 'settle_lost': 'The item was lost',
 };
 
 const Ctx = createContext(null);

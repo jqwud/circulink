@@ -7,9 +7,9 @@ import { pool, q, one, withTx, todayPH } from '../db.js';
 import { config } from '../config.js';
 import { bad, notFound, wrap } from '../errors.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
-import { OUT_LOANS_SQL, addCredits, audit, checkinState, notify } from '../services.js';
+import { OUT_LOANS_SQL, addCredits, audit, checkinState, notify, removeItemTx, settleDisputeTx } from '../services.js';
 import { runReminders } from '../jobs.js';
-import { RULES, PROHIBITED, AVG_WEIGHT_KG } from '../rules.js';
+import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG } from '../rules.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
 import { SELECT_REQUEST, mapRequest } from './requests.js';
 import { impactNumbers } from './community.js';
@@ -131,14 +131,8 @@ router.post('/admin/items/:id/remove', wrap(async (req, res) => {
   const active = await one("SELECT id FROM requests WHERE item_id = ? AND status IN ('approved','handed_over') LIMIT 1", [item.id]);
   if (active) throw bad('This item is out on loan or booked. Finish that request first.', 'item_busy');
   await withTx(async (conn) => {
-    await conn.query("UPDATE items SET status = 'removed' WHERE id = ?", [item.id]);
     // Pending requests are rejected and credits go back.
-    const [pend] = await conn.query("SELECT * FROM requests WHERE item_id = ? AND status = 'pending'", [item.id]);
-    for (const r of pend) {
-      await conn.query("UPDATE requests SET status = 'rejected', credits_held = 0 WHERE id = ?", [r.id]);
-      if (r.credits_held) await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_item_removed', r.id);
-      await notify(conn, r.borrower_id, 'request_rejected', `Item removed: ${item.title}`, 'Your credits were returned.', r.id);
-    }
+    await removeItemTx(conn, item);
     if (item.owner_id) await notify(conn, item.owner_id, 'item_removed', `Your listing was removed: ${item.title}`, req.body?.reason || 'It did not follow the community rules.');
     await audit(req.user.id, 'item_removed', `item #${item.id} ${item.title}${req.body?.reason ? ': ' + req.body.reason : ''}`, conn);
   });
@@ -224,26 +218,31 @@ router.get('/admin/reports', wrap(async (req, res) => {
   res.json(out);
 }));
 
+// Resolving a report about a disputed loan settles the loan too: staff must choose how (`settle`),
+// and the credits follow that outcome (see DISPUTE_OUTCOMES in rules.js).
 router.patch('/admin/reports/:id', wrap(async (req, res) => {
-  const { status, mediator_notes, outcome, close_request } = req.body || {};
+  const { status, mediator_notes, outcome, settle } = req.body || {};
   const rp = await one('SELECT * FROM reports WHERE id = ?', [req.params.id]);
   if (!rp) throw notFound('Report not found.');
   if (status && !['open', 'in_mediation', 'resolved'].includes(status)) throw bad('Bad status.', 'bad_status');
   if (status === 'resolved' && !String(outcome || rp.outcome || '').trim()) throw bad('Write the outcome before closing the case.', 'outcome_required');
+  const loan = rp.target_type === 'request' ? await one('SELECT status FROM requests WHERE id = ?', [rp.target_id]) : null;
+  const settling = status === 'resolved' && loan?.status === 'disputed';
+  if (settling && !settle) throw bad('Choose how the dispute was settled.', 'settle_required');
+  if (settling && !DISPUTE_OUTCOMES[settle]) throw bad('Choose how the dispute was settled.', 'bad_outcome');
+  let settled = null;
   await withTx(async (conn) => {
     await conn.query(
       `UPDATE reports SET status = COALESCE(?, status), mediator_notes = COALESCE(?, mediator_notes), outcome = COALESCE(?, outcome),
          resolved_by = IF(? = 'resolved', ?, resolved_by), resolved_at = IF(? = 'resolved', NOW(), resolved_at) WHERE id = ?`,
       [status || null, mediator_notes ?? null, outcome ?? null, status || '', req.user.id, status || '', rp.id]);
     if (status === 'resolved') {
-      if (close_request && rp.target_type === 'request') {
-        await conn.query("UPDATE requests SET status = 'closed' WHERE id = ? AND status = 'disputed'", [rp.target_id]);
-      }
+      if (settling) settled = await settleDisputeTx(conn, rp.target_id, settle, req.user);
       await notify(conn, rp.reporter_id, 'report_resolved', 'Your report was resolved', outcome || rp.outcome, rp.id);
     }
     await audit(req.user.id, `report_${status || 'updated'}`, `report #${rp.id}`, conn);
   });
-  res.json({ ok: true });
+  res.json({ ok: true, settled });
 }));
 
 // ---------- announcements ----------
@@ -323,6 +322,7 @@ router.get('/admin/export/transactions.csv', wrap(async (_req, res) => {
 router.get('/admin/rules', wrap(async (_req, res) => {
   res.json({
     rules: RULES,
+    dispute_outcomes: DISPUTE_OUTCOMES,
     prohibited_words: PROHIBITED,
     tiers: [
       { tier: 'low', example: 'Chairs, calculators, board games', approval: 'Automatic', handover: 'Pickup point' },

@@ -1,7 +1,7 @@
 // Business logic that both the resident API and the LGU portal API share.
 import { q, one, withTx, todayPH } from './db.js';
 import { bad, forbidden, notFound } from './errors.js';
-import { RULES, creditCost, handledByStaff, autoApproves } from './rules.js';
+import { RULES, DISPUTE_OUTCOMES, creditCost, handledByStaff, autoApproves } from './rules.js';
 
 // ---------- small helpers ----------
 export async function notify(conn, userId, type, title, body = null, refId = null) {
@@ -196,7 +196,30 @@ export function handOver(requestId, actor, photo = null) {
 }
 
 // ---------- return ----------
-// Credits move only here, and only for a confirmed return.
+// The normal credit rules for a good return: the lender earns a reward if it came back on time and they are
+// under the monthly cap for this borrower; a late borrower loses the late penalty (never below 0).
+async function normalReturnCredits(conn, r, onTime) {
+  const out = { lender_reward: 0, late_penalty: 0 };
+  if (r.owner_id && onTime) {
+    const [[cap]] = await conn.query(
+      `SELECT COUNT(*) AS n FROM credit_ledger l JOIN requests rr ON rr.id = l.request_id
+        WHERE l.user_id = ? AND l.reason = 'lend_reward' AND rr.borrower_id = ?
+          AND l.created_at >= (NOW() - INTERVAL 30 DAY)`, [r.owner_id, r.borrower_id]);
+    if (cap.n < RULES.pairRewardCapPerMonth) {
+      out.lender_reward = await addCredits(conn, r.owner_id, RULES.lenderReward, 'lend_reward', r.id);
+      await notify(conn, r.owner_id, 'credit_earned', `+${RULES.lenderReward} credit`, `Thank you for lending ${r.item_title}.`, r.id);
+    } else {
+      await notify(conn, r.owner_id, 'credit_capped', 'Thanks for lending again', 'You reached the monthly reward limit for this neighbor, so no credit this time.', r.id);
+    }
+  }
+  if (!onTime) {
+    out.late_penalty = -(await addCredits(conn, r.borrower_id, -RULES.latePenalty, 'late_penalty', r.id));
+    await notify(conn, r.borrower_id, 'late_return', 'Returned late', `${RULES.latePenalty} credit was taken. Please return on time next time.`, r.id);
+  }
+  return out;
+}
+
+// Credits move only on a confirmed return (here) or when staff settle a dispute (settleDisputeTx).
 export function returnItem(requestId, actor, { condition = 'good', note = null, photo = null } = {}) {
   if (!['good', 'damaged', 'lost'].includes(condition)) throw bad('Choose the item condition.', 'bad_condition');
   return withTx(async (conn) => {
@@ -215,23 +238,7 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
         "UPDATE requests SET status='closed', returned_at=NOW(), return_condition='good', on_time=?, return_photo=?, note=COALESCE(?, note) WHERE id=?",
         [onTime, photo, note, r.id]);
       result.status = 'closed';
-      // Lender reward: owned item, on time, and under the monthly cap for this pair.
-      if (r.owner_id && onTime) {
-        const [[cap]] = await conn.query(
-          `SELECT COUNT(*) AS n FROM credit_ledger l JOIN requests rr ON rr.id = l.request_id
-            WHERE l.user_id = ? AND l.reason = 'lend_reward' AND rr.borrower_id = ?
-              AND l.created_at >= (NOW() - INTERVAL 30 DAY)`, [r.owner_id, r.borrower_id]);
-        if (cap.n < RULES.pairRewardCapPerMonth) {
-          result.lender_reward = await addCredits(conn, r.owner_id, RULES.lenderReward, 'lend_reward', r.id);
-          await notify(conn, r.owner_id, 'credit_earned', `+${RULES.lenderReward} credit`, `Thank you for lending ${r.item_title}.`, r.id);
-        } else {
-          await notify(conn, r.owner_id, 'credit_capped', 'Thanks for lending again', 'You reached the monthly reward limit for this neighbor, so no credit this time.', r.id);
-        }
-      }
-      if (!onTime) {
-        result.late_penalty = -(await addCredits(conn, r.borrower_id, -RULES.latePenalty, 'late_penalty', r.id));
-        await notify(conn, r.borrower_id, 'late_return', 'Returned late', `${RULES.latePenalty} credit was taken. Please return on time next time.`, r.id);
-      }
+      Object.assign(result, await normalReturnCredits(conn, r, onTime));
       await notify(conn, r.borrower_id, 'return_confirmed', `Return confirmed: ${r.item_title}`, 'Quick question: would you have bought or rented this otherwise?', r.id);
     } else {
       // Damaged or lost goes to barangay mediation. No lender reward until it is settled.
@@ -247,6 +254,50 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
     if (actor.role !== 'resident') await audit(actor.id, `return_${condition}`, `request #${r.id}`, conn);
     return result;
   });
+}
+
+// ---------- removing an item ----------
+// The item stops being listed. Its waiting and booked requests are rejected and their credits refunded.
+// `conn` is an open transaction. The caller decides whether an item out on loan may be removed.
+export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.' } = {}) {
+  await conn.query("UPDATE items SET status = 'removed' WHERE id = ?", [item.id]);
+  const [open] = await conn.query("SELECT * FROM requests WHERE item_id = ? AND id <> ? AND status IN ('pending','approved') FOR UPDATE", [item.id, exceptRequestId]);
+  for (const r of open) {
+    await conn.query("UPDATE requests SET status = 'rejected', credits_held = 0 WHERE id = ?", [r.id]);
+    if (r.credits_held) await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_item_removed', r.id);
+    await notify(conn, r.borrower_id, 'request_rejected', `Item removed: ${item.title}`, why, r.id);
+  }
+  return open.length;
+}
+
+// ---------- settling a dispute ----------
+// Staff choose one outcome (DISPUTE_OUTCOMES in rules.js); every credit change is a ledger row and nobody
+// goes below 0. Only a loan that is still disputed is settled, so a second call never pays twice.
+export async function settleDisputeTx(conn, requestId, outcome, actor) {
+  const rule = DISPUTE_OUTCOMES[outcome];
+  if (!rule) throw bad('Choose how the dispute was settled.', 'bad_outcome');
+  const r = await loadRequest(conn, requestId);
+  if (r.status !== 'disputed') return null;
+  const result = { outcome, owner: 0, borrower: 0 };
+  if (rule.normalRules) {
+    const normal = await normalReturnCredits(conn, r, !!r.on_time);
+    result.owner = normal.lender_reward;
+    result.borrower = -normal.late_penalty;
+  } else {
+    if (r.owner_id && rule.owner) result.owner = await addCredits(conn, r.owner_id, rule.owner, `settle_${outcome}`, r.id);
+    if (rule.borrower) result.borrower = await addCredits(conn, r.borrower_id, rule.borrower, `settle_${outcome}`, r.id);
+  }
+  if (rule.removeItem) {
+    const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [r.item_id]);
+    await removeItemTx(conn, item, { exceptRequestId: r.id, why: 'The item was lost. Your credits were returned.' });
+  }
+  await conn.query("UPDATE requests SET status = 'closed', dispute_outcome = ?, settled_at = NOW() WHERE id = ?", [outcome, r.id]);
+  const words = { fine: 'It was fine after all.', accident: 'It was an accident.', borrower_fault: 'The borrower was responsible.', lost: 'The item was lost.' }[outcome];
+  const change = (n) => (n > 0 ? `+${n}` : String(n));
+  await notify(conn, r.borrower_id, 'dispute_settled', `Settled: ${r.item_title}`, `${words} Your credits: ${change(result.borrower)}.`, r.id);
+  if (r.owner_id) await notify(conn, r.owner_id, 'dispute_settled', `Settled: ${r.item_title}`, `${words} Your credits: ${change(result.owner)}.`, r.id);
+  await audit(actor.id, `dispute_${outcome}`, `request #${r.id}`, conn);
+  return result;
 }
 
 // ---------- daily check-in while the item is out ----------

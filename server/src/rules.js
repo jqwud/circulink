@@ -14,6 +14,16 @@ export const RULES = {
   checkinAlertAfterMissedDays: 2, // missed daily check-ins in a row before the owner and staff are alerted
 };
 
+// How staff settle a dispute (an item returned damaged or lost), and what each outcome does to credits.
+// Nobody goes below 0. "fine" means it was fine after all, so the normal return rules apply
+// (the lender reward if it came back on time, the late penalty if it did not).
+export const DISPUTE_OUTCOMES = {
+  fine: { owner: 0, borrower: 0, normalRules: true },
+  accident: { owner: 1, borrower: 0 },
+  borrower_fault: { owner: 1, borrower: -2 },
+  lost: { owner: 2, borrower: -2, removeItem: true },
+};
+
 // Words that are not allowed in listings (weapons, medicines, hazardous items).
 export const PROHIBITED = [
   'gun', 'firearm', 'pistol', 'rifle', 'ammo', 'bullet', 'explosive', 'firecracker', 'fireworks',

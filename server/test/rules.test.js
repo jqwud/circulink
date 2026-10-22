@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { RULES, AVG_WEIGHT_KG, creditCost, handledByStaff, autoApproves, findProhibited } from '../src/rules.js';
+import { RULES, DISPUTE_OUTCOMES, AVG_WEIGHT_KG, creditCost, handledByStaff, autoApproves, findProhibited } from '../src/rules.js';
 
 const item = (tier, isShelf = false) => ({ tier, is_shelf: isShelf ? 1 : 0 });
 
@@ -22,6 +22,16 @@ describe('the rule numbers', () => {
     assert.equal(RULES.idPhotoRetentionDays, 7);
     assert.equal(RULES.unusedUploadGraceHours, 24);
     assert.equal(RULES.checkinAlertAfterMissedDays, 2);
+  });
+});
+
+describe('dispute outcomes', () => {
+  test('each outcome gives the owner something, and only fault or loss costs the borrower', () => {
+    assert.deepEqual(Object.keys(DISPUTE_OUTCOMES), ['fine', 'accident', 'borrower_fault', 'lost']);
+    for (const k of ['accident', 'borrower_fault', 'lost']) assert.ok(DISPUTE_OUTCOMES[k].owner > 0, k);
+    assert.equal(DISPUTE_OUTCOMES.accident.borrower, 0);
+    assert.ok(DISPUTE_OUTCOMES.borrower_fault.borrower < 0 && DISPUTE_OUTCOMES.lost.borrower < 0);
+    assert.equal(DISPUTE_OUTCOMES.lost.removeItem, true);
   });
 });
 

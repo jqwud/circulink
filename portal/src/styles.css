@@ -79,6 +79,11 @@ input, select, textarea { font: inherit; width: 100%; padding: 9px 12px; border:
 input:focus, select:focus, textarea:focus { border-color: var(--c-accent); outline: none; box-shadow: 0 0 0 3px var(--c-primary-soft); }
 textarea { min-height: 84px; resize: vertical; }
 .field { margin-bottom: 14px; }
+fieldset.settle { border: 1.5px solid var(--c-line); border-radius: var(--r-md); padding: 10px 14px; }
+fieldset.settle legend { font-weight: 800; padding: 0 6px; }
+.choice { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; cursor: pointer; }
+.choice input { width: auto; margin-top: 4px; }
+.choice small { display: block; color: var(--c-muted); }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .row > .grow { flex: 1; min-width: 180px; }
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }

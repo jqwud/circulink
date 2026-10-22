@@ -56,7 +56,7 @@ There are no push notifications: reminders and alerts are rows in `notifications
         │                 │                                │                       │
         │                 └──reject / cancel──► rejected / cancelled (credits refunded)
         │                                                  └──cancel──► cancelled (refunded)
-        │                                                                          └──return damaged/lost──► disputed ──staff resolve──► closed
+        │                                                                          └──return damaged/lost──► disputed ──staff settle (fine / accident / borrower's fault / lost)──► closed
  low-tier items skip "pending" and are approved at once
  pending with no answer for 7 days (or past its end date), or approved but never picked up by its end date ──► expired (credits refunded)
  while handed_over: the borrower checks in once a day (Still with me / I returned it / There's a problem)
@@ -65,6 +65,7 @@ There are no push notifications: reminders and alerts are rows in `notifications
 - **Credits** move only inside database transactions (`withTx` in `server/src/db.js`) and every change writes a `credit_ledger` row. Rows are locked (`SELECT ... FOR UPDATE`) so two requests cannot book the same dates or spend the same credit.
 - **Who manages a loan:** the item owner for their own low and medium items; LGU staff for high-tier and Barangay Shelf items (`handledByStaff` in `rules.js`).
 - **Daily check-ins** (`request_checkins`): one answer per loan per day. "I returned it" stores `borrower_returned_at`, and on-time is judged by that day, not by when the owner confirms. The `checkins` job reminds the borrower after a missed day and alerts the owner after 2 (`RULES.checkinAlertAfterMissedDays`); staff see the count on the dashboard.
+- **Disputes** are settled by staff with one of four outcomes (`DISPUTE_OUTCOMES` in `rules.js`, applied by `settleDisputeTx`); each credit change is a ledger row (`settle_*`), and "lost" removes the item.
 - **On a good return:** the lender earns 1 credit if it was on time and they have not hit the 2-per-30-days cap with this borrower; a late borrower loses 1 credit (never below 0).
 
 ## Key decisions

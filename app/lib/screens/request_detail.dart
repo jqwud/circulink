@@ -267,6 +267,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
               if (str(r['pickup_point']).isNotEmpty) _row(context.t('Pickup'), str(r['pickup_point'])),
               if (asOwner && status == 'handed_over' && str(r['borrower_returned_at']).isEmpty) _row(context.t('Last check-in'), _lastCheckin(context, mapOf(r['checkin']))),
               if (str(r['return_condition']).isNotEmpty) _row(context.t('Condition at return'), _conditionText(context, str(r['return_condition']))),
+              if (str(r['dispute_outcome']).isNotEmpty) _row(context.t('Settled'), _outcomeText(context, str(r['dispute_outcome']))),
               if (r['on_time'] != null && (status == 'closed' || status == 'disputed')) _row(context.t('Returned'), boolOf(r['on_time']) ? context.t('On time') : context.t('Late')),
               if (str(r['note']).isNotEmpty) _row(context.t('Note'), str(r['note'])),
             ],
@@ -341,6 +342,19 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
         ],
       ),
     );
+  }
+
+  String _outcomeText(BuildContext c, String v) {
+    switch (v) {
+      case 'fine':
+        return c.t('It was fine after all');
+      case 'accident':
+        return c.t('An accident, nobody to blame');
+      case 'borrower_fault':
+        return c.t('Damaged by the borrower');
+      default:
+        return c.t('The item was lost');
+    }
   }
 
   String _conditionText(BuildContext c, String v) {

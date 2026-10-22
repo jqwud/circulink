@@ -74,6 +74,7 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | Check-ins | handover day · 1 missed day · 2 missed days · a check-in after that | nothing due · 1 reminder · owner alerted once, staff count · count starts again | ✅ `checkins.test.js` |
 | Order of operations | late and capped return | owner +0, borrower −1, both notified | ⬜ |
 | Kit with too few credits | 1 credit, 3 lines costing 1 | 1 booked, 2 "not enough credits" | ⬜ |
+| Dispute outcomes | fine (on time) · accident · borrower's fault · borrower's fault with 1 credit · lost · resolve twice | owner +1 · owner +1 · owner +1, borrower −2 · borrower stops at 0 · owner +2, borrower −2, item removed, other booking refunded · no second payment | ✅ `disputes.test.js` |
 
 ## State changes
 
@@ -85,7 +86,7 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | closed / disputed | 400 | 400 | 400 | 400 | allowed |
 | rejected / cancelled / expired | 400 | 400 | 400 | 400 | 400 |
 
-Fixed by batch 3 (✅): pending forever and approved-never-collected now expire. Fixed by batch 5 (✅): a loan that is out is watched by daily check-ins, and a borrower who returned it is no longer charged for a slow confirmation. Still stuck (batch 6): disputed never resolved with credits.
+Fixed by batch 3 (✅): pending forever and approved-never-collected now expire. Fixed by batch 5 (✅): a loan that is out is watched by daily check-ins, and a borrower who returned it is no longer charged for a slow confirmation. Fixed by batch 6 (✅): a disputed loan is closed only with an outcome, and the credits follow it.
 
 Check-in (`POST /requests/:id/checkin`): borrower only (403), only while `handed_over` (400 `bad_state`), not after "I returned it" (400 `already_returned`), "There's a problem" needs a note (400 `note_required`).
 

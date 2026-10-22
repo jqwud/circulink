@@ -29,6 +29,12 @@ class WalletScreen extends StatelessWidget {
         return c.t('Thanks for lending');
       case 'late_penalty':
         return c.t('Late return');
+      case 'settle_accident':
+        return c.t('Dispute settled: accident');
+      case 'settle_borrower_fault':
+        return c.t('Dispute settled: damaged by the borrower');
+      case 'settle_lost':
+        return c.t('Dispute settled: item lost');
       default:
         return r.replaceAll('_', ' ');
     }
