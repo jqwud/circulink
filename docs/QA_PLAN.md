@@ -20,7 +20,7 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | # | Area | Exists | Highest-value tests to add |
 |---|---|---|---|
 | 1 | Requirements and acceptance | Rules in README and `rules.js` | The criteria below; settle the "no stated rule" list |
-| 2 | Functional | Main loop | Title 1, 2, 120, 121 characters; emoji names; double-submit borrow; every role against every admin route |
+| 2 | Functional | Main loop; change dates while waiting, edit item, tier locked during a loan, puroks, phone format, literal search (✅ batch 10, `data-rules.test.js`) | Title 1, 2, 120, 121 characters; emoji names; double-submit borrow; every role against every admin route |
 | 3 | Business rules | Rule numbers unit-tested; 12 loop steps | Exact-number table below |
 | 4 | State and workflow | Happy-path transitions | Every refused transition; stuck states |
 | 5 | API | Status and code checks; wrong upload type → 400, 5 MB limit, unknown route → 404, health with DB (✅ batch 1); ended session → 401 `auth_expired`, locked email → 429 `too_many_attempts`, too many changes → 429 `too_many_requests` (✅ batch 9) | 61st login from one network in 15 min → 429 |

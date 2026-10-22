@@ -2,6 +2,16 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 10: One source of truth, better forms, small data rules (2026-10-22)
+
+- **Rules from the server:** `/meta` now carries the rule numbers and the puroks; help, wallet, verification and date texts are built from them (`context.tv` fills `{n}` in a translated sentence). The condition-photo rule is decided once on the server (`photo_required`).
+- **Puroks:** a `puroks` table managed by staff on the Rules page; the app's sign-up and profile read it (`GET /api/puroks` works before login). Removing a purok keeps it for people who already chose it.
+- **Date picker:** booked days are greyed out, an overdue loan blocks days up to today, and a range cannot pass 14 days or a booked day. The same picker is used for items, kits and changing dates.
+- **Edit item:** owners edit a listing with the share form. The tier cannot change while a request is active (`item_busy`).
+- **Change dates:** a borrower can move a waiting request (`PATCH /requests/:id/dates`), with the same checks as a new request; the owner is told.
+- **Small data rules:** staff cannot approve a resident without an ID photo (`no_id_photo`); staff can restore only what staff removed (`owner_removed`); a phone number can be cleared and must look like one (`bad_phone`); a purok must be on the list (`bad_purok`); `%` and `_` in searches are matched literally.
+- Migration 008 adds `puroks` and `items.removed_by`.
+
 ## Batch 9: Account safety (2026-10-22)
 
 - **Passwords:** new passwords need at least 8 characters. Residents and staff can change their password (the current one is needed); other sessions end and this device stays logged in.

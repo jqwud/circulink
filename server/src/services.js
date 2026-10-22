@@ -1,7 +1,7 @@
 // Business logic that both the resident API and the LGU portal API share.
 import { q, one, withTx, todayPH } from './db.js';
 import { bad, forbidden, notFound } from './errors.js';
-import { RULES, DISPUTE_OUTCOMES, creditCost, handledByStaff, autoApproves } from './rules.js';
+import { RULES, DISPUTE_OUTCOMES, creditCost, handledByStaff, autoApproves, photoRequired } from './rules.js';
 
 // ---------- small helpers ----------
 export async function notify(conn, userId, type, title, body = null, refId = null) {
@@ -61,6 +61,7 @@ export function checkinState(r, today = todayPH()) {
   return {
     due_today: !returned && base < today,
     missed_days: returned ? 0 : Math.max(0, daysBetween(base, today) - 1),
+    alert: !returned && daysBetween(base, today) - 1 >= RULES.checkinAlertAfterMissedDays,
     last_day: r.last_checkin_day || null,
     last_answer: r.last_checkin_answer || null,
   };
@@ -194,13 +195,34 @@ export function cancelRequest(requestId, actor) {
   });
 }
 
+// ---------- change dates while waiting ----------
+// The borrower may move a request that is still waiting for an answer. Same checks as a new request.
+export function changeRequestDates(requestId, actor, start, end) {
+  return withTx(async (conn) => {
+    const r = await loadRequest(conn, requestId);
+    if (r.borrower_id !== actor.id) throw forbidden('Only the borrower can change the dates.', 'cannot_manage');
+    if (r.status !== 'pending') throw bad('Dates can be changed only while the request is waiting.', 'bad_state');
+    assertDates(start, end);
+    const [[dup]] = await conn.query(
+      `SELECT id FROM requests WHERE item_id = ? AND borrower_id = ? AND id <> ? AND status IN ('pending','approved')
+         AND start_date <= ? AND end_date >= ? LIMIT 1`, [r.item_id, r.borrower_id, r.id, end, start]);
+    if (dup) throw bad('You already asked for this item for those dates.', 'duplicate_request');
+    if (await findClash(conn, r.item_id, start, end, r.id)) throw bad('Those dates are already booked. Try other dates.', 'dates_booked');
+    await conn.query('UPDATE requests SET start_date = ?, end_date = ? WHERE id = ?', [start, end, r.id]);
+    if (r.owner_id && !r.handled_by_staff) {
+      await notify(conn, r.owner_id, 'request_dates_changed', `New dates for ${r.item_title}`, `${start} to ${end}. Open Requests to approve or reject.`, r.id);
+    }
+    return { id: r.id, start_date: start, end_date: end };
+  });
+}
+
 // ---------- hand over ----------
 export function handOver(requestId, actor, photo = null) {
   return withTx(async (conn) => {
     const r = await loadRequest(conn, requestId);
     assertCanManage(r, actor);
     if (r.status !== 'approved') throw bad('Only an approved request can be handed over.', 'bad_state');
-    if (r.tier !== 'low' && !photo) throw bad('A condition photo is required for this item.', 'photo_required');
+    if (photoRequired(r) && !photo) throw bad('A condition photo is required for this item.', 'photo_required');
     await conn.query("UPDATE requests SET status = 'handed_over', handed_over_at = NOW(), handover_photo = ?, checkin_since = ? WHERE id = ?", [photo, todayPH(), r.id]);
     await notify(conn, r.borrower_id, 'handover', `You have ${r.item_title}`, `Please return it by ${r.end_date}. Check in once a day in the app until you return it.`, r.id);
     if (actor.role !== 'resident') await audit(actor.id, 'handover_confirmed', `request #${r.id}`, conn);
@@ -239,7 +261,7 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
     const r = await loadRequest(conn, requestId);
     assertCanManage(r, actor);
     if (r.status !== 'handed_over') throw bad('This item is not out on loan.', 'bad_state');
-    if (r.tier !== 'low' && condition === 'good' && !photo) throw bad('A condition photo is required for this item.', 'photo_required');
+    if (photoRequired(r) && condition === 'good' && !photo) throw bad('A condition photo is required for this item.', 'photo_required');
 
     // Lateness is judged by the day the borrower said "I returned it", so a slow confirmation never costs them.
     const returnedDay = r.borrower_returned_at ? String(r.borrower_returned_at).slice(0, 10) : todayPH();
@@ -272,8 +294,8 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
 // ---------- removing an item ----------
 // The item stops being listed. Its waiting and booked requests are rejected and their credits refunded.
 // `conn` is an open transaction. The caller decides whether an item out on loan may be removed.
-export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.' } = {}) {
-  await conn.query("UPDATE items SET status = 'removed' WHERE id = ?", [item.id]);
+export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.', by = 'staff' } = {}) {
+  await conn.query("UPDATE items SET status = 'removed', removed_by = ? WHERE id = ?", [by, item.id]);
   const [open] = await conn.query("SELECT * FROM requests WHERE item_id = ? AND id <> ? AND status IN ('pending','approved') FOR UPDATE", [item.id, exceptRequestId]);
   for (const r of open) {
     await conn.query("UPDATE requests SET status = 'rejected', credits_held = 0 WHERE id = ?", [r.id]);
@@ -303,7 +325,7 @@ export async function deleteAccountTx(conn, userId, actor, { newPasswordHash, re
     if (r.credits_held) await addCredits(conn, u.id, r.credit_cost, 'refund_cancelled', r.id);
   }
   const [items] = await conn.query("SELECT * FROM items WHERE owner_id = ? AND status <> 'removed' FOR UPDATE", [u.id]);
-  for (const item of items) await removeItemTx(conn, item, { why: 'The owner left Hiraman. Your credits were returned.' });
+  for (const item of items) await removeItemTx(conn, item, { why: 'The owner left Hiraman. Your credits were returned.', by: 'owner' });
   await conn.query('UPDATE items SET description = NULL, photo_url = NULL WHERE owner_id = ?', [u.id]);
 
   if (u.id_photo_path) removeFile(u.id_photo_path);

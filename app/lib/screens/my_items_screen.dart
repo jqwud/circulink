@@ -117,6 +117,10 @@ class MyItemsScreen extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => AddItemScreen(item: it))),
+                          child: Text(ctx.t('Edit')),
+                        ),
                         TextButton(onPressed: () => _setStatus(ctx, it, paused ? 'available' : 'paused'), child: Text(paused ? ctx.t('Resume') : ctx.t('Pause'))),
                         TextButton(onPressed: () => _remove(ctx, it), child: Text(ctx.t('Remove'), style: const TextStyle(color: HiColors.danger))),
                       ],

@@ -67,8 +67,9 @@ class WalletScreen extends StatelessWidget {
                   children: <Widget>[
                     Text(ctx.t('How credits work'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
                     const SizedBox(height: 8),
-                    _tip(ctx.t('You start with 3 credits when the barangay verifies you.')),
-                    _tip(ctx.t('Borrowing costs 1 credit (2 for valuable items). Barangay Shelf items are free.')),
+                    _tip(ctx.tv('You start with {n} credits when the barangay verifies you.', <String, Object>{'n': ctx.app.rule('starterCredits', 3)})),
+                    _tip(ctx.tv('Borrowing costs {low} credit ({high} for valuable items). Barangay Shelf items are free.',
+                        <String, Object>{'low': ctx.app.rule('costLowMedium', 1), 'high': ctx.app.rule('costHigh', 2)})),
                     _tip(ctx.t('Credits are held when you ask, and returned if the request is rejected or cancelled.')),
                     _tip(ctx.t('Lenders earn 1 credit after a good, on-time return.')),
                     _tip(ctx.t('A late return costs the borrower 1 credit.')),

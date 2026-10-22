@@ -6,9 +6,10 @@ import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/photo.dart';
 
-/// M8: share an item. The risk tier decides who approves the loan.
+/// M8: share an item, or edit one ([item] given). The risk tier decides who approves the loan.
 class AddItemScreen extends StatefulWidget {
-  const AddItemScreen({super.key});
+  final Map<String, dynamic>? item;
+  const AddItemScreen({super.key, this.item});
 
   @override
   State<AddItemScreen> createState() => _AddItemScreenState();
@@ -25,6 +26,24 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String? _photo;
   bool _busy = false;
   String? _error;
+
+  bool get _editing => widget.item != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final Map<String, dynamic>? it = widget.item;
+    if (it != null) {
+      _title.text = str(it['title']);
+      _desc.text = str(it['description']);
+      _categoryId = intOf(it['category_id'], 0) == 0 ? null : intOf(it['category_id']);
+      _pickupId = mapOf(it['pickup_point'])['id'] == null ? null : intOf(mapOf(it['pickup_point'])['id']);
+      _condition = str(it['condition'], 'good');
+      _tier = str(it['tier'], 'low');
+      _repair = boolOf(it['repair_reuse']);
+      _photo = it['photo_url'] == null ? null : str(it['photo_url']);
+    }
+  }
 
   @override
   void dispose() {
@@ -56,7 +75,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _error = null;
     });
     try {
-      await context.app.api.post('/items', <String, dynamic>{
+      final Map<String, dynamic> body = <String, dynamic>{
         'title': _title.text.trim(),
         'description': _desc.text.trim(),
         'category_id': _categoryId,
@@ -65,11 +84,20 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'tier': _tier,
         'repair_reuse': _repair,
         'photo_url': _photo,
-      });
+      };
+      if (_editing) {
+        await context.app.api.patch('/items/${widget.item!['id']}', body);
+      } else {
+        await context.app.api.post('/items', body);
+      }
       await context.app.bump();
       if (!mounted) return;
       Navigator.pop(context);
-      pawsaDialog(context, pose: 'cheer', title: context.tx('Thank you, neighbor!'), message: context.tx('Your item is now shared. You earn a credit after each good, on-time return.'));
+      if (_editing) {
+        showMessage(context, context.tx('Changes saved.'));
+      } else {
+        pawsaDialog(context, pose: 'cheer', title: context.tx('Thank you, neighbor!'), message: context.tx('Your item is now shared. You earn a credit after each good, on-time return.'));
+      }
     } catch (e) {
       if (mounted) setState(() => _error = context.app.errorText(e));
     } finally {
@@ -83,7 +111,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     final List<Map<String, dynamic>> points = context.app.pickupPoints;
     final String photoUrl = context.app.api.absolute(_photo);
     return Scaffold(
-      appBar: hiAppBar(context.t('Share an item')),
+      appBar: hiAppBar(_editing ? context.t('Edit item') : context.t('Share an item')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
@@ -174,7 +202,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ),
           ],
           const SizedBox(height: 16),
-          PrimaryButton(label: context.t('Share item'), busy: _busy, onPressed: _save),
+          PrimaryButton(label: _editing ? context.t('Save changes') : context.t('Share item'), busy: _busy, onPressed: _save),
           const SizedBox(height: 20),
         ],
       ),

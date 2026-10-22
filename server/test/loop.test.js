@@ -165,8 +165,12 @@ await step('reject and cancel return the held credits', async () => {
 await step('not enough credits is refused with a clear code', async () => {
   const fresh = await api('POST', '/auth/register', null, { name: 'No Credits', email: 'nocredit@hiraman.test', password: 'secret12', accept_privacy: true });
   const id = fresh.json.user.id;
-  await api('POST', `/admin/users/${id}/approve`, staff);
   const t = fresh.json.token;
+  // Staff approve only someone who sent an ID photo.
+  await api('POST', '/me/id-consent', t);
+  const fd = new FormData(); fd.append('file', new Blob([PNG], { type: 'image/png' }), 'id.png');
+  await fetch(`${base}/me/id-photo`, { method: 'POST', headers: { Authorization: `Bearer ${t}` }, body: fd });
+  assert.equal((await api('POST', `/admin/users/${id}/approve`, staff)).status, 200);
   // spend the 3 starter credits on three different low-tier items
   const items = (await api('GET', '/items?tier=low&owner=others', t)).json.filter((i) => !i.is_shelf).slice(0, 4);
   for (let i = 0; i < 3; i++) assert.equal((await api('POST', '/requests', t, { item_id: items[i].id, start_date: day(10), end_date: day(10) })).status, 201);

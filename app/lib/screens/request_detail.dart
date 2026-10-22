@@ -5,6 +5,7 @@ import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
+import '../widgets/date_range.dart';
 import '../widgets/photo.dart';
 import 'messages_screen.dart';
 import 'report_screen.dart';
@@ -61,6 +62,22 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     await _run(() => _post('reject', <String, dynamic>{'reason': text.isEmpty ? null : text}));
   }
 
+  Future<void> _changeDates(Map<String, dynamic> r) async {
+    final Map<String, dynamic> item = mapOf(await context.app.api.get('/items/${mapOf(r['item'])['id']}'));
+    if (!mounted) return;
+    final DateTimeRange? range = await pickBorrowDates(
+      context,
+      maxDays: context.app.rule('maxLoanDays', 14),
+      booked: listOf(item['booked_ranges']),
+      initial: parseYmd(str(r['start_date'])) != null && parseYmd(str(r['end_date'])) != null
+          ? DateTimeRange(start: parseYmd(str(r['start_date']))!, end: parseYmd(str(r['end_date']))!)
+          : null,
+    );
+    if (range == null || !mounted) return;
+    await _run(() => context.app.api.patch('/requests/${widget.requestId}/dates', <String, dynamic>{'start_date': ymd(range.start), 'end_date': ymd(range.end)}));
+    if (mounted) showMessage(context, context.tx('Dates changed. The owner was told.'));
+  }
+
   Future<void> _cancel() async {
     final bool ok = await confirmDialog(context, title: context.tx('Cancel this request?'), message: context.tx('Your held credits will be returned.'), confirmLabel: context.tx('Yes, cancel'), danger: true);
     if (!ok || !mounted) return;
@@ -68,7 +85,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   }
 
   Future<void> _handover(Map<String, dynamic> r) async {
-    final bool needPhoto = str(mapOf(r['item'])['tier']) != 'low';
+    final bool needPhoto = boolOf(r['photo_required']);
     String? photo;
     if (needPhoto) {
       photo = await pickAndUploadPhoto(context);
@@ -92,7 +109,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (BuildContext sheetContext) => Padding(
         padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
-        child: _ReturnSheet(needPhoto: str(mapOf(r['item'])['tier']) != 'low'),
+        child: _ReturnSheet(needPhoto: boolOf(r['photo_required'])),
       ),
     );
     if (result == null || !mounted) return;
@@ -228,6 +245,10 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       } else if (status == 'handed_over') {
         actions.add(PrimaryButton(label: context.t('Confirm return'), icon: Icons.assignment_return, busy: _busy, onPressed: () => _return(r)));
       }
+    }
+    if (asBorrower && status == 'pending') {
+      actions.add(SoftButton(label: context.t('Change dates'), icon: Icons.edit_calendar, onPressed: _busy ? null : () => _changeDates(r)));
+      actions.add(const SizedBox(height: 8));
     }
     if (asBorrower && (status == 'pending' || status == 'approved')) {
       if (actions.isNotEmpty) actions.add(const SizedBox(height: 8));

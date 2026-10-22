@@ -23,6 +23,11 @@ class AppState extends ChangeNotifier {
 
   List<Map<String, dynamic>> categories = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> pickupPoints = <Map<String, dynamic>>[];
+  List<String> puroks = <String>[];
+  Map<String, dynamic> rules = <String, dynamic>{};
+
+  /// A rule number from the server (RULES in server/src/rules.js), or [fallback] before /meta has loaded.
+  int rule(String key, int fallback) => intOf(rules[key], fallback);
   SharedPreferences? _prefs;
 
   bool get isApproved => user?['verification_status'] == 'approved';
@@ -174,6 +179,8 @@ class AppState extends ChangeNotifier {
     final Map<String, dynamic> m = mapOf(await api.get('/meta'));
     categories = listOf(m['categories']);
     pickupPoints = listOf(m['pickup_points']);
+    puroks = (m['puroks'] is List ? m['puroks'] as List<dynamic> : <dynamic>[]).map((dynamic p) => p.toString()).toList();
+    rules = mapOf(m['rules']);
   }
 
   /// Call after something changed on the server (a request, a listing, credits).

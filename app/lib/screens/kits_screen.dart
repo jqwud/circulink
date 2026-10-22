@@ -4,6 +4,7 @@ import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
+import '../widgets/date_range.dart';
 
 /// M14: ready-made bundles for a party, wake, school event or trip.
 class KitsScreen extends StatelessWidget {
@@ -14,17 +15,11 @@ class KitsScreen extends StatelessWidget {
       showMessage(context, context.tx('Your account must be verified by the barangay first.'), bad: true);
       return;
     }
-    final DateTime now = DateTime.now();
-    final DateTime first = DateTime(now.year, now.month, now.day);
-    final DateTimeRange? range = await showDateRangePicker(
-      context: context,
-      firstDate: first,
-      lastDate: first.add(const Duration(days: 90)),
-      helpText: context.tx('Choose borrow dates (up to 14 days)'),
-    );
+    final int maxDays = context.app.rule('maxLoanDays', 14);
+    final DateTimeRange? range = await pickBorrowDates(context, maxDays: maxDays);
     if (range == null || !context.mounted) return;
-    if (daysInclusive(range.start, range.end) > 14) {
-      showMessage(context, context.tx('You can borrow for up to 14 days.'), bad: true);
+    if (daysInclusive(range.start, range.end) > maxDays) {
+      showMessage(context, context.txv('You can borrow for up to {n} days.', <String, Object>{'n': maxDays}), bad: true);
       return;
     }
     try {

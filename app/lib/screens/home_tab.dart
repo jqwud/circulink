@@ -240,7 +240,7 @@ class _VerifyBanner extends StatelessWidget {
         break;
       default:
         title = context.t('Verify your account');
-        body = context.t('Send a photo of your ID so you can borrow and lend. You get 3 starter credits.');
+        body = context.tv('Send a photo of your ID so you can borrow and lend. You get {n} starter credits.', <String, Object>{'n': context.app.rule('starterCredits', 3)});
         tone = Tone.info;
         action = context.t('Send my ID');
     }

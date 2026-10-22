@@ -30,6 +30,12 @@ export async function withTx(fn) {
   }
 }
 
+// A search term for LIKE: % and _ are matched as themselves, not as wildcards.
+export const likeText = (s) => `%${String(s).trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+// The puroks residents can choose from (managed by staff in the portal).
+export const purokNames = async () => (await q('SELECT name FROM puroks ORDER BY CHAR_LENGTH(name), name')).map((r) => r.name);
+
 // Today's date (YYYY-MM-DD) in Philippine time. Jobs pass their own "now" so tests can move the clock.
 export const todayPH = (now = new Date()) => now.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 

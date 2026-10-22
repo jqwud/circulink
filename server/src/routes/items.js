@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { pool, q, one, todayPH } from '../db.js';
+import { pool, q, one, todayPH, likeText, purokNames } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { creditCost, findProhibited, handledByStaff } from '../rules.js';
+import { RULES, creditCost, findProhibited, handledByStaff } from '../rules.js';
 import { ownPhoto } from '../uploads.js';
 
 const router = Router();
@@ -31,6 +31,7 @@ export function mapItem(r) {
     is_shelf: !!r.is_shelf,
     repair_reuse: !!r.repair_reuse,
     status: r.status,
+    removed_by: r.removed_by || null,
     is_out: r.is_out > 0,
     credit_cost: creditCost(r),
     handled_by_staff: handledByStaff(r),
@@ -43,18 +44,24 @@ export function mapItem(r) {
 
 export const SELECT_ITEM_SQL = SELECT_ITEM;
 
+// Lists and rule numbers the app shows, so screens never repeat a number the server decides.
 router.get('/meta', authRequired, wrap(async (_req, res) => {
   res.json({
     categories: await q('SELECT id, slug, name_en, name_fil, icon FROM categories ORDER BY id'),
     pickup_points: await q('SELECT id, name, note, hours FROM pickup_points ORDER BY id'),
+    puroks: await purokNames(),
+    rules: RULES,
   });
 }));
+
+// Public: the sign-up form needs the puroks before anyone is logged in.
+router.get('/puroks', wrap(async (_req, res) => res.json(await purokNames())));
 
 router.get('/items', authRequired, wrap(async (req, res) => {
   const { q: text, category_id, tier, shelf, owner } = req.query;
   const where = ["i.status = 'available'"];
   const params = [];
-  if (text) { where.push('(i.title LIKE ? OR i.description LIKE ?)'); params.push(`%${text}%`, `%${text}%`); }
+  if (text) { where.push('(i.title LIKE ? OR i.description LIKE ?)'); params.push(likeText(text), likeText(text)); }
   if (category_id) { where.push('i.category_id = ?'); params.push(Number(category_id)); }
   if (['low', 'medium', 'high'].includes(tier)) { where.push('i.tier = ?'); params.push(tier); }
   if (shelf === '1') where.push('i.is_shelf = 1');
@@ -66,10 +73,13 @@ router.get('/items', authRequired, wrap(async (req, res) => {
 router.get('/items/:id', authRequired, wrap(async (req, res) => {
   const row = await one(`${SELECT_ITEM} WHERE i.id = ? AND i.status <> 'removed'`, [req.params.id]);
   if (!row) throw notFound('Item not found.');
+  // The same "taken" rule as booking (TAKEN_SQL): an item that is out and overdue stays taken until today.
+  const today = todayPH();
   const booked = await q(
-    `SELECT start_date, end_date, status FROM requests
-      WHERE item_id = ? AND status IN ('approved','handed_over') AND end_date >= ? ORDER BY start_date`,
-    [row.id, todayPH()]);
+    `SELECT start_date, IF(status = 'handed_over', GREATEST(end_date, ?), end_date) AS end_date, status FROM requests
+      WHERE item_id = ? AND status IN ('approved','handed_over') AND IF(status = 'handed_over', GREATEST(end_date, ?), end_date) >= ?
+      ORDER BY start_date`,
+    [today, row.id, today, today]);
   res.json({ ...mapItem(row), booked_ranges: booked });
 }));
 
@@ -128,6 +138,11 @@ router.patch('/items/:id', authRequired, wrap(async (req, res) => {
   if (!item || item.owner_id !== req.user.id) throw forbidden('You can only edit your own items.', 'cannot_manage');
   const f = readItemBody(req.body, { partial: true });
   if (req.body?.status && ['available', 'paused'].includes(req.body.status)) f.status = req.body.status;
+  // The tier decides the cost, who approves and who hands over, so it cannot change under an active loan.
+  if (f.tier && f.tier !== item.tier) {
+    const active = await one("SELECT id FROM requests WHERE item_id = ? AND status IN ('pending','approved','handed_over','disputed') LIMIT 1", [item.id]);
+    if (active) throw bad('This item has an active request. Change its tier after the loan ends.', 'item_busy');
+  }
   const keys = Object.keys(f);
   if (keys.length) await q(`UPDATE items SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => f[k]), item.id]);
   res.json(mapItem(await one(`${SELECT_ITEM} WHERE i.id = ?`, [item.id])));
@@ -138,7 +153,7 @@ router.delete('/items/:id', authRequired, wrap(async (req, res) => {
   if (!item || item.owner_id !== req.user.id) throw forbidden('You can only remove your own items.', 'cannot_manage');
   const active = await one("SELECT id FROM requests WHERE item_id = ? AND status IN ('pending','approved','handed_over') LIMIT 1", [item.id]);
   if (active) throw bad('This item has an active request. Finish or reject it first.', 'item_busy');
-  await q("UPDATE items SET status = 'removed' WHERE id = ?", [item.id]);
+  await q("UPDATE items SET status = 'removed', removed_by = 'owner' WHERE id = ?", [item.id]);
   res.json({ ok: true });
 }));
 

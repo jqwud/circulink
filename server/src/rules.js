@@ -46,6 +46,9 @@ export function creditCost(item) {
 // High-value items and Barangay Shelf items are handled at the barangay hall by LGU staff.
 export const handledByStaff = (item) => !!item.is_shelf || item.tier === 'high';
 
+// Medium and high items need a condition photo at handover and at a good return.
+export const photoRequired = (item) => item.tier !== 'low';
+
 // Low tier: approved at once. Medium and high: someone must approve.
 export const autoApproves = (item) => item.tier === 'low';
 

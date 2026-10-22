@@ -2,7 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
-import { pool, q, one, withTx } from '../db.js';
+import { pool, q, one, withTx, purokNames } from '../db.js';
 import { HttpError, bad, wrap } from '../errors.js';
 import { authRequired, signToken, publicUser } from '../auth.js';
 import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
@@ -14,6 +14,20 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false,
   handler: (_req, res) => res.status(429).json({ error: 'Too many tries from this network. Please wait a few minutes.', code: 'too_many_requests' }),
 });
+
+// A purok must be one the barangay lists (empty is allowed: it is optional). Phone: digits, spaces, + and -.
+async function checkPurok(p) {
+  if (p === undefined || p === null || p === '') return null;
+  const names = await purokNames();
+  if (names.length && !names.includes(String(p).trim())) throw bad('Choose a purok from the list.', 'bad_purok');
+  return String(p).trim();
+}
+function checkPhone(p) {
+  const v = String(p ?? '').trim();
+  if (!v) return null;
+  if (!/^\+?[0-9][0-9 -]{5,18}[0-9]$/.test(v)) throw bad('Enter a phone number with digits only, like 0917 123 4567.', 'bad_phone');
+  return v;
+}
 
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
 
@@ -56,6 +70,8 @@ router.post('/auth/register', limiter, wrap(async (req, res) => {
   if (!name || name.trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
   if (!emailOk(email)) throw bad('Please enter a valid email.', 'bad_email');
   checkPassword(password);
+  const purokOk = await checkPurok(purok);
+  const phoneOk = checkPhone(phone);
   if (acceptPrivacy !== true) throw bad('Please read and accept the privacy notice.', 'privacy_required');
   const hash = await bcrypt.hash(password, 10);
   let r;
@@ -63,7 +79,7 @@ router.post('/auth/register', limiter, wrap(async (req, res) => {
     [r] = await pool.query(
       `INSERT INTO users (name, email, phone, password_hash, purok, language, privacy_version, privacy_accepted_at)
        VALUES (?,?,?,?,?,?,?, NOW())`,
-      [name.trim(), email.trim().toLowerCase(), phone || null, hash, purok || null, language === 'en' ? 'en' : 'fil', PRIVACY_VERSION]);
+      [name.trim(), email.trim().toLowerCase(), phoneOk, hash, purokOk, language === 'en' ? 'en' : 'fil', PRIVACY_VERSION]);
   } catch (e) {
     // The same answer whether or not the email is taken, so sign-up cannot be used to find out who is a member.
     if (e.code === 'ER_DUP_ENTRY') throw bad('We could not create an account with these details. If you signed up before, log in or ask the barangay to reset your password.', 'signup_failed');
@@ -119,8 +135,15 @@ export { temporaryPassword };
 
 router.patch('/me', authRequired, wrap(async (req, res) => {
   const { name, phone, purok, language } = req.body || {};
-  await q('UPDATE users SET name = COALESCE(?, name), phone = COALESCE(?, phone), purok = COALESCE(?, purok), language = COALESCE(?, language) WHERE id = ?',
-    [name || null, phone || null, purok || null, ['en', 'fil'].includes(language) ? language : null, req.user.id]);
+  if (name !== undefined && String(name).trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
+  // A field that is sent is saved; an empty phone clears it. Fields that are not sent stay as they are.
+  const fields = {};
+  if (name !== undefined) fields.name = String(name).trim().slice(0, 120);
+  if (phone !== undefined) fields.phone = checkPhone(phone);
+  if (purok !== undefined && purok !== '') fields.purok = await checkPurok(purok);
+  if (['en', 'fil'].includes(language)) fields.language = language;
+  const keys = Object.keys(fields);
+  if (keys.length) await q(`UPDATE users SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => fields[k]), req.user.id]);
   res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
 }));
 

@@ -71,7 +71,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               children: <Widget>[
                 _bullet(context.t('Send a clear photo of any ID that shows your name and address.')),
                 _bullet(context.t('Only barangay staff can see it. Other residents never do.')),
-                _bullet(context.t('You get 3 starter credits once you are verified.')),
+                _bullet(context.tv('You get {n} starter credits once you are verified.', <String, Object>{'n': context.app.rule('starterCredits', 3)})),
               ],
             ),
           ),
@@ -89,7 +89,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
             onChanged: (bool? v) => setState(() => _agreed = v ?? false),
             controlAffinity: ListTileControlAffinity.leading,
             contentPadding: EdgeInsets.zero,
-            title: Text(context.t('I agree that barangay staff may view my ID to check that I live here. It is deleted 7 days after their decision.')),
+            title: Text(context.tv('I agree that barangay staff may view my ID to check that I live here. It is deleted {n} days after their decision.',
+                <String, Object>{'n': context.app.rule('idPhotoRetentionDays', 7)})),
           ),
           const SizedBox(height: 6),
           PrimaryButton(label: context.t('Send for verification'), busy: _busy, onPressed: _file == null || !_agreed ? null : _send),

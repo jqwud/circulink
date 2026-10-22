@@ -4,10 +4,10 @@ import { config } from '../config.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
 import { ownPhoto } from '../uploads.js';
-import { RULES } from '../rules.js';
+import { RULES, photoRequired } from '../rules.js';
 import {
   createRequest, decideRequest, cancelRequest, handOver, returnItem, saveSurvey, saveRating, checkIn, checkinState, addDays,
-  contactOpen, threadOpen, notify,
+  contactOpen, threadOpen, notify, changeRequestDates,
 } from '../services.js';
 
 const router = Router();
@@ -53,6 +53,7 @@ export function mapRequest(r, viewerId = null) {
     credit_cost: r.credit_cost,
     credits_held: !!r.credits_held && ['pending', 'approved', 'handed_over'].includes(r.status),
     handled_by_staff: !!r.handled_by_staff,
+    photo_required: photoRequired({ tier: r.item_tier }),
     approved_at: r.approved_at,
     handed_over_at: r.handed_over_at,
     borrower_returned_at: r.borrower_returned_at,
@@ -164,6 +165,9 @@ router.post('/requests/:id/handover', authRequired, wrap(async (req, res) => res
 router.post('/requests/:id/return', authRequired, wrap(async (req, res) => {
   const { condition, note, photo } = req.body || {};
   res.json(await returnItem(Number(req.params.id), req.user, { condition: condition || 'good', note: note || null, photo: ownPhoto(photo) }));
+}));
+router.patch('/requests/:id/dates', authRequired, wrap(async (req, res) => {
+  res.json(await changeRequestDates(Number(req.params.id), req.user, req.body?.start_date, req.body?.end_date));
 }));
 router.post('/requests/:id/checkin', authRequired, wrap(async (req, res) => {
   res.json(await checkIn(Number(req.params.id), req.user, req.body?.answer, req.body?.note || null));

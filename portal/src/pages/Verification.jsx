@@ -15,7 +15,11 @@ export default function Verification() {
 
   async function approve(u) {
     setBusy(true);
-    try { await api(`/admin/users/${u.id}/approve`, { method: 'POST' }); toast(t('Resident approved. 3 starter credits given.')); setView(null); reload(); }
+    try {
+      const r = await api(`/admin/users/${u.id}/approve`, { method: 'POST' });
+      toast(r.starter_credits ? t('Resident approved. {n} starter credits given.').replace('{n}', r.starter_credits) : t('Resident approved.'));
+      setView(null); reload();
+    }
     catch (e) { toast(e.message, 'bad'); } finally { setBusy(false); }
   }
   async function reject() {

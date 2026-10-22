@@ -36,7 +36,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 7 | Phone numbers after approval and a request thread | D1 | L | Done |
 | 8 | Privacy notice, consent, delete account, My data | P2 | M | Done |
 | 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Done |
-| 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Planned |
+| 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Done |
 | 11 | Notifications in the user's language | D6 | M | Planned |
 | 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Planned |
 | 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Planned |
@@ -98,6 +98,13 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Settings to check:** `CORS_ORIGIN` empty now means "this server and localhost only". An existing `.env` with `CORS_ORIGIN=*` keeps allowing every website; change it to empty or to a list.
 - **New library:** `flutter_secure_storage` (approved in the decisions).
 - **Undo:** `npm run migrate:down` (drops the token version and the reset flag), then `git revert` the batch commit.
+
+### Batch 10: One source of truth, better forms, small data rules
+- **Goal:** screens never repeat a rule the server decides, forms prevent mistakes instead of reporting them, and a handful of data gaps are closed.
+- **Files:** `database/migrations/008_puroks_and_item_removal.sql` (new), `server/src/db.js` (`likeText`, `purokNames`), `rules.js` (`photoRequired`), `services.js` (`changeRequestDates`, `removeItemTx` records who removed, check-in `alert`), `routes/items.js` (`/meta` rules and puroks, public `GET /puroks`, booked days include overdue loans, tier locked during a loan, owner removal recorded), `routes/requests.js` (`PATCH /requests/:id/dates`, `photo_required`), `routes/auth.js` (purok and phone checks, profile fields can be cleared), `routes/admin.js` (puroks managed by staff, approval needs an ID photo, restore only staff removals, escaped search); app `widgets/date_range.dart` (new), `core/i18n.dart` (`tv`/`txv`), `state.dart`, `item_detail.dart`, `kits_screen.dart`, `help_screen.dart`, `wallet_screen.dart`, `home_tab.dart`, `verification_screen.dart`, `request_detail.dart`, `add_item_screen.dart` (also Edit item), `my_items_screen.dart`, `auth_screens.dart`, `profile_screen.dart`, `strings_fil.dart`; portal `Rules.jsx` (puroks), `Verification.jsx`, `Transactions.jsx`, `Listings.jsx`, `i18n.jsx`; tests `data-rules.test.js` (new, 14), `loop.test.js`.
+- **Proof:** server 160/160; `flutter analyze` clean, `flutter test` 5/5; portal builds; no missing Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-165943-before-migrate`); row counts unchanged; the seven puroks are in the new table.
+- **Behavior changes users can notice:** the date picker greys out booked days (including an overdue loan up to today) and stops a range at 14 days; owners can edit an item (not its tier while a loan is active); borrowers can change the dates of a waiting request; the purok list comes from the server and staff add or remove puroks in Rules; help, wallet and verification texts use the server's numbers; a phone number can be cleared and must look like one; staff cannot approve someone without an ID photo or restore an item its owner deleted; searching for % or _ no longer matches everything.
+- **Undo:** `npm run migrate:down` (drops the puroks table and the removal column), then `git revert` the batch commit.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

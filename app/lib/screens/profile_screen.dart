@@ -180,7 +180,8 @@ class ProfileScreen extends StatelessWidget {
     final Map<String, dynamic> u = context.app.user ?? <String, dynamic>{};
     final TextEditingController name = TextEditingController(text: str(u['name']));
     final TextEditingController phone = TextEditingController(text: str(u['phone']));
-    String purok = kPuroks.contains(str(u['purok'])) ? str(u['purok']) : kPuroks.first;
+    final List<String> puroks = <String>{...context.app.puroks.isEmpty ? kPuroks : context.app.puroks, if (str(u['purok']).isNotEmpty) str(u['purok'])}.toList();
+    String purok = str(u['purok']).isNotEmpty ? str(u['purok']) : puroks.first;
     final bool? ok = await showDialog<bool>(
       context: context,
       builder: (BuildContext ctx) => StatefulBuilder(
@@ -195,7 +196,7 @@ class ProfileScreen extends StatelessWidget {
               DropdownButtonFormField<String>(
                 initialValue: purok,
                 decoration: InputDecoration(labelText: ctx2.tx('Purok'), border: const OutlineInputBorder()),
-                items: kPuroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
+                items: puroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
                 onChanged: (String? v) => setLocal(() => purok = v ?? purok),
               ),
             ]),
@@ -213,7 +214,12 @@ class ProfileScreen extends StatelessWidget {
     phone.dispose();
     if (ok != true || !context.mounted) return;
     try {
-      await context.app.api.patch('/me', <String, dynamic>{'name': n.isEmpty ? null : n, 'phone': p.isEmpty ? null : p, 'purok': purok});
+      // An empty phone clears it; the purok is sent only if it changed (a removed purok can be kept).
+      await context.app.api.patch('/me', <String, dynamic>{
+        if (n.isNotEmpty) 'name': n,
+        'phone': p,
+        if (purok != str(u['purok'])) 'purok': purok,
+      });
       await context.app.refreshMe();
       if (context.mounted) showMessage(context, context.tx('Profile saved.'));
     } catch (e) {

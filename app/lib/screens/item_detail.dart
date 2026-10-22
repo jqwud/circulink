@@ -4,6 +4,7 @@ import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
+import '../widgets/date_range.dart';
 import 'report_screen.dart';
 import 'request_detail.dart';
 
@@ -207,20 +208,18 @@ class _RequestSheetState extends State<_RequestSheet> {
   String? _error;
 
   Future<void> _pickDates() async {
-    final DateTime today = DateTime.now();
-    final DateTime first = DateTime(today.year, today.month, today.day);
-    final DateTimeRange? r = await showDateRangePicker(
-      context: context,
-      firstDate: first,
-      lastDate: first.add(const Duration(days: 90)),
-      initialDateRange: _start != null && _end != null ? DateTimeRange(start: _start!, end: _end!) : null,
-      helpText: context.tx('Choose borrow dates (up to 14 days)'),
+    final int maxDays = context.app.rule('maxLoanDays', 14);
+    final DateTimeRange? r = await pickBorrowDates(
+      context,
+      maxDays: maxDays,
+      booked: listOf(widget.item['booked_ranges']),
+      initial: _start != null && _end != null ? DateTimeRange(start: _start!, end: _end!) : null,
     );
-    if (r != null) {
+    if (r != null && mounted) {
       setState(() {
         _start = r.start;
         _end = r.end;
-        _error = daysInclusive(r.start, r.end) > 14 ? context.tx('You can borrow for up to 14 days.') : null;
+        _error = daysInclusive(r.start, r.end) > maxDays ? context.txv('You can borrow for up to {n} days.', <String, Object>{'n': maxDays}) : null;
       });
     }
   }
@@ -230,8 +229,9 @@ class _RequestSheetState extends State<_RequestSheet> {
       setState(() => _error = context.tx('Choose a start and end date.'));
       return;
     }
-    if (daysInclusive(_start!, _end!) > 14) {
-      setState(() => _error = context.tx('You can borrow for up to 14 days.'));
+    final int maxDays = context.app.rule('maxLoanDays', 14);
+    if (daysInclusive(_start!, _end!) > maxDays) {
+      setState(() => _error = context.txv('You can borrow for up to {n} days.', <String, Object>{'n': maxDays}));
       return;
     }
     setState(() {

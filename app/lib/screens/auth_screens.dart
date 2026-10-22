@@ -10,6 +10,7 @@ import '../widgets/language_toggle.dart';
 import '../widgets/pawsa.dart';
 import 'privacy_screens.dart';
 
+/// Used only when the server cannot be reached; the real list comes from GET /puroks (managed by staff).
 const List<String> kPuroks = <String>['Purok 1', 'Purok 2', 'Purok 3', 'Purok 4', 'Purok 5', 'Purok 6', 'Purok 7'];
 
 /// M2: log in.
@@ -140,8 +141,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _password = TextEditingController();
+  List<String> _puroks = kPuroks;
   String _purok = kPuroks.first;
   bool _agreed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPuroks();
+  }
+
+  Future<void> _loadPuroks() async {
+    try {
+      final dynamic list = await context.app.api.get('/puroks');
+      if (list is List && list.isNotEmpty && mounted) {
+        setState(() {
+          _puroks = list.map((dynamic p) => p.toString()).toList();
+          if (!_puroks.contains(_purok)) _purok = _puroks.first;
+        });
+      }
+    } catch (_) {
+      // Offline: keep the built-in list; the server checks the choice anyway.
+    }
+  }
   bool _busy = false;
   String? _error;
 
@@ -203,7 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             DropdownButtonFormField<String>(
               initialValue: _purok,
               decoration: InputDecoration(labelText: context.t('Purok'), border: const OutlineInputBorder()),
-              items: kPuroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
+              items: _puroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
               onChanged: (String? v) => setState(() => _purok = v ?? _purok),
             ),
             const SizedBox(height: 14),

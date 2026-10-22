@@ -3,7 +3,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import path from 'node:path';
 import fs from 'node:fs';
-import { pool, q, one, withTx, todayPH } from '../db.js';
+import { pool, q, one, withTx, todayPH, likeText, purokNames } from '../db.js';
 import { config } from '../config.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { temporaryPassword } from './auth.js';
@@ -20,7 +20,7 @@ import { impactNumbers } from './community.js';
 const router = Router();
 router.use('/admin', authRequired, requireStaff);
 
-const like = (s) => `%${String(s).trim()}%`;
+const like = likeText;
 
 // ---------- dashboard ----------
 router.get('/admin/stats', wrap(async (_req, res) => {
@@ -84,13 +84,14 @@ router.post('/admin/users/:id/approve', wrap(async (req, res) => {
   const r = await withTx(async (conn) => {
     const [[u]] = await conn.query('SELECT * FROM users WHERE id = ? AND role = ? FOR UPDATE', [req.params.id, 'resident']);
     if (!u) throw notFound('Resident not found.');
+    if (!u.id_photo_path && u.verification_status !== 'approved') throw bad('This resident has not sent an ID photo yet.', 'no_id_photo');
     await conn.query("UPDATE users SET verification_status = 'approved', reject_reason = NULL, verification_decided_at = NOW() WHERE id = ?", [u.id]);
     // Starter credits are given once.
     const [[given]] = await conn.query("SELECT COUNT(*) n FROM credit_ledger WHERE user_id = ? AND reason = 'starter'", [u.id]);
-    if (!given.n) await addCredits(conn, u.id, RULES.starterCredits, 'starter');
+    const starter = given.n ? 0 : await addCredits(conn, u.id, RULES.starterCredits, 'starter');
     await notify(conn, u.id, 'verified', 'Welcome to Hiraman!', `Your account is verified. You have ${RULES.starterCredits} starter credits.`);
     await audit(req.user.id, 'verification_approved', `user #${u.id} ${u.name}`, conn);
-    return { id: u.id, verification_status: 'approved' };
+    return { id: u.id, verification_status: 'approved', starter_credits: starter };
   });
   res.json(r);
 }));
@@ -165,8 +166,12 @@ router.post('/admin/items/:id/remove', wrap(async (req, res) => {
   res.json({ id: item.id, status: 'removed' });
 }));
 
+// Only what staff removed can be restored: an item its owner deleted stays deleted.
 router.post('/admin/items/:id/restore', wrap(async (req, res) => {
-  await q("UPDATE items SET status = 'available' WHERE id = ?", [req.params.id]);
+  const item = await one('SELECT * FROM items WHERE id = ?', [req.params.id]);
+  if (!item) throw notFound('Item not found.');
+  if (item.status === 'removed' && item.removed_by !== 'staff') throw bad('The owner removed this item. Only they can list it again.', 'owner_removed');
+  await q("UPDATE items SET status = 'available', removed_by = NULL WHERE id = ?", [req.params.id]);
   await audit(req.user.id, 'item_restored', `item #${req.params.id}`);
   res.json({ id: Number(req.params.id), status: 'available' });
 }));
@@ -276,8 +281,21 @@ router.get('/admin/announcements', wrap(async (_req, res) => {
   res.json(await q('SELECT a.id, a.audience, a.title, a.message, a.created_at, u.name AS author FROM announcements a JOIN users u ON u.id = a.author_id ORDER BY a.id DESC LIMIT 50'));
 }));
 
-router.get('/admin/puroks', wrap(async (_req, res) => {
-  res.json((await q("SELECT DISTINCT purok FROM users WHERE purok IS NOT NULL AND purok <> '' ORDER BY purok")).map((r) => r.purok));
+// The puroks residents choose from. Removing one does not change the people who live there.
+router.get('/admin/puroks', wrap(async (_req, res) => res.json(await purokNames())));
+
+router.post('/admin/puroks', wrap(async (req, res) => {
+  const name = String(req.body?.name || '').trim().replace(/\s+/g, ' ').slice(0, 60);
+  if (name.length < 2) throw bad('Enter the purok name.', 'bad_purok');
+  await q('INSERT IGNORE INTO puroks (name) VALUES (?)', [name]);
+  await audit(req.user.id, 'purok_added', name);
+  res.status(201).json(await purokNames());
+}));
+
+router.delete('/admin/puroks/:name', wrap(async (req, res) => {
+  await q('DELETE FROM puroks WHERE name = ?', [req.params.name]);
+  await audit(req.user.id, 'purok_removed', req.params.name);
+  res.json(await purokNames());
 }));
 
 router.post('/admin/announcements', wrap(async (req, res) => {

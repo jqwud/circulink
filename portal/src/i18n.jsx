@@ -38,7 +38,7 @@ const FIL = {
   'Waiting for review': 'Naghihintay ng review', 'No IDs are waiting. Nice work!': 'Walang naghihintay na ID. Magaling!',
   'View ID': 'Tingnan ang ID', 'ID photo': 'Larawan ng ID', 'Why is it being rejected?': 'Bakit ito tinatanggihan?',
   'Tell the resident what to fix, for example: "ID photo is blurry, please retake."': 'Sabihin sa residente kung ano ang aayusin, hal. "Malabo ang ID, paki-kuha ulit."',
-  'Resident approved. 3 starter credits given.': 'Naaprubahan ang residente. Nabigyan ng 3 starter credits.', 'Resident was asked to fix their ID.': 'Pinaayos sa residente ang ID.',
+  'Resident was asked to fix their ID.': 'Pinaayos sa residente ang ID.',
   'Check that the name matches the account, the photo is clear, and the address is in this barangay.': 'Tiyaking tugma ang pangalan sa account, malinaw ang larawan, at nasa barangay na ito ang tirahan.',
   'Registered': 'Nagparehistro', 'Reject with reason': 'Tanggihan na may dahilan',
   // residents
@@ -131,6 +131,12 @@ const FIL = {
   'Give it to the person now. It is shown only once. They must change it when they log in.':
     'Ibigay ito sa tao ngayon. Isang beses lang ito ipapakita. Kailangan niya itong palitan pag nag-log in.',
   'Done': 'Tapos',
+  // approvals, puroks and listings
+  'Resident approved. {n} starter credits given.': 'Naaprubahan ang residente. Nabigyan ng {n} panimulang credits.', 'Resident approved.': 'Naaprubahan ang residente.',
+  'Puroks': 'Mga purok', 'Residents choose one of these when they sign up.': 'Pipili ang mga residente ng isa rito pag nag-sign up.',
+  'New purok name': 'Pangalan ng bagong purok', 'Purok added.': 'Naidagdag ang purok.', 'Purok removed.': 'Inalis ang purok.',
+  'Remove {name}?': 'Alisin ang {name}?', 'New residents will not see it. People who already chose it keep it.': 'Hindi na ito makikita ng mga bagong residente. Mananatili ito sa mga nakapili na.',
+  'Removed by the owner': 'Inalis ng may-ari',
   'Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.':
     'Permanenteng aalisin ang pangalan, contact, litrato ng ID at mga mensahe nila. Mananatili ang mga tala ng hiraman nang walang pangalan nila. Hindi na ito maibabalik.',
 };

@@ -62,7 +62,7 @@ export default function Listings() {
                   <td>{i.is_shelf ? <Badge value="shelf" label={t('Shelf')} /> : <>{i.owner_full_name}<small>{i.owner?.purok}</small></>}</td>
                   <td><Badge value={i.status} />{i.is_out && <> <Badge value="handed_over" label={t('On loan')} /></>}</td>
                   <td>{i.status === 'removed'
-                    ? <button className="btn small" onClick={() => restore(i)}>{t('Restore')}</button>
+                    ? (i.removed_by === 'staff' ? <button className="btn small" onClick={() => restore(i)}>{t('Restore')}</button> : <small className="muted">{t('Removed by the owner')}</small>)
                     : <button className="btn small danger" onClick={() => setRemoving(i)}>{t('Remove')}</button>}</td>
                 </tr>
               ))}

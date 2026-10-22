@@ -120,7 +120,7 @@ export default function Transactions() {
                     <td>{fmt(r.start_date)} – {fmt(r.end_date)}{r.overdue && <small style={{ color: 'var(--c-danger)', fontWeight: 700 }}>{daysLate(r.end_date)} {t('day(s) late')}</small>}</td>
                     <td><Badge value={r.status} />{r.overdue && <> <Badge value="overdue" label={t('Overdue')} /></>}{r.return_condition && r.return_condition !== 'good' && <> <Badge value="disputed" label={t(r.return_condition)} /></>}
                       {r.borrower_returned_at && r.status === 'handed_over' && <> <Badge value="info" label={t('Borrower says returned')} /></>}
-                      {r.checkin?.missed_days >= 2 && <> <Badge value="overdue" label={`${t('No check-in')}: ${r.checkin.missed_days} ${t('days')}`} /></>}</td>
+                      {r.checkin?.alert && <> <Badge value="overdue" label={`${t('No check-in')}: ${r.checkin.missed_days} ${t('days')}`} /></>}</td>
                     <td><div className="cell-actions">
                       {act1 === 'decide' && <>
                         <button className="btn small primary" disabled={busy} onClick={() => act(`/requests/${r.id}/approve`)}>{t('Approve')}</button>

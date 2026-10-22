@@ -94,7 +94,7 @@ const Map<String, String> kFil = <String, String>{
   "Please send a clearer photo of your ID.": "Magpadala ng mas malinaw na litrato ng ID.",
   "Send ID again": "Ipadala ulit ang ID",
   "Verify your account": "I-verify ang account mo",
-  "Send a photo of your ID so you can borrow and lend. You get 3 starter credits.": "Magpadala ng litrato ng ID para makahiram at makapagpahiram. May 3 panimulang credits ka.",
+  "Send a photo of your ID so you can borrow and lend. You get {n} starter credits.": "Magpadala ng litrato ng ID para makahiram at makapagpahiram. May {n} panimulang credits ka.",
   "Send my ID": "Ipadala ang ID ko",
 
   // browse
@@ -122,8 +122,8 @@ const Map<String, String> kFil = <String, String>{
   "Borrow": "Humiram",
   "Not available": "Hindi available",
   "Your account must be verified by the barangay first.": "Kailangang maberipika muna ng barangay ang account mo.",
-  "Choose borrow dates (up to 14 days)": "Piliin ang petsa ng paghiram (hanggang 14 araw)",
-  "You can borrow for up to 14 days.": "Hanggang 14 araw lang ang paghiram.",
+  "Choose borrow dates (up to {n} days)": "Piliin ang petsa ng paghiram (hanggang {n} araw)",
+  "You can borrow for up to {n} days.": "Hanggang {n} araw lang ang paghiram.",
   "Choose a start and end date.": "Pumili ng simula at katapusang petsa.",
   "Choose dates": "Pumili ng petsa",
   "This costs no credits.": "Walang credit na kailangan dito.",
@@ -245,8 +245,8 @@ const Map<String, String> kFil = <String, String>{
   "How credits work": "Paano gumagana ang credits",
   "History": "Kasaysayan",
   "No credit activity yet.": "Wala pang galaw ang credits.",
-  "You start with 3 credits when the barangay verifies you.": "Magsisimula ka sa 3 credits kapag na-verify ka ng barangay.",
-  "Borrowing costs 1 credit (2 for valuable items). Barangay Shelf items are free.": "1 credit ang paghiram (2 para sa mamahaling gamit). Libre ang mga gamit sa Barangay Shelf.",
+  "You start with {n} credits when the barangay verifies you.": "Magsisimula ka sa {n} credits kapag na-verify ka ng barangay.",
+  "Borrowing costs {low} credit ({high} for valuable items). Barangay Shelf items are free.": "{low} credit ang paghiram ({high} para sa mamahaling gamit). Libre ang mga gamit sa Barangay Shelf.",
   "Credits are held when you ask, and returned if the request is rejected or cancelled.": "Hawak ang credits kapag humiling ka, at ibabalik kung tinanggihan o kinansela ang hiling.",
   "Lenders earn 1 credit after a good, on-time return.": "Nakakakuha ng 1 credit ang nagpahiram pagkatapos ng maayos at nasa oras na pagbalik.",
   "A late return costs the borrower 1 credit.": "Mababawasan ng 1 credit ang humiram kapag huli ang pagbalik.",
@@ -287,7 +287,7 @@ const Map<String, String> kFil = <String, String>{
   "Only verified neighbors can borrow and lend. This keeps everyone safe.": "Mga beripikadong kapitbahay lang ang pwedeng humiram at magpahiram. Ito ang nagpoprotekta sa lahat.",
   "Send a clear photo of any ID that shows your name and address.": "Magpadala ng malinaw na litrato ng anumang ID na may pangalan at address mo.",
   "Only barangay staff can see it. Other residents never do.": "Ang barangay staff lang ang makakakita nito. Hindi ito makikita ng ibang residente.",
-  "You get 3 starter credits once you are verified.": "Makakakuha ka ng 3 panimulang credits kapag na-verify ka.",
+  "You get {n} starter credits once you are verified.": "Makakakuha ka ng {n} panimulang credits kapag na-verify ka.",
   "Take or choose a photo": "Kumuha o pumili ng litrato",
   "Choose a different photo": "Pumili ng ibang litrato",
   "Send for verification": "Ipadala para ma-verify",
@@ -338,8 +338,8 @@ const Map<String, String> kFil = <String, String>{
 
   // help
   "How borrowing works": "Paano ang paghiram",
-  "Find an item, choose dates (up to 14 days) and send a request. Quick-borrow items are approved right away. Others wait for the owner or barangay staff.": "Maghanap ng gamit, pumili ng petsa (hanggang 14 araw) at magpadala ng hiling. Agad na aprubado ang mga mabilisang hiram. Ang iba ay hihintayin ang may-ari o barangay staff.",
-  "You start with 3 credits. Borrowing costs 1 (2 for valuable items). Lenders earn 1 credit after a good, on-time return. Late returns cost the borrower 1.": "Magsisimula ka sa 3 credits. 1 ang paghiram (2 sa mamahaling gamit). Ang nagpahiram ay kikita ng 1 credit pagkatapos ng maayos at nasa oras na pagbalik. Ang huling pagbalik ay may bawas na 1 sa humiram.",
+  "Find an item, choose dates (up to {days} days) and send a request. Quick-borrow items are approved right away. Others wait for the owner or barangay staff.": "Maghanap ng gamit, pumili ng petsa (hanggang {days} araw) at magpadala ng hiling. Agad na aprubado ang mga mabilisang hiram. Ang iba ay hihintayin ang may-ari o barangay staff.",
+  "You start with {start} credits. Borrowing costs {low} ({high} for valuable items). Lenders earn {reward} credit after a good, on-time return. Late returns cost the borrower {penalty}.": "Magsisimula ka sa {start} credits. {low} ang paghiram ({high} sa mamahaling gamit). Ang nagpahiram ay kikita ng {reward} credit pagkatapos ng maayos at nasa oras na pagbalik. Ang huling pagbalik ay may bawas na {penalty} sa humiram.",
   "Handover and return": "Abutan at balikan",
   "Meet at the pickup point. The owner confirms the handover and the return in the app. For some items a photo is taken.": "Magkita sa pickup point. Kinukumpirma ng may-ari sa app ang abutan at pagbalik. Sa ilang gamit, kukuha ng litrato.",
   "Damaged or lost items": "Nasira o nawalang gamit",
@@ -437,7 +437,7 @@ const Map<String, String> kFil = <String, String>{
   "Please read and accept the privacy notice.": "Pakibasa at tanggapin ang abiso sa privacy.",
   "I have read the privacy notice and I agree to it.": "Nabasa ko ang abiso sa privacy at sumasang-ayon ako.",
   "Read the privacy notice": "Basahin ang abiso sa privacy",
-  "I agree that barangay staff may view my ID to check that I live here. It is deleted 7 days after their decision.": "Pumapayag akong makita ng barangay staff ang ID ko para matiyak na dito ako nakatira. Buburahin ito 7 araw pagkatapos ng kanilang desisyon.",
+  "I agree that barangay staff may view my ID to check that I live here. It is deleted {n} days after their decision.": "Pumapayag akong makita ng barangay staff ang ID ko para matiyak na dito ako nakatira. Buburahin ito {n} araw pagkatapos ng kanilang desisyon.",
   "Change password": "Palitan ang password",
   "Choose your own password": "Pumili ng sarili mong password",
   "The barangay gave you a temporary password. Pick a new one that only you know.": "Binigyan ka ng barangay ng pansamantalang password. Pumili ng bago na ikaw lang ang nakakaalam.",
@@ -449,6 +449,12 @@ const Map<String, String> kFil = <String, String>{
   "The new password needs at least 8 characters.": "Kailangan ng hindi bababa sa 8 na character ang bagong password.",
   "The two new passwords are not the same.": "Hindi magkapareho ang dalawang bagong password.",
   "Password changed. Other phones were logged out.": "Napalitan ang password. Na-log out ang ibang phone.",
+  "Edit item": "I-edit ang gamit",
+  "Save changes": "I-save ang mga pagbabago",
+  "Changes saved.": "Na-save ang mga pagbabago.",
+  "Change dates": "Palitan ang petsa",
+  "Dates changed. The owner was told.": "Napalitan ang petsa. Nasabihan ang may-ari.",
+  "Edit": "I-edit",
 };
 
 /// Messages from the server, by error code, in Filipino.
@@ -509,4 +515,8 @@ const Map<String, String> kErrorFil = <String, String>{
   'too_many_attempts': 'Sobrang dami ng maling password. Maghintay ng 15 minuto, o magpa-reset ng password sa barangay.',
   'too_many_requests': 'Sobrang dami ng ginawa sa maikling oras. Maghintay ng ilang minuto.',
   'signup_failed': 'Hindi makagawa ng account gamit ang mga detalyeng ito. Kung nakapag-sign up ka na, mag-log in o magpa-reset ng password sa barangay.',
+  'bad_purok': 'Pumili ng purok mula sa listahan.',
+  'bad_phone': 'Ilagay ang numero ng telepono gamit ang mga numero lang, gaya ng 0917 123 4567.',
+  'no_id_photo': 'Hindi pa nagpapadala ng litrato ng ID ang residenteng ito.',
+  'owner_removed': 'Inalis ito ng may-ari. Siya lang ang makakapaglista ulit.',
 };
