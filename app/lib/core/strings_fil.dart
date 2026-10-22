@@ -390,6 +390,17 @@ const Map<String, String> kFil = <String, String>{
   "An accident, nobody to blame": "Aksidente, walang may kasalanan",
   "Damaged by the borrower": "Sinira ng humiram",
   "The item was lost": "Nawala ang gamit",
+  "Contact": "Kontak",
+  "Call": "Tumawag",
+  "Messages": "Mga mensahe",
+  "Send a message": "Magpadala ng mensahe",
+  "No phone number on file. Use the messages.": "Walang nakatalang numero. Gamitin ang mga mensahe.",
+  "Phone numbers are shared once the request is approved.": "Makikita ang numero ng telepono kapag naaprubahan na ang hiling.",
+  "Could not open the phone app.": "Hindi mabuksan ang phone app.",
+  "No messages yet. Say hello and agree on the pickup.": "Wala pang mensahe. Bumati at magkasundo sa pickup.",
+  "Write a message": "Sumulat ng mensahe",
+  "This conversation is closed.": "Sarado na ang usapang ito.",
+  "Barangay staff": "Barangay staff",
 };
 
 /// Messages from the server, by error code, in Filipino.
@@ -440,4 +451,7 @@ const Map<String, String> kErrorFil = <String, String>{
   'already_returned': 'Nasabi mo nang naibalik mo ang gamit na ito.',
   'settle_required': 'Piliin kung paano naayos ang hidwaan.',
   'bad_outcome': 'Piliin kung paano naayos ang hidwaan.',
+  'empty_message': 'Sumulat muna ng mensahe.',
+  'message_too_long': 'Hanggang 500 character lang ang mensahe.',
+  'thread_closed': 'Sarado na ang usapang ito.',
 };

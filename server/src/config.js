@@ -15,6 +15,8 @@ export const config = {
   },
   jwtSecret: process.env.JWT_SECRET || 'dev-only-change-me',
   corsOrigin: process.env.CORS_ORIGIN || '*',
+  // Shown to borrowers of items the barangay handles. Optional.
+  hallPhone: process.env.HALL_PHONE || null,
   uploadDir: path.resolve(process.env.UPLOAD_DIR || path.join(here, '..', 'uploads')),
 };
 

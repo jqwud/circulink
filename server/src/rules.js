@@ -12,6 +12,8 @@ export const RULES = {
   idPhotoRetentionDays: 7,    // ID photos are deleted this many days after staff approve or reject
   unusedUploadGraceHours: 24, // a photo nobody attached to anything is deleted after this long
   checkinAlertAfterMissedDays: 2, // missed daily check-ins in a row before the owner and staff are alerted
+  contactDaysAfterClose: 7,   // phone numbers and the message thread stay open this long after a loan closes
+  messageMaxLength: 500,
 };
 
 // How staff settle a dispute (an item returned damaged or lost), and what each outcome does to credits.

@@ -30,6 +30,19 @@ const isoDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) && !Number.is
 const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 export const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
+// ---------- contact between neighbors ----------
+// Phone numbers are shared only between the two neighbors of a loan, from approval until
+// RULES.contactDaysAfterClose days after it closes.
+export function contactOpen(r, today = todayPH()) {
+  if (['approved', 'handed_over', 'disputed'].includes(r.status)) return true;
+  if (r.status !== 'closed') return false;
+  const ended = r.settled_at || r.returned_at;
+  return !!ended && addDays(String(ended).slice(0, 10), RULES.contactDaysAfterClose) >= today;
+}
+
+// The message thread is open while a request waits for an answer, and for as long as contact is.
+export const threadOpen = (r, today = todayPH()) => r.status === 'pending' || contactOpen(r, today);
+
 // ---------- daily check-ins ----------
 // Loans that are out and not yet reported back by the borrower, with what the check-in rules need.
 export const OUT_LOANS_SQL = `
@@ -152,7 +165,7 @@ export function decideRequest(requestId, actor, decision, reason = null) {
       if (await findClash(conn, r.item_id, r.start_date, r.end_date, r.id)) throw bad('Those dates were booked by another request.', 'dates_booked');
       await conn.query("UPDATE requests SET status = 'approved', approved_at = NOW() WHERE id = ?", [r.id]);
       await notify(conn, r.borrower_id, 'request_approved', `Approved: ${r.item_title}`,
-        r.handled_by_staff ? 'Pick it up at the barangay hall.' : 'Message the owner and agree on the pickup point.', r.id);
+        r.handled_by_staff ? 'Pick it up at the barangay hall.' : 'Open the request to call or message the owner and agree on the pickup.', r.id);
     } else {
       await conn.query("UPDATE requests SET status = 'rejected', note = COALESCE(?, note) WHERE id = ?", [reason, r.id]);
       if (r.credits_held) {

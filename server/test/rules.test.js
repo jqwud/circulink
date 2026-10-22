@@ -22,6 +22,7 @@ describe('the rule numbers', () => {
     assert.equal(RULES.idPhotoRetentionDays, 7);
     assert.equal(RULES.unusedUploadGraceHours, 24);
     assert.equal(RULES.checkinAlertAfterMissedDays, 2);
+    assert.equal(RULES.contactDaysAfterClose, 7);
   });
 });
 

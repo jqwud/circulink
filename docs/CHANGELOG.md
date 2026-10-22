@@ -2,6 +2,14 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 7: Phone numbers and a request thread (2026-10-22)
+
+- **Phone numbers after approval:** the borrower and the owner see each other's first name and phone number, with Call and Text buttons, from approval until 7 days after the loan closes. Waiting, rejected, cancelled and expired requests show none. Items the barangay handles show the Barangay Hall, its hours and `HALL_PHONE` (new, optional, in `.env`).
+- **Message thread:** every request has a short text thread for the borrower, the owner and barangay staff (up to 500 characters a message). It is open while the request waits and until 7 days after it closes, then stays readable. A new message notifies the others once until they open the thread.
+- Staff read and write threads from the portal's Transactions page.
+- The approval notice now says to open the request to call or message the owner.
+- Migration 005 adds `request_messages`. The app now uses `url_launcher`.
+
 ## Batch 6: Dispute outcomes (2026-10-22)
 
 - **Staff choose how a dispute ends:** fine after all (the normal return rules), an accident (owner +1), damaged by the borrower (owner +1, borrower −2) or lost (owner +2, borrower −2, item removed). Nobody goes below 0. The numbers live in `DISPUTE_OUTCOMES` in `rules.js`.

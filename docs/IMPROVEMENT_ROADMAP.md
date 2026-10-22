@@ -33,7 +33,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | **Do next** | | | | |
 | 5 | Daily check-in, fair lateness, request timeline | B1, D5 | L | Done |
 | 6 | Dispute outcomes with ledger rows | B4 | M | Done |
-| 7 | Phone numbers after approval and a request thread | D1 | L | Planned |
+| 7 | Phone numbers after approval and a request thread | D1 | L | Done |
 | 8 | Privacy notice, consent, delete account, My data | P2 | M | Planned |
 | 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Planned |
 | 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Planned |
@@ -73,6 +73,14 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** server 112/112 (11 new; the loop test now settles its dispute instead of just closing it); `flutter analyze` clean, `flutter test` 5/5; portal builds; no missing Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-162223-before-migrate`); row counts unchanged (the demo has no disputes).
 - **Behavior changes users can notice:** staff can no longer close a disputed loan without choosing an outcome (the old "Also mark the loan as closed" box is gone); the chosen outcome moves credits, removes a lost item and refunds its other bookings; both neighbors get a "Settled" notification; the request and the wallet show the outcome. "Credits on hold" now shows only while a request is active.
 - **Undo:** `npm run migrate:down` (drops the outcome columns; ledger rows stay), then `git revert` the batch commit.
+
+### Batch 7: Phone numbers and a request thread
+- **Goal:** after approval the two neighbors can actually reach each other, so a loan no longer stalls at "message the owner".
+- **Files:** `database/migrations/005_request_messages.sql` (new), `server/src/services.js` (`contactOpen`, `threadOpen`), `rules.js`, `config.js` (`HALL_PHONE`), `.env.example`, `routes/requests.js` (`contact` on a request, `GET/POST /requests/:id/messages`); app `messages_screen.dart` (new), `request_detail.dart` (contact card with Call and Text), `notifications_screen.dart`, `strings_fil.dart`, `pubspec.yaml` (`url_launcher`), `AndroidManifest.xml` (tel and sms intents); portal `Transactions.jsx` (Messages button and thread), `i18n.jsx`, `styles.css`; tests `contact.test.js` (new, 12), `rules.test.js`.
+- **Proof:** server 124/124; `flutter analyze` clean, `flutter test` 5/5; portal builds; no missing Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-162851-before-migrate`); row counts unchanged.
+- **Behavior changes users can notice:** from approval until 7 days after a loan closes, the borrower and the owner see each other's first name and phone number with Call and Text buttons; items the barangay handles show the hall (and `HALL_PHONE` if set). Every request has a message thread for the borrower, the owner and staff, open while it waits and until 7 days after it closes; a new message sends one notification until the thread is opened. Staff read and answer threads from Transactions.
+- **New library:** `url_launcher` (approved in the decisions) for the Call and Text buttons.
+- **Undo:** `npm run migrate:down` (drops the messages), then `git revert` the batch commit.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

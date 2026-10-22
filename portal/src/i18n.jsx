@@ -110,6 +110,9 @@ const FIL = {
   'settle_fine': 'Maayos naman pala', 'settle_accident': 'Aksidente, walang may kasalanan', 'settle_borrower_fault': 'Sinira ng humiram', 'settle_lost': 'Nawala ang gamit',
   'Normal return rules: the lender earns 1 if it was on time; a late borrower loses 1.': 'Karaniwang patakaran: +1 sa nagpahiram kung nasa oras; -1 sa humiram kung late.',
   'the item is removed': 'aalisin ang gamit', 'Never below 0.': 'Hindi bababa sa 0.',
+  // message threads
+  'Messages': 'Mga mensahe', 'No messages yet.': 'Wala pang mensahe.', 'Barangay staff': 'Barangay staff',
+  'Write a message': 'Sumulat ng mensahe', 'This conversation is closed.': 'Sarado na ang usapang ito.',
 };
 
 // English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),

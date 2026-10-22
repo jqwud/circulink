@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/photo.dart';
+import 'messages_screen.dart';
 import 'report_screen.dart';
 
 /// M10 / M11: one request, with every action that fits its status and who you are.
@@ -273,6 +275,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
             ],
           ),
         ),
+        if ((asBorrower || asOwner) && (mapOf(r['contact']).isNotEmpty || boolOf(r['thread_open']) || intOf(r['message_count']) > 0)) _contactCard(context, r),
         _Timeline(request: r),
         if (asBorrower && status == 'handed_over' && str(r['borrower_returned_at']).isEmpty) _checkinCard(context, r),
         _guide(context, r, asOwner, staff),
@@ -288,6 +291,71 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  Future<void> _launch(String uri) async {
+    bool ok = false;
+    try {
+      ok = await launchUrl(Uri.parse(uri));
+    } catch (_) {
+      ok = false;
+    }
+    if (!ok && mounted) showMessage(context, context.tx('Could not open the phone app.'), bad: true);
+  }
+
+  Future<void> _openMessages(Map<String, dynamic> r) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (BuildContext c) => MessagesScreen(requestId: intOf(r['id']), title: str(mapOf(r['item'])['title'])),
+    ));
+    if (mounted) setState(() => _reloadTick++);
+  }
+
+  /// Who to call or text about this loan. Numbers show only after approval, until a week after it closes;
+  /// items the barangay handles show the hall. The message thread works from the first request.
+  Widget _contactCard(BuildContext context, Map<String, dynamic> r) {
+    final Map<String, dynamic> c = mapOf(r['contact']);
+    final bool hall = str(c['kind']) == 'hall';
+    final String phone = str(c['phone']);
+    final String dial = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final int count = intOf(r['message_count']);
+    return HiCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(context.t('Contact'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          const SizedBox(height: 6),
+          if (c.isNotEmpty) ...<Widget>[
+            Row(children: <Widget>[
+              Icon(hall ? Icons.account_balance : Icons.person, color: HiColors.accent, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text(str(c['name']), style: const TextStyle(fontWeight: FontWeight.w800))),
+            ]),
+            if (hall && str(c['hours']).isNotEmpty)
+              Text('${str(c['note'])} · ${str(c['hours'])}', style: const TextStyle(color: HiColors.muted)),
+            const SizedBox(height: 4),
+            Text(phone.isNotEmpty ? phone : context.t('No phone number on file. Use the messages.'), style: TextStyle(color: phone.isNotEmpty ? HiColors.ink : HiColors.muted)),
+            if (dial.isNotEmpty) ...<Widget>[
+              const SizedBox(height: 8),
+              Row(children: <Widget>[
+                Expanded(child: SoftButton(label: context.t('Call'), icon: Icons.call, onPressed: () => _launch('tel:$dial'))),
+                const SizedBox(width: 8),
+                Expanded(child: SoftButton(label: context.t('Text'), icon: Icons.sms_outlined, onPressed: () => _launch('sms:$dial'))),
+              ]),
+            ],
+            const SizedBox(height: 8),
+          ] else
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(context.t('Phone numbers are shared once the request is approved.'), style: const TextStyle(color: HiColors.muted)),
+            ),
+          SoftButton(
+            label: count > 0 ? '${context.t('Messages')} ($count)' : context.t('Send a message'),
+            icon: Icons.chat_bubble_outline,
+            onPressed: () => _openMessages(r),
+          ),
+        ],
+      ),
     );
   }
 

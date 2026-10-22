@@ -92,6 +92,8 @@ Check-in (`POST /requests/:id/checkin`): borrower only (403), only while `handed
 
 ## Permissions
 
+Contact and messages (✅ `contact.test.js`): phone numbers only for the two neighbors of a loan, from approval to 7 days after it closes, never in staff lists; staff-handled items show the hall; only the borrower, the owner and staff can read or write a thread; empty, too long and closed threads are refused.
+
 | Action | Resident | Item owner | Staff | Admin |
 |---|---|---|---|---|
 | Borrow, wanted post, report | yes (verified) | yes | no | no |

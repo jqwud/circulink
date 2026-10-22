@@ -3,6 +3,45 @@ import { api, upload } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, Tabs, daysLate, useDateFormat, useLoad, useToast } from '../components.jsx';
 
+// The request's message thread. Staff can read every thread and write in it.
+function Thread({ req, onClose }) {
+  const { t } = useI18n();
+  const toast = useToast();
+  const fmt = useDateFormat();
+  const thread = useLoad(() => api(`/requests/${req.id}/messages`), [req.id]);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function send(e) {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setBusy(true);
+    try { await api(`/requests/${req.id}/messages`, { method: 'POST', body: { body: text } }); setText(''); thread.reload(); }
+    catch (err) { toast(err.message, 'bad'); } finally { setBusy(false); }
+  }
+  const list = thread.data?.messages || [];
+  return (
+    <Modal title={`${t('Messages')}: ${req.item.title}`} onClose={onClose} wide>
+      {thread.loading && !thread.data && <Loading />}
+      {thread.data && (list.length === 0 ? <p className="muted">{t('No messages yet.')}</p> : (
+        <ul className="thread">
+          {list.map((m) => (
+            <li key={m.id} className={m.staff ? 'staff' : ''}>
+              <b>{m.staff ? t('Barangay staff') : m.from}</b> <span className="muted">· {fmt(m.created_at)}</span>
+              <p>{m.body}</p>
+            </li>
+          ))}
+        </ul>
+      ))}
+      {thread.data?.open ? (
+        <form onSubmit={send} className="row" style={{ marginTop: 12 }}>
+          <input className="grow" value={text} maxLength={500} onChange={(e) => setText(e.target.value)} placeholder={t('Write a message')} aria-label={t('Write a message')} />
+          <button className="btn primary" disabled={busy}>{t('Send')}</button>
+        </form>
+      ) : thread.data && <p className="muted">{t('This conversation is closed.')}</p>}
+    </Modal>
+  );
+}
+
 // Which button does a staff member need on this row?
 function nextAction(r) {
   if (r.status === 'pending' && r.handled_by_staff) return 'decide';
@@ -22,7 +61,7 @@ export default function Transactions() {
   const { data, loading, error, reload } = useLoad(() => api(path), [path]);
   const all = useLoad(() => api('/admin/requests?overdue=1'), [tab]);
 
-  const [dialog, setDialog] = useState(null);   // { kind: 'handover'|'return'|'reject', req }
+  const [dialog, setDialog] = useState(null);   // { kind: 'handover'|'return'|'reject'|'thread', req }
   const [condition, setCondition] = useState('good');
   const [note, setNote] = useState('');
   const [photo, setPhoto] = useState('');
@@ -89,6 +128,7 @@ export default function Transactions() {
                       </>}
                       {act1 === 'handover' && <button className="btn small primary" onClick={() => setDialog({ kind: 'handover', req: r })}>{t('Confirm handover')}</button>}
                       {act1 === 'return' && <button className="btn small primary" onClick={() => setDialog({ kind: 'return', req: r })}>{t('Confirm return')}</button>}
+                      <button className="btn small" onClick={() => setDialog({ kind: 'thread', req: r })}>{t('Messages')}{r.message_count ? ` (${r.message_count})` : ''}</button>
                     </div></td>
                   </tr>
                 );
@@ -97,6 +137,8 @@ export default function Transactions() {
           </table>
         </div>
       ))}
+
+      {dialog?.kind === 'thread' && <Thread req={dialog.req} onClose={close} />}
 
       {dialog?.kind === 'reject' && (
         <Modal title={`${t('Reject')}: ${dialog.req.item.title}`} onClose={close}>

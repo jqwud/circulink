@@ -47,6 +47,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.assignment_return;
       case 'dispute_settled':
         return Icons.gavel;
+      case 'message':
+        return Icons.chat_bubble_outline;
       default:
         return Icons.notifications_none;
     }
