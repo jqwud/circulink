@@ -143,7 +143,7 @@ class AppState extends ChangeNotifier {
     await _startSession(res);
   }
 
-  Future<void> register({required String name, required String email, required String password, String? phone, String? purok}) async {
+  Future<void> register({required String name, required String email, required String password, String? phone, String? purok, bool acceptPrivacy = false}) async {
     final dynamic res = await api.post('/auth/register', <String, dynamic>{
       'name': name.trim(),
       'email': email.trim(),
@@ -151,6 +151,7 @@ class AppState extends ChangeNotifier {
       'phone': phone,
       'purok': purok,
       'language': lang,
+      'accept_privacy': acceptPrivacy,
     });
     await _startSession(res);
   }

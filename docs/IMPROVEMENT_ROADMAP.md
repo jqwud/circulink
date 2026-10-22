@@ -34,7 +34,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 5 | Daily check-in, fair lateness, request timeline | B1, D5 | L | Done |
 | 6 | Dispute outcomes with ledger rows | B4 | M | Done |
 | 7 | Phone numbers after approval and a request thread | D1 | L | Done |
-| 8 | Privacy notice, consent, delete account, My data | P2 | M | Planned |
+| 8 | Privacy notice, consent, delete account, My data | P2 | M | Done |
 | 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Planned |
 | 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Planned |
 | 11 | Notifications in the user's language | D6 | M | Planned |
@@ -81,6 +81,14 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Behavior changes users can notice:** from approval until 7 days after a loan closes, the borrower and the owner see each other's first name and phone number with Call and Text buttons; items the barangay handles show the hall (and `HALL_PHONE` if set). Every request has a message thread for the borrower, the owner and staff, open while it waits and until 7 days after it closes; a new message sends one notification until the thread is opened. Staff read and answer threads from Transactions.
 - **New library:** `url_launcher` (approved in the decisions) for the Call and Text buttons.
 - **Undo:** `npm run migrate:down` (drops the messages), then `git revert` the batch commit.
+
+### Batch 8: Privacy
+- **Goal:** people know what is collected and why before they give it, and can see and delete their data (RA 10173).
+- **Files:** `database/migrations/006_privacy.sql` (new), `server/src/privacy.js` (new: the notice in Filipino and English, `PRIVACY_VERSION`), `auth.js` (`privacy_ok`, `id_consent`, `deletion_requested`), `routes/auth.js` (`GET /privacy`, consent at sign-up, `POST /me/privacy`, `POST /me/id-consent`, `GET /me/data`, `POST`/`DELETE /me/delete-request`), `services.js` (`deleteAccountTx`), `routes/admin.js` (deletion filter, dashboard count, `POST /admin/users/:id/delete`), `.env.example` (`DPO_*`); app `privacy_screens.dart` (new: notice, My data, delete request), `gate.dart`, `auth_screens.dart`, `verification_screen.dart`, `profile_screen.dart`, `state.dart`, `strings_fil.dart`; portal `Residents.jsx`, `Dashboard.jsx`, `i18n.jsx`; tests `privacy.test.js` (new, 9), and consent added where `jobs`, `loop` and `uploads` tests sign up or send an ID.
+- **Proof:** server 133/133; `flutter analyze` clean, `flutter test` 5/5; portal builds; no missing Filipino text. Migration applied to the demo database with a backup first (`hiraman-20261022-163745-before-migrate`); row counts unchanged.
+- **Behavior changes users can notice:** sign-up needs a ticked "I have read the privacy notice" box; sending an ID needs a ticked consent box; residents who joined earlier see the notice once and tap "I agree" (or log out); Profile has Privacy notice, My data (copy everything) and Delete my account (a request the resident can take back); admins delete accounts from Residents (refused while a loan is active), which removes the name, contacts, ID photo, messages and notes but keeps the anonymous loan records.
+- **For the barangay:** fill in `DPO_NAME`, `DPO_EMAIL` and `DPO_PHONE` in `server/.env`; until then the notice says to ask at the hall's help desk. Have the barangay's legal or DPO contact review the notice text in `server/src/privacy.js`.
+- **Undo:** `npm run migrate:down` (drops the consent and deletion columns; deleted accounts stay anonymized), then `git revert` the batch commit.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

@@ -12,6 +12,7 @@ import '../widgets/pawsa.dart';
 import 'auth_screens.dart';
 import 'help_screen.dart';
 import 'impact_screen.dart';
+import 'privacy_screens.dart';
 import 'my_items_screen.dart';
 import 'verification_screen.dart';
 import 'wallet_screen.dart';
@@ -121,6 +122,12 @@ class ProfileScreen extends StatelessWidget {
         _tile(context, Icons.edit_outlined, context.t('Edit profile'), () => _editProfile(context)),
         _tile(context, Icons.help_outline, context.t('Help and rules'), () => _push(context, const HelpScreen())),
         _tile(context, Icons.settings_ethernet, context.t('Server address'), () => showServerDialog(context)),
+        SectionTitle(context.t('Privacy')),
+        _tile(context, Icons.privacy_tip_outlined, context.t('Privacy notice'), () => _push(context, const PrivacyScreen())),
+        _tile(context, Icons.download_outlined, context.t('My data'), () => _push(context, const MyDataScreen())),
+        _tile(context, Icons.person_remove_outlined,
+            boolOf(app.user?['deletion_requested']) ? context.t('Deletion requested. Tap to keep your account') : context.t('Delete my account'),
+            () => askToDeleteAccount(context)),
         SectionTitle(context.t('Language')),
         const Align(alignment: Alignment.centerLeft, child: LanguageToggle()),
         const SizedBox(height: 18),

@@ -2,6 +2,14 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 8: Privacy (2026-10-22)
+
+- **Privacy notice** (RA 10173) in Filipino and English: what is collected, why, who sees it, how long it is kept, your rights, and the barangay's Data Protection Officer (`DPO_NAME`, `DPO_EMAIL`, `DPO_PHONE` in `.env`). Served at `GET /api/privacy` and shown in the app.
+- **Consent:** signing up needs the notice to be accepted (`privacy_required`); sending an ID photo needs a separate consent (`id_consent_required`). People who joined before see the notice once and agree. Changing `PRIVACY_VERSION` asks everyone again.
+- **My data:** residents can see and copy everything Hiraman holds about them (`GET /api/me/data`).
+- **Delete my account:** residents ask from Profile and can take it back; staff see requests on the dashboard and in Residents; an admin deletes the account, which is refused while a loan is active. The name, contact details, ID photo, messages, notes, wanted posts and notifications are removed; waiting requests are cancelled and refunded; listings are removed; anonymous loan and credit records stay.
+- Migration 006 adds `privacy_version`, `privacy_accepted_at`, `id_consent_at`, `deletion_requested_at` and `deleted_at` to `users`.
+
 ## Batch 7: Phone numbers and a request thread (2026-10-22)
 
 - **Phone numbers after approval:** the borrower and the owner see each other's first name and phone number, with Call and Text buttons, from approval until 7 days after the loan closes. Waiting, rejected, cancelled and expired requests show none. Items the barangay handles show the Barangay Hall, its hours and `HALL_PHONE` (new, optional, in `.env`).

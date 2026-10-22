@@ -283,6 +283,44 @@ export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'You
   return open.length;
 }
 
+// ---------- deleting an account ----------
+// The person is removed, the loan records stay (without them) so the barangay's totals still add up.
+// Refused while a loan they are part of is approved, out or disputed. Their waiting requests are cancelled and
+// refunded, their listings removed (others' waiting requests on them are refunded), and their name, contact
+// details, ID photo, messages, notes and notifications are deleted.
+export async function deleteAccountTx(conn, userId, actor, { newPasswordHash, removeFile }) {
+  const [[u]] = await conn.query('SELECT * FROM users WHERE id = ? FOR UPDATE', [userId]);
+  if (!u || u.role !== 'resident') throw notFound('Resident not found.');
+  if (u.deleted_at) return { id: u.id, deleted: true };
+  const [[busy]] = await conn.query(
+    `SELECT COUNT(*) AS n FROM requests r JOIN items i ON i.id = r.item_id
+      WHERE (r.borrower_id = ? OR i.owner_id = ?) AND r.status IN ('approved','handed_over','disputed')`, [u.id, u.id]);
+  if (busy.n) throw bad('This person has an active loan. Finish or cancel it first.', 'active_loans');
+
+  const [mine] = await conn.query("SELECT * FROM requests WHERE borrower_id = ? AND status = 'pending' FOR UPDATE", [u.id]);
+  for (const r of mine) {
+    await conn.query("UPDATE requests SET status = 'cancelled', credits_held = 0 WHERE id = ?", [r.id]);
+    if (r.credits_held) await addCredits(conn, u.id, r.credit_cost, 'refund_cancelled', r.id);
+  }
+  const [items] = await conn.query("SELECT * FROM items WHERE owner_id = ? AND status <> 'removed' FOR UPDATE", [u.id]);
+  for (const item of items) await removeItemTx(conn, item, { why: 'The owner left Hiraman. Your credits were returned.' });
+  await conn.query('UPDATE items SET description = NULL, photo_url = NULL WHERE owner_id = ?', [u.id]);
+
+  if (u.id_photo_path) removeFile(u.id_photo_path);
+  await conn.query(
+    `UPDATE users SET name = 'Deleted user', email = ?, phone = NULL, purok = NULL, password_hash = ?, id_photo_path = NULL,
+       reject_reason = NULL, suspended = 1, deletion_requested_at = NULL, deleted_at = NOW() WHERE id = ?`,
+    [`deleted-${u.id}@hiraman.invalid`, newPasswordHash, u.id]);
+  await conn.query('DELETE FROM request_messages WHERE sender_id = ?', [u.id]);
+  await conn.query('DELETE FROM wanted_posts WHERE user_id = ?', [u.id]);
+  await conn.query('UPDATE request_checkins c JOIN requests r ON r.id = c.request_id SET c.note = NULL WHERE r.borrower_id = ?', [u.id]);
+  await conn.query('UPDATE requests SET note = NULL WHERE borrower_id = ?', [u.id]);
+  await conn.query('UPDATE ratings SET comment = NULL WHERE rater_id = ?', [u.id]);
+  await conn.query('DELETE FROM notifications WHERE user_id = ?', [u.id]);
+  await audit(actor.id, 'account_deleted', `user #${u.id}`, conn);
+  return { id: u.id, deleted: true };
+}
+
 // ---------- settling a dispute ----------
 // Staff choose one outcome (DISPUTE_OUTCOMES in rules.js); every credit change is a ledger row and nobody
 // goes below 0. Only a loan that is still disputed is settled, so a second call never pays twice.

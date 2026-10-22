@@ -81,6 +81,7 @@ describe('request expiry (7 days, or once the dates have passed)', () => {
 describe('ID photos are deleted 7 days after the decision', () => {
   let file;
   test('setup: Isa sends an ID and staff approve it', async () => {
+    await s.api('POST', '/me/id-consent', isa);
     const r = await s.upload('/me/id-photo', isa, PNG, 'image/png', 'id.png');
     assert.equal(r.status, 200);
     file = path.join(process.env.UPLOAD_DIR, 'private', (await one('SELECT id_photo_path p FROM users WHERE email = ?', ['isa@hiraman.test'])).p);
@@ -101,7 +102,8 @@ describe('ID photos are deleted 7 days after the decision', () => {
     assert.equal(view.status, 404);
   });
   test('a photo still waiting for a decision is never deleted', async () => {
-    const ben2 = await s.api('POST', '/auth/register', null, { name: 'Waiting Person', email: 'waiting@hiraman.test', password: 'secret12' });
+    const ben2 = await s.api('POST', '/auth/register', null, { name: 'Waiting Person', email: 'waiting@hiraman.test', password: 'secret12', accept_privacy: true });
+    await s.api('POST', '/me/id-consent', ben2.json.token);
     await s.upload('/me/id-photo', ben2.json.token, PNG, 'image/png', 'id.png');
     await deleteOldIdPhotos(later(60));
     assert.ok((await one('SELECT id_photo_path p FROM users WHERE email = ?', ['waiting@hiraman.test'])).p);

@@ -17,6 +17,7 @@ export default function Dashboard() {
     { n: s.overdue, label: 'Overdue items', to: '/transactions', bad: true },
     { n: s.missed_checkins, label: 'Loans with no check-in for 2+ days', to: '/transactions', bad: true },
     { n: s.open_reports, label: 'Open reports', to: '/reports', bad: true },
+    { n: s.deletion_requests, label: 'Account deletion requests', to: '/residents?deletion=1' },
   ].filter((a) => a.n > 0);
 
   return (

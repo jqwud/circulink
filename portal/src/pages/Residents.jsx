@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
+import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
 import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, useLoad, useToast, useDateFormat } from '../components.jsx';
 
@@ -7,14 +9,25 @@ export default function Residents() {
   const { t } = useI18n();
   const toast = useToast();
   const fmt = useDateFormat();
-  const [status, setStatus] = useState('');
+  const { user } = useAuth();
+  const [params] = useSearchParams();
+  const [status, setStatus] = useState(params.get('deletion') === '1' ? 'deletion' : '');
   const [text, setText] = useState('');
   const { data, loading, error, reload } = useLoad(
-    () => api(`/admin/users?${new URLSearchParams({ ...(status && { status }), ...(text && { q: text }) })}`), [status, text]);
+    () => api(`/admin/users?${new URLSearchParams({ ...(status === 'deletion' ? { deletion: '1' } : status && { status }), ...(text && { q: text }) })}`), [status, text]);
   const [openId, setOpenId] = useState(null);
   const detail = useLoad(() => (openId ? api(`/admin/users/${openId}`) : Promise.resolve(null)), [openId]);
 
   const [confirming, setConfirming] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+
+  // Deleting removes the person's name, contacts, ID photo and messages; their loan records stay without them.
+  async function remove(u) {
+    try {
+      await api(`/admin/users/${u.id}/delete`, { method: 'POST' });
+      toast(t('Account deleted.')); setOpenId(null); reload();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
 
   async function toggle(u) {
     try {
@@ -33,6 +46,7 @@ export default function Residents() {
         <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label={t('Status')}>
           <option value="">{t('All')}</option>
           {['pending', 'approved', 'rejected', 'unverified'].map((s) => <option key={s} value={s}>{t(s)}</option>)}
+          <option value="deletion">{t('Deletion requested')}</option>
         </select>
       </div>
       {loading && !data && <Loading />}
@@ -46,7 +60,7 @@ export default function Residents() {
                 <tr key={u.id}>
                   <td><b>{u.name}</b><small>{u.email}{u.phone ? ` · ${u.phone}` : ''}</small></td>
                   <td>{u.purok || '–'}</td>
-                  <td><Badge value={u.verification_status} />{u.suspended && <> <Badge value="suspended" /></>}</td>
+                  <td><Badge value={u.verification_status} />{u.suspended && <> <Badge value="suspended" /></>}{u.deletion_requested_at && <> <Badge value="removed" label={t('Deletion requested')} /></>}</td>
                   <td>{u.credits}</td>
                   <td>{u.items}</td>
                   <td>{u.loans}</td>
@@ -88,6 +102,11 @@ export default function Residents() {
                 </ul>
               )}
               <div className="modal-actions">
+                {user.role === 'lgu_admin' && (
+                  <button className="btn danger" onClick={() => setDeleting(detail.data.user)}>
+                    {detail.data.user.deletion_requested ? t('Delete account (requested)') : t('Delete account')}
+                  </button>
+                )}
                 <button className={`btn ${detail.data.user.suspended ? '' : 'danger'}`} onClick={() => askToggle(detail.data.user)}>
                   {detail.data.user.suspended ? t('Reinstate') : t('Suspend')}
                 </button>
@@ -95,6 +114,17 @@ export default function Residents() {
             </>
           )}
         </Modal>
+      )}
+
+      {deleting && (
+        <ConfirmModal
+          title={t("Delete {name}'s account?").replace('{name}', deleting.name)}
+          message={t('Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.')}
+          confirmLabel={t('Delete account')}
+          danger
+          onConfirm={() => remove(deleting)}
+          onClose={() => setDeleting(null)}
+        />
       )}
 
       {confirming && (

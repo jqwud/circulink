@@ -113,6 +113,12 @@ const FIL = {
   // message threads
   'Messages': 'Mga mensahe', 'No messages yet.': 'Wala pang mensahe.', 'Barangay staff': 'Barangay staff',
   'Write a message': 'Sumulat ng mensahe', 'This conversation is closed.': 'Sarado na ang usapang ito.',
+  // privacy and account deletion
+  'Account deletion requests': 'Mga hiling na burahin ang account', 'Deletion requested': 'Hiniling na burahin',
+  'Delete account': 'Burahin ang account', 'Delete account (requested)': 'Burahin ang account (hiniling)', 'Account deleted.': 'Nabura ang account.',
+  "Delete {name}'s account?": 'Burahin ang account ni {name}?',
+  'Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.':
+    'Permanenteng aalisin ang pangalan, contact, litrato ng ID at mga mensahe nila. Mananatili ang mga tala ng hiraman nang walang pangalan nila. Hindi na ito maibabalik.',
 };
 
 // English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),

@@ -42,7 +42,7 @@ const dina = await login('dina');
 // ---- registration and verification ----
 let newTok; let newId;
 await step('register a new resident: starts unverified with 0 credits', async () => {
-  const r = await api('POST', '/auth/register', null, { name: 'Test Neighbor', email: 'test@hiraman.test', password: 'secret12', purok: 'Purok 1' });
+  const r = await api('POST', '/auth/register', null, { name: 'Test Neighbor', email: 'test@hiraman.test', password: 'secret12', purok: 'Purok 1', accept_privacy: true });
   assert.equal(r.status, 201); newTok = r.json.token; newId = r.json.user.id;
   assert.equal(r.json.user.verification_status, 'unverified'); assert.equal(r.json.user.credits, 0);
 });
@@ -52,6 +52,7 @@ await step('unverified resident cannot borrow', async () => {
   assert.equal(r.status, 403); assert.equal(r.json.code, 'not_verified');
 });
 await step('ID upload moves the account to pending', async () => {
+  assert.equal((await api('POST', '/me/id-consent', newTok)).status, 200);
   const fd = new FormData(); fd.append('file', new Blob([PNG], { type: 'image/png' }), 'id.png');
   const res = await fetch(`${base}/me/id-photo`, { method: 'POST', headers: { Authorization: `Bearer ${newTok}` }, body: fd });
   assert.equal(res.status, 200); assert.equal((await res.json()).verification_status, 'pending');
@@ -162,7 +163,7 @@ await step('reject and cancel return the held credits', async () => {
   assert.equal(await credits(dina), before);
 });
 await step('not enough credits is refused with a clear code', async () => {
-  const fresh = await api('POST', '/auth/register', null, { name: 'No Credits', email: 'nocredit@hiraman.test', password: 'secret12' });
+  const fresh = await api('POST', '/auth/register', null, { name: 'No Credits', email: 'nocredit@hiraman.test', password: 'secret12', accept_privacy: true });
   const id = fresh.json.user.id;
   await api('POST', `/admin/users/${id}/approve`, staff);
   const t = fresh.json.token;

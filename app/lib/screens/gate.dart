@@ -7,6 +7,7 @@ import '../widgets/pawsa.dart';
 import 'auth_screens.dart';
 import 'home_shell.dart';
 import 'onboarding_screen.dart';
+import 'privacy_screens.dart';
 
 /// Decides what to show: loading, first-time intro, login, or the app.
 class Gate extends StatelessWidget {
@@ -19,6 +20,8 @@ class Gate extends StatelessWidget {
     if (app.user == null) {
       return app.seenOnboarding ? const LoginScreen() : const OnboardingScreen();
     }
+    // Residents who joined before the privacy notice existed (or before it changed) agree once.
+    if (app.user?['role'] == 'resident' && app.user?['privacy_ok'] == false) return const PrivacyScreen(mustAccept: true);
     return const HomeShell();
   }
 }

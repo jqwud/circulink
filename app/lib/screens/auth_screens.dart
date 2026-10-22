@@ -8,6 +8,7 @@ import '../widgets/common.dart';
 import '../widgets/connection.dart';
 import '../widgets/language_toggle.dart';
 import '../widgets/pawsa.dart';
+import 'privacy_screens.dart';
 
 const List<String> kPuroks = <String>['Purok 1', 'Purok 2', 'Purok 3', 'Purok 4', 'Purok 5', 'Purok 6', 'Purok 7'];
 
@@ -140,6 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _password = TextEditingController();
   String _purok = kPuroks.first;
+  bool _agreed = false;
   bool _busy = false;
   String? _error;
 
@@ -157,6 +159,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       setState(() => _error = context.tx('Please fill in your name, a valid email and a password of at least 6 characters.'));
       return;
     }
+    if (!_agreed) {
+      setState(() => _error = context.tx('Please read and accept the privacy notice.'));
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -168,6 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _password.text,
         phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
         purok: _purok,
+        acceptPrivacy: _agreed,
       );
       if (mounted) Navigator.of(context).popUntil((Route<dynamic> r) => r.isFirst);
     } on ApiException catch (e) {
@@ -201,6 +208,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 14),
             TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: context.t('Password'), helperText: context.t('At least 6 characters'), border: const OutlineInputBorder())),
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              value: _agreed,
+              onChanged: (bool? v) => setState(() => _agreed = v ?? false),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              title: Text(context.t('I have read the privacy notice and I agree to it.')),
+              subtitle: Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero, foregroundColor: HiColors.accent),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (BuildContext c) => const PrivacyScreen())),
+                  child: Text(context.t('Read the privacy notice')),
+                ),
+              ),
+            ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 12),
               Container(

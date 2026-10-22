@@ -1,25 +1,32 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
-import { pool, q, one } from '../db.js';
+import { pool, q, one, withTx } from '../db.js';
 import { bad, wrap } from '../errors.js';
 import { authRequired, signToken, publicUser } from '../auth.js';
 import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
+import { PRIVACY_VERSION, privacyNotice } from '../privacy.js';
+import { audit } from '../services.js';
 
 const router = Router();
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false });
 
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
 
+// The privacy notice. Public: people read it before they sign up.
+router.get('/privacy', (req, res) => res.json(privacyNotice(req.query.lang)));
+
 router.post('/auth/register', limiter, wrap(async (req, res) => {
-  const { name, email, password, phone, purok, language } = req.body || {};
+  const { name, email, password, phone, purok, language, accept_privacy: acceptPrivacy } = req.body || {};
   if (!name || name.trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
   if (!emailOk(email)) throw bad('Please enter a valid email.', 'bad_email');
   if (!password || password.length < 6) throw bad('Password must be at least 6 characters.', 'bad_password');
+  if (acceptPrivacy !== true) throw bad('Please read and accept the privacy notice.', 'privacy_required');
   const hash = await bcrypt.hash(password, 10);
   const [r] = await pool.query(
-    'INSERT INTO users (name, email, phone, password_hash, purok, language) VALUES (?,?,?,?,?,?)',
-    [name.trim(), email.trim().toLowerCase(), phone || null, hash, purok || null, language === 'en' ? 'en' : 'fil']);
+    `INSERT INTO users (name, email, phone, password_hash, purok, language, privacy_version, privacy_accepted_at)
+     VALUES (?,?,?,?,?,?,?, NOW())`,
+    [name.trim(), email.trim().toLowerCase(), phone || null, hash, purok || null, language === 'en' ? 'en' : 'fil', PRIVACY_VERSION]);
   const user = await one('SELECT * FROM users WHERE id = ?', [r.insertId]);
   res.status(201).json({ token: signToken(user), user: publicUser(user) });
 }));
@@ -45,6 +52,69 @@ router.patch('/me', authRequired, wrap(async (req, res) => {
   res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
 }));
 
+// Agreeing to the current privacy notice (people who joined before it existed, or after it changed).
+router.post('/me/privacy', authRequired, wrap(async (req, res) => {
+  await q('UPDATE users SET privacy_version = ?, privacy_accepted_at = NOW() WHERE id = ?', [PRIVACY_VERSION, req.user.id]);
+  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+}));
+
+// Agreeing that barangay staff may view the ID photo. Needed before the first ID upload.
+router.post('/me/id-consent', authRequired, wrap(async (req, res) => {
+  await q('UPDATE users SET id_consent_at = NOW() WHERE id = ?', [req.user.id]);
+  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+}));
+
+// "My data": everything Hiraman holds about the person, in one download. Other people appear by first name only.
+router.get('/me/data', authRequired, wrap(async (req, res) => {
+  const id = req.user.id;
+  const u = req.user;
+  const first = "SUBSTRING_INDEX(%s, ' ', 1)";
+  res.json({
+    exported_at: new Date().toISOString(),
+    profile: {
+      name: u.name, email: u.email, phone: u.phone, purok: u.purok, language: u.language, role: u.role,
+      verification_status: u.verification_status, credits: u.credits, joined: u.created_at, has_id_photo: !!u.id_photo_path,
+      privacy_version: u.privacy_version, privacy_accepted_at: u.privacy_accepted_at, id_consent_at: u.id_consent_at,
+      deletion_requested_at: u.deletion_requested_at,
+    },
+    items: await q('SELECT id, title, description, item_condition, tier, status, created_at FROM items WHERE owner_id = ? ORDER BY id', [id]),
+    requests_as_borrower: await q(
+      `SELECT r.id, i.title AS item, ${first.replace('%s', 'o.name')} AS owner, r.start_date, r.end_date, r.status, r.on_time, r.created_at
+         FROM requests r JOIN items i ON i.id = r.item_id LEFT JOIN users o ON o.id = i.owner_id WHERE r.borrower_id = ? ORDER BY r.id`, [id]),
+    requests_for_my_items: await q(
+      `SELECT r.id, i.title AS item, ${first.replace('%s', 'b.name')} AS borrower, r.start_date, r.end_date, r.status, r.created_at
+         FROM requests r JOIN items i ON i.id = r.item_id JOIN users b ON b.id = r.borrower_id WHERE i.owner_id = ? ORDER BY r.id`, [id]),
+    credit_history: await q('SELECT amount, reason, request_id, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id', [id]),
+    checkins: await q(
+      'SELECT c.request_id, c.day, c.answer, c.note FROM request_checkins c JOIN requests r ON r.id = c.request_id WHERE r.borrower_id = ? ORDER BY c.id', [id]),
+    messages_sent: await q('SELECT request_id, body, created_at FROM request_messages WHERE sender_id = ? ORDER BY id', [id]),
+    ratings_given: await q('SELECT request_id, stars, comment, created_at FROM ratings WHERE rater_id = ? ORDER BY id', [id]),
+    ratings_received: await q('SELECT request_id, stars, comment, created_at FROM ratings WHERE ratee_id = ? ORDER BY id', [id]),
+    reports_filed: await q('SELECT target_type, reason, details, status, outcome, created_at FROM reports WHERE reporter_id = ? ORDER BY id', [id]),
+    wanted_posts: await q('SELECT title, details, needed_by, status, created_at FROM wanted_posts WHERE user_id = ? ORDER BY id', [id]),
+    survey_answers: await q(
+      'SELECT s.request_id, s.would_have_bought FROM impact_surveys s JOIN requests r ON r.id = s.request_id WHERE r.borrower_id = ?', [id]),
+    notifications: await q('SELECT type, title, body, created_at, read_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 200', [id]),
+  });
+}));
+
+// Asking for the account to be deleted. An admin does it from the portal once no loan is active.
+router.post('/me/delete-request', authRequired, wrap(async (req, res) => {
+  if (req.user.role !== 'resident') throw bad('Staff accounts are managed by an admin.', 'bad_state');
+  await withTx(async (conn) => {
+    await conn.query('UPDATE users SET deletion_requested_at = NOW() WHERE id = ?', [req.user.id]);
+    const reason = String(req.body?.reason || '').trim().slice(0, 200);
+    await audit(req.user.id, 'deletion_requested', `user #${req.user.id}${reason ? `: ${reason}` : ''}`, conn);
+  });
+  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+}));
+
+router.delete('/me/delete-request', authRequired, wrap(async (req, res) => {
+  await q('UPDATE users SET deletion_requested_at = NULL WHERE id = ?', [req.user.id]);
+  await audit(req.user.id, 'deletion_cancelled', `user #${req.user.id}`);
+  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+}));
+
 // Public item photos (listings, handover and return photos).
 router.post('/uploads', authRequired, publicUpload, wrap(async (req, res) => {
   if (!req.file) throw bad('Choose a photo first.', 'no_file');
@@ -57,6 +127,10 @@ router.post('/me/id-photo', authRequired, privateUpload, wrap(async (req, res) =
   if (req.user.role !== 'resident') {
     removePrivateFile(req.file.filename);
     throw bad('Staff accounts do not need verification.', 'bad_state');
+  }
+  if (!req.user.id_consent_at) {
+    removePrivateFile(req.file.filename);
+    throw bad('Please agree that barangay staff may view your ID first.', 'id_consent_required');
   }
   await q("UPDATE users SET id_photo_path = ?, verification_status = 'pending', reject_reason = NULL WHERE id = ?", [req.file.filename, req.user.id]);
   // Keep only the newest ID photo: the old one is personal data we no longer need.

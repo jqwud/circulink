@@ -60,6 +60,7 @@ describe('public photo uploads', () => {
 
 describe('ID photos', () => {
   test('a new ID photo replaces the old file instead of keeping both', async () => {
+    await s.api('POST', '/me/id-consent', isa);
     const first = await s.upload('/me/id-photo', isa, PNG, 'image/png', 'id1.png');
     assert.equal(first.status, 200);
     assert.equal(files(privateDir).length, 1);

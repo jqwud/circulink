@@ -7,7 +7,9 @@ import { pool, q, one, withTx, todayPH } from '../db.js';
 import { config } from '../config.js';
 import { bad, notFound, wrap } from '../errors.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
-import { OUT_LOANS_SQL, addCredits, audit, checkinState, notify, removeItemTx, settleDisputeTx } from '../services.js';
+import { OUT_LOANS_SQL, addCredits, audit, checkinState, deleteAccountTx, notify, removeItemTx, settleDisputeTx } from '../services.js';
+import { removePrivateFile } from '../uploads.js';
+import crypto from 'node:crypto';
 import { runReminders } from '../jobs.js';
 import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG } from '../rules.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
@@ -35,6 +37,7 @@ router.get('/admin/stats', wrap(async (_req, res) => {
     missed_checkins: (await q(OUT_LOANS_SQL)).filter((r) => checkinState(r, today).missed_days >= RULES.checkinAlertAfterMissedDays).length,
     staff_requests_waiting: await n("SELECT COUNT(*) n FROM requests WHERE status='pending' AND handled_by_staff=1"),
     open_reports: await n("SELECT COUNT(*) n FROM reports WHERE status <> 'resolved'"),
+    deletion_requests: await n('SELECT COUNT(*) n FROM users WHERE deletion_requested_at IS NOT NULL AND deleted_at IS NULL'),
     completed_loans: impact.completed_loans,
     return_rate: impact.return_rate,
     purchases_avoided: impact.purchases_avoided,
@@ -43,12 +46,13 @@ router.get('/admin/stats', wrap(async (_req, res) => {
 
 // ---------- verification and users ----------
 router.get('/admin/users', wrap(async (req, res) => {
-  const where = ["u.role = 'resident'"];
+  const where = ["u.role = 'resident'", 'u.deleted_at IS NULL'];
   const params = [];
   if (req.query.status) { where.push('u.verification_status = ?'); params.push(req.query.status); }
+  if (req.query.deletion === '1') where.push('u.deletion_requested_at IS NOT NULL');
   if (req.query.q) { where.push('(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)'); params.push(like(req.query.q), like(req.query.q), like(req.query.q)); }
   const rows = await q(
-    `SELECT u.id, u.name, u.email, u.phone, u.purok, u.verification_status, u.reject_reason, u.credits, u.suspended, u.created_at,
+    `SELECT u.id, u.name, u.email, u.phone, u.purok, u.verification_status, u.reject_reason, u.credits, u.suspended, u.created_at, u.deletion_requested_at,
             (u.id_photo_path IS NOT NULL) AS has_id_photo,
             (SELECT COUNT(*) FROM items i WHERE i.owner_id = u.id AND i.status <> 'removed') AS items,
             (SELECT COUNT(*) FROM requests r WHERE r.borrower_id = u.id AND r.status = 'closed') AS loans
@@ -112,6 +116,12 @@ for (const [action, value, logged] of [['suspend', 1, 'user_suspended'], ['reins
     res.json({ id: u.id, suspended: !!value });
   }));
 }
+
+// Deleting a resident's account (admin only), usually after they asked from the app.
+router.post('/admin/users/:id/delete', requireAdmin, wrap(async (req, res) => {
+  const newPasswordHash = await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 10);
+  res.json(await withTx((conn) => deleteAccountTx(conn, Number(req.params.id), req.user, { newPasswordHash, removeFile: removePrivateFile })));
+}));
 
 // ---------- listings and the Barangay Shelf ----------
 router.get('/admin/items', wrap(async (req, res) => {

@@ -21,6 +21,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   XFile? _file;
   Uint8List? _preview;
   bool _busy = false;
+  bool _agreed = false;
 
   Future<void> _pick() async {
     final XFile? f = await pickPhoto(context);
@@ -38,6 +39,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
     if (_file == null) return;
     setState(() => _busy = true);
     try {
+      if (context.app.user?['id_consent'] != true) await context.app.api.post('/me/id-consent');
       await context.app.api.upload('/me/id-photo', _file!);
       await context.app.bump();
       if (!mounted) return;
@@ -81,8 +83,16 @@ class _VerificationScreenState extends State<VerificationScreen> {
             ),
           const SizedBox(height: 12),
           SoftButton(label: _file == null ? context.t('Take or choose a photo') : context.t('Choose a different photo'), icon: Icons.photo_camera, onPressed: _pick),
-          const SizedBox(height: 10),
-          PrimaryButton(label: context.t('Send for verification'), busy: _busy, onPressed: _file == null ? null : _send),
+          const SizedBox(height: 6),
+          CheckboxListTile(
+            value: _agreed,
+            onChanged: (bool? v) => setState(() => _agreed = v ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            title: Text(context.t('I agree that barangay staff may view my ID to check that I live here. It is deleted 7 days after their decision.')),
+          ),
+          const SizedBox(height: 6),
+          PrimaryButton(label: context.t('Send for verification'), busy: _busy, onPressed: _file == null || !_agreed ? null : _send),
         ],
       ),
     );

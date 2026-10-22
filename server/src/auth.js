@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { PRIVACY_VERSION } from './privacy.js';
 import { config } from './config.js';
 import { one } from './db.js';
 import { HttpError, forbidden } from './errors.js';
@@ -54,5 +55,8 @@ export const publicUser = (u, extra = {}) => ({
   credits: u.credits,
   language: u.language,
   has_id_photo: !!u.id_photo_path,
+  privacy_ok: u.privacy_version === PRIVACY_VERSION,
+  id_consent: !!u.id_consent_at,
+  deletion_requested: !!u.deletion_requested_at,
   ...extra,
 });
