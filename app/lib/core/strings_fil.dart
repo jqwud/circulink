@@ -525,6 +525,9 @@ const Map<String, String> kFil = <String, String>{
   "not yet earned": "hindi pa nakukuha",
   "Loading...": "Naglo-load...",
   "Please write a few words.": "Pakisulat ng ilang salita.",
+  "No connection. Check your internet and try again.": "Walang koneksyon. Tingnan ang internet mo at subukan muli.",
+  "Earned": "Nakuha na",
+  "Locked": "Hindi pa nakukuha",
 };
 
 /// Messages from the server, by error code, in Filipino.

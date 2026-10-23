@@ -2,6 +2,12 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 17: What residents see (2026-10-23)
+
+- Badges sit in an even grid: three equal tiles per row, earned ones bright, the rest muted with a lock and "Locked"; rows grow with large text (`BadgeGrid`, also in the gallery and its test).
+- The component gallery is no longer reachable from the app; developers open it with `flutter run -t lib/main_gallery.dart`.
+- Real (release) builds hide the server address (Profile and the login plug button) and the technical connection card; residents see only "No connection. Check your internet and try again." when it is down. Test builds keep the tools (`kShowServerTools`; `--dart-define=HIRAMAN_SERVER_TOOLS=true` turns them on in a release build).
+
 ## Batch 15: Containers (2026-10-23)
 
 - `Dockerfile`: one image with the API and the built portal. `docker-compose.yml`: MySQL 8 and the API, with the database, photos and backups in volumes, health checks, Philippine time. `docker-compose.dev.yml`: the API restarts on save and MySQL is open on port 3307.

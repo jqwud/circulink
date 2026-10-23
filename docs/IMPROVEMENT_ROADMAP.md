@@ -49,7 +49,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Done |
 | **Next (agreed 2026-10-23)** | | | | |
 | 16 | Phone test of batches 5 to 15, and anything it turns up | | S | Partly done (CI green; phone test by the user went well) |
-| 17 | Resident view: even badge grid, gallery out of the app, no server tools or technical status in release builds | Resident view | S | Planned |
+| 17 | Resident view: even badge grid, gallery out of the app, no server tools or technical status in release builds | Resident view | S | Done |
 | 18 | Staff control of requests and listings: approve, cancel or close any request with correct refunds; edit or hide any listing | Admin tools | M | Planned |
 | 19 | Automatic flags: unusual or possibly harmful listings go to a staff review queue | Admin tools | M | Planned |
 | 20 | Rule numbers editable by admins in the portal, within limits, audited | Rule numbers | M | Planned |

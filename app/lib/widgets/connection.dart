@@ -71,6 +71,20 @@ class ServerStatusCard extends StatelessWidget {
     final String status = app.serverStatus;
     final String host = Uri.tryParse(app.api.baseUrl)?.authority ?? app.api.baseUrl;
     final bool down = status == 'down';
+    // Residents see nothing while things work, and one plain sentence when they do not.
+    if (!kShowServerTools) {
+      if (!down) return const SizedBox.shrink();
+      return Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(color: HiColors.dangerSoft, borderRadius: BorderRadius.circular(HiRadius.md)),
+        child: Row(children: <Widget>[
+          const Icon(Icons.wifi_off_rounded, size: 20, color: HiColors.danger),
+          const SizedBox(width: 10),
+          Expanded(child: Text(context.t('No connection. Check your internet and try again.'), style: const TextStyle(color: HiColors.danger, fontWeight: FontWeight.w700))),
+        ]),
+      );
+    }
     final bool ok = status == 'ok';
     final Color bg = ok ? HiColors.leafSoft : (down ? HiColors.dangerSoft : HiColors.mutedSoft);
     final Color fg = ok ? HiColors.leaf : (down ? HiColors.danger : HiColors.ink);

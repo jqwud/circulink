@@ -2,10 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
+
+/// Server address, connection status and the plug button are for testing only. Real (release) builds show
+/// residents none of it: the address is built in. Test builds (debug, or --dart-define=HIRAMAN_SERVER_TOOLS=true) keep them.
+const bool kShowServerTools = kDebugMode || bool.fromEnvironment('HIRAMAN_SERVER_TOOLS');
 
 /// Server address given at build time. A new value replaces the saved address once (see AppState.init).
 const String kServerFromBuild = String.fromEnvironment('HIRAMAN_SERVER');

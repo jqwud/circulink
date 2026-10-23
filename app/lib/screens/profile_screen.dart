@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../core/format.dart';
+import '../core/api.dart';
 import '../core/i18n.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
@@ -15,7 +15,6 @@ import 'help_screen.dart';
 import 'impact_screen.dart';
 import 'password_screen.dart';
 import 'privacy_screens.dart';
-import 'dev/gallery_screen.dart';
 import 'my_items_screen.dart';
 import 'verification_screen.dart';
 import 'wallet_screen.dart';
@@ -88,36 +87,7 @@ class ProfileScreen extends StatelessWidget {
                   _stat(ctx.t('Credits'), '${app.credits}'),
                 ]),
                 SectionTitle(ctx.t('My badges')),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: badges.map((Map<String, dynamic> b) {
-                    final String key = str(b['key']);
-                    final bool earned = boolOf(b['earned']);
-                    final List<String> text = _badgeText[key] ?? <String>[key, ''];
-                    return Semantics(
-                      button: true,
-                      label: '${ctx.t(text[0])}, ${earned ? ctx.t('earned') : ctx.t('not yet earned')}',
-                      excludeSemantics: true,
-                      child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () => pawsaDialog(ctx, pose: earned ? 'cheer' : 'sleepy', title: ctx.tx(text[0]), message: earned ? ctx.tx('You earned this badge!') : ctx.tx(text[1])),
-                      child: Container(
-                        width: 100,
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
-                        decoration: BoxDecoration(
-                          color: earned ? HiColors.primarySoft : HiColors.mutedSoft,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Column(children: <Widget>[
-                          Icon(_badgeIcon(key), size: 30, color: earned ? HiColors.accent : HiColors.muted),
-                          const SizedBox(height: 4),
-                          Text(ctx.t(text[0]), textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: earned ? HiColors.ink : HiColors.muted)),
-                        ]),
-                      ),
-                    ));
-                  }).toList(),
-                ),
+                BadgeGrid(badges: badges, text: _badgeText, icon: _badgeIcon),
               ],
             );
           },
@@ -130,9 +100,7 @@ class ProfileScreen extends StatelessWidget {
         _tile(context, Icons.edit_outlined, context.t('Edit profile'), () => _editProfile(context)),
         _tile(context, Icons.lock_outline, context.t('Change password'), () => _push(context, const ChangePasswordScreen())),
         _tile(context, Icons.help_outline, context.t('Help and rules'), () => _push(context, const HelpScreen())),
-        _tile(context, Icons.settings_ethernet, context.t('Server address'), () => showServerDialog(context)),
-        // Developer tool: every component on one screen. Never in a release build.
-        if (kDebugMode) _tile(context, Icons.palette_outlined, 'Component gallery', () => _push(context, const GalleryScreen())),
+        if (kShowServerTools) _tile(context, Icons.settings_ethernet, context.t('Server address'), () => showServerDialog(context)),
         SectionTitle(context.t('Privacy')),
         _tile(context, Icons.privacy_tip_outlined, context.t('Privacy notice'), () => _push(context, const PrivacyScreen())),
         _tile(context, Icons.download_outlined, context.t('My data'), () => _push(context, const MyDataScreen())),
@@ -243,4 +211,3 @@ class _ProfileSheetState extends State<_ProfileSheet> {
     );
   }
 }
-

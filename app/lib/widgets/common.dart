@@ -1,6 +1,7 @@
 // The app's UI kit. Each component lives in its own file under ui/ (see docs/DESIGN_SYSTEM.md).
 // Screens import this one file to get all of them.
 export 'ui/ask_text.dart';
+export 'ui/badge_grid.dart';
 export 'ui/buttons.dart';
 export 'ui/feedback.dart';
 export 'ui/hi_card.dart';

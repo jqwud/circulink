@@ -63,11 +63,14 @@ class _LoginScreenState extends State<LoginScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                IconButton(
-                  tooltip: context.t('Server address'),
-                  icon: const Icon(Icons.settings_ethernet, color: HiColors.muted),
-                  onPressed: () => showServerDialog(context),
-                ),
+                if (kShowServerTools)
+                  IconButton(
+                    tooltip: context.t('Server address'),
+                    icon: const Icon(Icons.settings_ethernet, color: HiColors.muted),
+                    onPressed: () => showServerDialog(context),
+                  )
+                else
+                  const SizedBox(width: 48),
                 const LanguageToggle(),
               ],
             ),
