@@ -27,6 +27,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | Resident view (2026-10-23) | Residents see only what they need. The component gallery leaves the app (developers open `lib/main_gallery.dart`); badges become an even grid. |
 | Hiraman 2.0 (2026-10-23) | Built from the design spec (Claude Docs: "Hiraman 2.0 Design Spec"). Residents message each other only with pre-written phrases; anything else goes to a concern only staff read. The Tiwala score is separate from credits and can never be spent. Donations earn no credits. Repeat pairs count less for rewards. |
 | No paid services (2026-10-23) | Nothing that costs money: a 6-digit handover code instead of QR scanning, in-app reminders and a staff call list instead of SMS. |
+| Reward supplies (2026-10-24) | Rewards are rice grains and fresh vegetables from local producers, given as thanks to the community. The LGU pays the producers so the stocks are always right; residents never handle money. (Answers Q1 and Q2 of the 2.0 spec in principle; the yearly amount is still the barangay's to set.) |
 
 ## Batches
 
