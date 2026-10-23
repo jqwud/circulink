@@ -357,7 +357,7 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
 // `conn` is an open transaction. The caller decides whether an item out on loan may be removed.
 // `reason` tells the app which sentence to show: removed (by staff), lost, owner_left, or hidden.
 export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.', by = 'staff', reason = 'removed' } = {}) {
-  await conn.query("UPDATE items SET status = 'removed', removed_by = ? WHERE id = ?", [by, item.id]);
+  await conn.query("UPDATE items SET status = 'removed', removed_by = ?, removed_at = NOW() WHERE id = ?", [by, item.id]);
   return closeOpenRequestsTx(conn, item, { exceptRequestId, why, reason });
 }
 

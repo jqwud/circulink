@@ -184,3 +184,6 @@ tr.row-urgent td:first-child { box-shadow: inset 4px 0 0 var(--c-danger); }
 @keyframes rowflash { from { background: var(--c-primary-soft); } to { background: transparent; } }
 tr.row-flash td { animation: rowflash 150ms ease-out; }
 @media (prefers-reduced-motion: reduce) { tr.row-flash td { animation: none; } }
+
+/* A calm note above a page (for example: the Tiwala score is in shadow mode). */
+.alert-info { padding: 12px 16px; margin-bottom: 16px; border-radius: var(--r-md); background: #e3efff; color: #1b4f9c; }

@@ -19,6 +19,7 @@ import { runReminders } from '../jobs.js';
 import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG, URGENT_REASONS, UNKIND_WORDS } from '../rules.js';
 import { staffWords } from '../kindwords.js';
 import { staffChoose, acceptShelf } from '../donations.js';
+import { runTiwala, TIWALA } from '../tiwala.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
 import { SELECT_REQUEST, mapRequest } from './requests.js';
 import { impactNumbers } from './community.js';
@@ -156,6 +157,39 @@ router.post('/admin/users/:id/priority', wrap(async (req, res) => {
   await q('UPDATE users SET priority_household = ? WHERE id = ?', [on ? 1 : 0, u.id]);
   await audit(req.user.id, on ? 'priority_set' : 'priority_cleared', `user #${u.id}`);
   res.json({ id: u.id, priority_household: on });
+}));
+
+// ---------- Tiwala score (shadow mode: staff only, no rewards yet) ----------
+router.get('/admin/tiwala', wrap(async (_req, res) => {
+  const rows = await q(
+    `SELECT t.*, u.name, u.purok, u.tiwala_frozen_until FROM trust_scores t JOIN users u ON u.id = t.user_id
+      WHERE t.period = 'live' AND u.deleted_at IS NULL ORDER BY t.score DESC, u.name`);
+  const json = (v) => (typeof v === 'string' ? JSON.parse(v) : v);
+  const residents = rows.map((r) => ({
+    user: { id: r.user_id, name: r.name, purok: r.purok }, score: r.score, tier: r.tier, parts: json(r.parts), signals: json(r.signals),
+    needs_staff_check: !!r.needs_staff_check, counted_loans: r.counted_loans, computed_on: r.computed_on, frozen_until: r.tiwala_frozen_until,
+  }));
+  const tiers = { gold: 0, silver: 0, bronze: 0, starter: 0 };
+  for (const r of residents) tiers[r.tier] = (tiers[r.tier] || 0) + 1;
+  res.json({ shadow_mode: true, window_days: TIWALA.windowDays, tiers, residents });
+}));
+
+// Recalculate now (normally nightly), for example after checking a signal.
+router.post('/admin/tiwala/run', requireAdmin, wrap(async (req, res) => {
+  const out = await runTiwala();
+  await audit(req.user.id, 'tiwala_recalculated', `${out.residents} residents`);
+  res.json(out);
+}));
+
+// Staff confirmed collusion: the score is held at 0 for 180 days. Admins only; audited; recalculated at once.
+router.post('/admin/users/:id/tiwala-freeze', requireAdmin, wrap(async (req, res) => {
+  const u = await one('SELECT id, name FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
+  if (!u) throw notFound('Resident not found.');
+  const until = req.body?.frozen ? addDays(todayPH(), TIWALA.frozenDays) : null;
+  await q('UPDATE users SET tiwala_frozen_until = ? WHERE id = ?', [until, u.id]);
+  await audit(req.user.id, until ? 'tiwala_frozen' : 'tiwala_unfrozen', `user #${u.id} ${u.name}`);
+  await runTiwala();
+  res.json({ id: u.id, tiwala_frozen_until: until });
 }));
 
 // ---------- donations ----------

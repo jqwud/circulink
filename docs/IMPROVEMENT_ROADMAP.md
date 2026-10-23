@@ -67,7 +67,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 29 | Hiraman 2.0: Donate / free to take (claims, barangay choice, recognition) | Spec §3 | L | Done |
 | 30 | Hiraman 2.0: Simple mode for seniors and PWDs | Spec §11 #1 | M | Done |
 | 31 | Hiraman 2.0: decision effects with reduced-motion fallback | Spec §7, §10 | M | Done |
-| 32 | Hiraman 2.0: Tiwala score in shadow mode (staff only) | Spec §8 | M | Planned |
+| 32 | Hiraman 2.0: Tiwala score in shadow mode (staff only) | Spec §8 | M | Done |
 | **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1) | | | Later |
 | Summary | One-page summary for the instructor (`docs/INSTRUCTOR_SUMMARY.md`) | | S | Done |
 | **Skip** | Push notifications, hosting/HTTPS now, iOS build, ORM or framework switch, separate worker service, certificate pinning, root detection | | | Skipped |

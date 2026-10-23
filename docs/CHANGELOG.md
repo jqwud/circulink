@@ -2,6 +2,29 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 32: Tiwala score, shadow mode (2026-10-24)
+
+Hiraman 2.0, spec section 8. The last MVP batch.
+
+- **The Tiwala (trust) score, 0 to 100**, from the last 90 days. It is separate from credits and can never be spent. It starts at 40 and adds:
+    - loans lent on time and in good condition (+3 each, up to 30);
+    - different borrowers (+2 each, up to 10);
+    - good returns as a borrower (+1, up to 5);
+    - confirmed gifts (+3, up to 9);
+    - ratings from 3 or more people (+3 or +5);
+    - a clean record (+5).
+
+  Penalties: late return −5, borrower's fault −8, lost −15, donation no-show −3, listing removed by staff −5. Tiers: Bronze 50, Silver 65, Gold 80, each with an activity gate. Nobody gets a tier in their first 30 days after verification. Without lending the highest score is 64, so food rewards are for lenders.
+- **Anti-abuse built in:**
+    - Only 2 loans per borrower and 4 per item count.
+    - Same-day loans, late or damaged returns, and borrowers verified less than 30 days ago earn nothing.
+    - Lending back and forth with one person 3+ times is flagged and stops counting (and their ratings are ignored).
+    - 70% or more of loans with the same 3 people is a "ring" signal.
+    - Gold always needs a staff check, and any signal does too.
+    - Admins can confirm collusion: the score is held at 0 for 180 days (audited).
+- **Shadow mode:** calculated nightly (new job), with a snapshot on the first day of each quarter for the coming rewards. Only staff see it, on the portal's **Tiwala (preview)** page: tier counts, each resident's score, the parts it is made of, and signals. Residents are not told, and no reward is promised until the barangay answers Q1 to Q3 (budget, suppliers, priority households).
+- Migration 016 (backup taken first; staff removals are now timestamped). Tests: 16 new (`tiwala.test.js`), including the spec's worked example (Ana: 78, Silver) and every anti-abuse rule.
+
 ## Batch 31: Decision effects (2026-10-24)
 
 Hiraman 2.0, spec sections 7 and 10.

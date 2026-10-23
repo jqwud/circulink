@@ -3267,6 +3267,116 @@
         }
       }
     },
+    "/admin/tiwala": {
+      "get": {
+        "operationId": "getAdminTiwala",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Tiwala scores in shadow mode: score, tier, how it was made, signals",
+        "description": "LGU staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/tiwala/run": {
+      "post": {
+        "operationId": "postAdminTiwalaRun",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Recalculate every Tiwala score now; audited",
+        "description": "LGU admin only.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/tiwala-freeze": {
+      "post": {
+        "operationId": "postAdminUsersIdTiwalaFreeze",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Confirm collusion: hold the score at 0 for 180 days (or lift it); audited",
+        "description": "LGU admin only. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "frozen": {}
+                },
+                "required": [
+                  "frozen"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/donations": {
       "get": {
         "operationId": "getAdminDonations",

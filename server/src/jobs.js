@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { RULES } from './rules.js';
 import { OUT_LOANS_SQL, addCredits, addDays, audit, checkinState, loadRequest, notify } from './services.js';
 import { removePrivateFile } from './uploads.js';
+import { runTiwala } from './tiwala.js';
 import { safeErrorLine, safeMessage } from './errors.js';
 
 const MINUTE = 60 * 1000;
@@ -215,6 +216,7 @@ export const JOBS = [
   { name: 'cleanup_uploads', everyMs: DAY, run: cleanupUploads },
   { name: 'delete_old_messages', everyMs: DAY, run: deleteOldMessages },
   { name: 'donations', everyMs: 60 * MINUTE, run: runDonations },
+  { name: 'tiwala', everyMs: DAY, run: runTiwala },
 ];
 
 // Runs every job whose interval has passed since its last run, and records the result in job_runs.
