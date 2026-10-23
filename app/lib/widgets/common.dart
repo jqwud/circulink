@@ -4,6 +4,7 @@ export 'ui/ask_text.dart';
 export 'ui/badge_grid.dart';
 export 'ui/buttons.dart';
 export 'ui/feedback.dart';
+export 'ui/decision_effect.dart';
 export 'ui/hi_card.dart';
 export 'ui/hi_field.dart';
 export 'ui/hi_sheet.dart';

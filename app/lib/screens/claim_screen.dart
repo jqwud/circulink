@@ -29,10 +29,12 @@ class _ClaimScreenState extends State<ClaimScreen> {
     setState(() => _busy = true);
     final AppState app = context.app;
     try {
-      await app.api.post('/donations/claims/${widget.claimId}/$action');
+      final Map<String, dynamic> out = mapOf(await app.api.post('/donations/claims/${widget.claimId}/$action'));
       await app.bump();
       if (!mounted) return;
       setState(() => _reloadTick++);
+      if (str(out['status']) == 'given') await playDecision(context, Decision.giftGiven);
+      if (!mounted) return;
       if (done != null) await pawsaDialog(context, pose: 'cheer', title: doneTitle ?? context.tx('Done!'), message: done);
     } catch (e) {
       if (mounted) showMessage(context, context.app.errorText(e), bad: true);

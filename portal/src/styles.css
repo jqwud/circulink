@@ -179,3 +179,8 @@ dl.kv dt { color: var(--c-muted); } dl.kv dd { margin: 0; font-weight: 700; }
 
 /* Safety and harassment concerns that are not resolved yet. */
 tr.row-urgent td:first-child { box-shadow: inset 4px 0 0 var(--c-danger); }
+
+/* A decision's row flashes once (150 ms), unless the computer asks for less motion. */
+@keyframes rowflash { from { background: var(--c-primary-soft); } to { background: transparent; } }
+tr.row-flash td { animation: rowflash 150ms ease-out; }
+@media (prefers-reduced-motion: reduce) { tr.row-flash td { animation: none; } }

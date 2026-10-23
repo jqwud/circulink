@@ -58,9 +58,14 @@ function nextAction(r) {
   return null;
 }
 
+// After a decision, its row gets a short highlight (150 ms) so staff see what changed. No celebration here.
+const idInPath = (path) => Number((String(path).match(/\/(\d+)(\/|$)/) || [])[1]) || null;
+
 export default function Transactions() {
   const { t } = useI18n();
   const toast = useToast();
+  const [flash, setFlash] = useState(null);
+  const flashRow = (path) => { setFlash(idInPath(path)); setTimeout(() => setFlash(null), 600); };
   const fmt = useDateFormat();
   const [tab, setTab] = useState('action');
   const [text, setText] = useState('');
@@ -83,7 +88,7 @@ export default function Transactions() {
 
   async function act(path2, body) {
     setBusy(true);
-    try { await api(path2, { method: 'POST', body }); toast(t('Done.')); close(); reload(); all.reload(); }
+    try { await api(path2, { method: 'POST', body }); toast(t('Done.')); close(); reload(); all.reload(); flashRow(path2); }
     catch (e) { toast(e.message, 'bad'); } finally { setBusy(false); }
   }
   async function onPhoto(e) {
@@ -122,7 +127,7 @@ export default function Transactions() {
               {rows.map((r) => {
                 const act1 = actionFor(r);
                 return (
-                  <tr key={r.id} className={r.overdue ? 'hot' : ''}>
+                  <tr key={r.id} className={`${r.overdue ? 'hot' : ''}${flash === r.id ? ' row-flash' : ''}`}>
                     <td><b>{r.item.title}</b><small>#{r.id} · {r.credit_cost} {r.credit_cost === 1 ? 'credit' : 'credits'}{r.handled_by_staff ? ` · ${t('Barangay handles')}` : ''}</small></td>
                     <td>{r.borrower_full_name}<small>{r.borrower.purok}{r.borrower_phone ? ` · ${r.borrower_phone}` : ''}</small></td>
                     <td>{r.owner?.name || t('Shelf')}</td>

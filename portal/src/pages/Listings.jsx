@@ -6,9 +6,14 @@ import { Badge, Empty, ErrorBox, LoadMore, Loading, Modal, PageHeader, usePaged,
 
 // Staff can edit any listing, hide it from neighbors (the owner sees the reason), show it again, or remove it.
 // Listings the automatic checks held back ("flagged") wait here until staff decide.
+// After a decision, its row gets a short highlight (150 ms) so staff see what changed. No celebration here.
+const idInPath = (path) => Number((String(path).match(/\/(\d+)(\/|$)/) || [])[1]) || null;
+
 export default function Listings() {
   const { t, lang } = useI18n();
   const toast = useToast();
+  const [flash, setFlash] = useState(null);
+  const flashRow = (path) => { setFlash(idInPath(path)); setTimeout(() => setFlash(null), 600); };
   const [params] = useSearchParams();
   const [status, setStatus] = useState(params.get('review') ? '' : 'available');
   const [review, setReview] = useState(params.get('review') || '');
@@ -28,7 +33,7 @@ export default function Listings() {
 
   async function act(path, body, done) {
     setBusy(true);
-    try { await api(path, { method: body === undefined ? 'POST' : body.method || 'POST', body: body?.data ?? body }); toast(done); close(); reload(); }
+    try { await api(path, { method: body === undefined ? 'POST' : body.method || 'POST', body: body?.data ?? body }); toast(done); close(); reload(); flashRow(path); }
     catch (e) { toast(e.message, 'bad'); } finally { setBusy(false); }
   }
   const openEdit = (i) => { setForm({ title: i.title, description: i.description || '', tier: i.tier, condition: i.condition }); setDialog({ kind: 'edit', item: i }); };
@@ -66,7 +71,7 @@ export default function Listings() {
             <thead><tr><th>{t('Item')}</th><th>{t('Category')}</th><th>{t('Tier')}</th><th>{t('Owner / source')}</th><th>{t('Status')}</th><th>{t('Actions')}</th></tr></thead>
             <tbody>
               {rows.map((i) => (
-                <tr key={i.id} className={i.review_status === 'flagged' ? 'hot' : ''}>
+                <tr key={i.id} className={`${i.review_status === 'flagged' ? 'hot' : ''}${flash === i.id ? ' row-flash' : ''}`}>
                   <td>
                     <b>{i.title}</b><small>{i.description?.slice(0, 70)}</small>
                     {i.review_flags?.length > 0 && <small className="flag-reasons">⚠ {i.review_flags.map((f) => t(`flag_${f}`)).join(' · ')}</small>}

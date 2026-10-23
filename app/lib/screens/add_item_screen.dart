@@ -109,6 +109,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
       final bool held = mapOf(saved)['review_status'] == 'flagged';
       await app.bump();
       if (!mounted) return;
+      if (_give && !held && !_editing) await playDecision(context, Decision.giftListed); // before the form closes
+      if (!mounted) return;
       Navigator.pop(context);
       if (held) {
         // The automatic checks held it back: say so kindly, without saying which check.

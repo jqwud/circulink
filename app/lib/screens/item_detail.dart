@@ -399,6 +399,8 @@ class _RequestSheetState extends State<_RequestSheet> {
       title = parent.tx('Request sent');
       msg = staff ? parent.tx('Barangay staff will review your request.') : parent.tx('The owner will approve or reject your request. Your credit is held until then.');
     }
+    await playDecision(parent, status == 'approved' ? Decision.gotItNow : Decision.requestSent);
+    if (!parent.mounted) return;
     await pawsaDialog(parent, pose: 'cheer', title: title, message: msg);
     if (!parent.mounted) return;
     Navigator.of(parent).pushReplacement(MaterialPageRoute<void>(builder: (BuildContext c) => RequestDetailScreen(requestId: intOf(out['id']))));

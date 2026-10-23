@@ -112,6 +112,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
           SectionTitle('Section title', trailing: TextButton(onPressed: () {}, child: const Text('See all'))),
           ItemCard(item: _item, onTap: () {}),
           RequestCard(request: _request, onTap: () {}),
+          _label('DECISION EFFECTS (tap to preview)'),
+          Wrap(spacing: 8, runSpacing: 8, children: <Widget>[
+            for (final Decision d in Decision.values)
+              Builder(builder: (BuildContext c) => OutlinedButton(onPressed: () => playDecision(c, d), child: Text(d.name))),
+          ]),
           _label('BADGES'),
           BadgeGrid(
             badges: const <Map<String, dynamic>>[

@@ -2,6 +2,17 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 31: Decision effects (2026-10-24)
+
+Hiraman 2.0, spec sections 7 and 10.
+
+- **A short effect after the server confirms a decision:** request sent, got it at once, approved, declined, credit back, handover, returned (good, or a problem), gift listed and gift given. One meaning per motion: toward you = yours now, away = given or sent, settle = confirmed, fade = closed or declined. A decline and a problem return are calm (no celebration, no haptic).
+- **Never in the way:** at most 900 ms (most 300 to 650 ms); taps go straight through to the screen and the first tap also ends the effect; the usual sentence still follows, so nothing is lost by missing the animation. Confirmations give one light haptic tick.
+- **Fallbacks:** with the phone's "Remove animations" setting or in Simple mode, nothing moves (haptic only). A phone that drops 3 of the first 10 frames of an effect gets simple 200 ms fades from then on, remembered on the phone. No animation library or video files.
+- **Portal:** no celebrations; after a staff decision in Listings or Transactions the row is highlighted for 150 ms (off when the computer asks for reduced motion).
+- Developers can preview every effect in the component gallery (`lib/main_gallery.dart`).
+- Tests: 7 new app tests (duration limit, haptic, taps reach the screen and end the effect, reduced motion, calm decline, slow-phone detection). The app end-to-end journeys run with the effects in place.
+
 ## Batch 30: Simple mode (2026-10-24)
 
 Hiraman 2.0, spec section 11, feature 1 (for seniors and PWDs).

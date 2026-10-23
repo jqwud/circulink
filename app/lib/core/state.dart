@@ -10,6 +10,7 @@ import 'constants.dart';
 import 'format.dart';
 import 'strings_fil.dart';
 import 'theme.dart';
+import '../widgets/ui/decision_effect.dart';
 
 /// Everything the whole app needs to know: who is logged in, the language, and shared lists.
 class AppState extends ChangeNotifier {
@@ -111,6 +112,9 @@ class AppState extends ChangeNotifier {
     lang = _prefs!.getString('lang') ?? 'fil';
     seenOnboarding = _prefs!.getBool('seen_onboarding') ?? false;
     browseOrigin = _prefs!.getString('browse_origin') ?? '';
+    // Decision effects: remember a slow phone so effects stay simple fades (see MotionBudget).
+    MotionBudget.instance.lowEnd = _prefs!.getBool('low_end_motion') ?? false;
+    MotionBudget.instance.store = (bool v) => _prefs?.setBool('low_end_motion', v);
     api.token = await _readToken();
     api.onUnauthorized = _expired;
 

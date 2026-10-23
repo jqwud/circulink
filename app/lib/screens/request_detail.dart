@@ -24,7 +24,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   int _reloadTick = 0;
   bool _busy = false;
 
-  Future<void> _run(Future<dynamic> Function() action, {String? done, String? doneTitle, String pose = 'happy'}) async {
+  Future<void> _run(Future<dynamic> Function() action, {String? done, String? doneTitle, String pose = 'happy', Decision? effect}) async {
     setState(() => _busy = true);
     final AppState app = context.app;
     try {
@@ -32,6 +32,9 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       await app.bump();
       if (!mounted) return;
       setState(() => _reloadTick++);
+      // The server confirmed: a short effect first (it never delays the action), then the sentence.
+      if (effect != null) await playDecision(context, effect);
+      if (!mounted) return;
       if (done != null) {
         await pawsaDialog(context, pose: pose, title: doneTitle ?? context.tx('Done!'), message: done);
       }
@@ -49,7 +52,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     final String? reason = await askText(context,
         title: context.tx('Reject this request?'), label: context.tx('Reason (optional)'), confirmLabel: context.tx('Reject'), danger: true, maxLength: 200);
     if (reason == null || !mounted) return;
-    await _run(() => _post('reject', <String, dynamic>{'reason': reason.isEmpty ? null : reason}));
+    await _run(() => _post('reject', <String, dynamic>{'reason': reason.isEmpty ? null : reason}), effect: Decision.declined);
   }
 
   Future<void> _changeDates(Map<String, dynamic> r) async {
@@ -88,7 +91,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   Future<void> _cancel() async {
     final bool ok = await confirmDialog(context, title: context.tx('Cancel this request?'), message: context.tx('Your held credits will be returned.'), confirmLabel: context.tx('Yes, cancel'), danger: true);
     if (!ok || !mounted) return;
-    await _run(() => _post('cancel'));
+    await _run(() => _post('cancel'), effect: Decision.creditBack);
   }
 
   Future<void> _handover(Map<String, dynamic> r) async {
@@ -105,7 +108,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       if (!ok) return;
     }
     if (!mounted) return;
-    await _run(() => _post('handover', <String, dynamic>{'photo': photo}), done: context.tx('The item is now with the borrower.'), doneTitle: context.tx('Handed over'));
+    await _run(() => _post('handover', <String, dynamic>{'photo': photo}), done: context.tx('The item is now with the borrower.'), doneTitle: context.tx('Handed over'), effect: Decision.handover);
   }
 
   Future<void> _return(Map<String, dynamic> r) async {
@@ -126,6 +129,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       done: good ? context.tx('Return confirmed. Credits were updated.') : context.tx('The barangay will review this and contact both of you.'),
       doneTitle: good ? context.tx('Item returned') : context.tx('Sent for review'),
       pose: good ? 'cheer' : 'oops',
+      effect: good ? Decision.returnedGood : Decision.returnProblem,
     );
   }
 
@@ -197,7 +201,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     final List<Widget> actions = <Widget>[];
     if (asOwner && !staff) {
       if (status == 'pending') {
-        actions.add(PrimaryButton(label: context.t('Approve'), icon: Icons.check, busy: _busy, onPressed: () => _run(() => _post('approve'), done: context.tx('Approved. Agree on the pickup with the borrower.'), doneTitle: context.tx('Approved'))));
+        actions.add(PrimaryButton(label: context.t('Approve'), icon: Icons.check, busy: _busy, onPressed: () => _run(() => _post('approve'), done: context.tx('Approved. Agree on the pickup with the borrower.'), doneTitle: context.tx('Approved'), effect: Decision.approved)));
         actions.add(const SizedBox(height: 8));
         actions.add(SoftButton(label: context.t('Reject'), icon: Icons.close, onPressed: _busy ? null : _reject));
       } else if (status == 'approved') {
