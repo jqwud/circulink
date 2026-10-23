@@ -20,6 +20,9 @@ export const EDITABLE_RULES = {
   maxLoanDays: { min: 1, max: 30 },
   pendingExpiryDays: { min: 1, max: 30 },
   checkinAlertAfterMissedDays: { min: 1, max: 7 },
+  vouchersBronze: { min: 0, max: 5 },   // food-reward vouchers per quarter (0 = none this quarter, e.g. when stock is short)
+  vouchersSilver: { min: 0, max: 5 },
+  vouchersGold: { min: 0, max: 5 },
 };
 
 // Called when the server starts (and after every change): defaults first, then the stored changes.

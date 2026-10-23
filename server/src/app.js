@@ -16,6 +16,7 @@ import requestRoutes from './routes/requests.js';
 import communityRoutes from './routes/community.js';
 import adminRoutes from './routes/admin.js';
 import donationRoutes from './routes/donations.js';
+import rewardRoutes from './routes/rewards.js';
 
 // The API's version (package.json), shown by /api/health so staff can tell which release is running.
 const VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -95,6 +96,7 @@ export function createApp(options = {}) {
   api.use(requestRoutes);
   api.use(communityRoutes);
   api.use(donationRoutes);
+  api.use(rewardRoutes);
   api.use(adminRoutes);
   app.use('/api', api);
 

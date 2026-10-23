@@ -86,10 +86,10 @@ describe('shadow mode', () => {
     assert.equal((await runTiwala(new Date('2027-01-01T03:00:00+08:00'))).snapshot, '2026-Q4');
     assert.ok(await one("SELECT user_id FROM trust_scores WHERE period = '2026-Q4' LIMIT 1"));
   });
-  test('staff see every score with how it was made; residents see nothing', async () => {
+  test('staff see every score with how it was made; residents see only their own (GET /me/tiwala)', async () => {
     const r = await s.api('GET', '/admin/tiwala', staff);
     assert.equal(r.status, 200);
-    assert.equal(r.json.shadow_mode, true);
+    assert.equal(r.json.shadow_mode, false, 'rewards are live since batch 33');
     const row = r.json.residents[0];
     assert.ok(row.user.name && typeof row.score === 'number' && row.parts.start === 40);
     assert.equal((await s.api('GET', '/admin/tiwala', ana)).status, 403);

@@ -2,6 +2,18 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 33: Food rewards, server (2026-10-24)
+
+Rewards are rice grains and fresh vegetables from local producers, paid for by the LGU (decided 2026-10-24). No money moves in the app.
+
+- **Catalog and stock:** admins add local producers and rewards (for example "2 kg rice" / "2 kilong bigas"). Staff record the stock the LGU buys (with a note such as the receipt number) or correct a count. Every change is a stock record and is audited, and stock never goes below zero.
+- **Vouchers each quarter:** on the first day of a quarter, everyone with a Tiwala tier gets vouchers: Bronze 1, Silver 2, Gold 3. Admins can set each from 0 to 5 on the Rules page, for example 0 when stock is short. Gold, and anyone with a signal, waits for a staff check. Nobody gets vouchers twice for a quarter. Admins can also issue now from today's scores (for the first launch).
+- **Collecting:** the resident chooses a reward (one unit is reserved) and shows a 6-digit code at the barangay hall. Staff see only the first name, purok and reward, and hand it out once. A senior who has not chosen chooses at the hall.
+- **Expiry:** 30 days, with reminders 7 days and 1 day before; a reserved unit goes back to stock. Admins can cancel a voucher with a reason (for example confirmed collusion).
+- **Accounts:** a monthly report per reward and producer (bought, handed out, returned, value), with about 5% of collections picked at random for staff to phone and confirm.
+- **The score leaves preview:** residents can now see their own score, tier and next step (`GET /me/tiwala`); nobody sees anyone else's.
+- Migration 017 (backup taken first). Tests: 13 new (`rewards.test.js`).
+
 ## Batch 32: Tiwala score, shadow mode (2026-10-24)
 
 Hiraman 2.0, spec section 8. The last MVP batch.

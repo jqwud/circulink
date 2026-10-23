@@ -34,6 +34,11 @@ export const RULES = {
   donationProblemsToPause: 2,   // problem donations in 90 days that pause donating ...
   donatePauseDays: 30,          // ... for this many days
   donorCancelsWithoutStaff: 1,  // a donor can cancel this many claims in 30 days; more need staff
+  // Food rewards (rice and vegetables from local producers, paid by the LGU): vouchers per quarter by Tiwala tier
+  vouchersBronze: 1,
+  vouchersSilver: 2,
+  vouchersGold: 3,
+  voucherDays: 30,              // a voucher must be collected within this many days
 };
 
 // How staff settle a dispute (an item returned damaged or lost), and what each outcome does to credits.

@@ -20,6 +20,7 @@ import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG, URGENT_REASONS, UNK
 import { staffWords } from '../kindwords.js';
 import { staffChoose, acceptShelf } from '../donations.js';
 import { runTiwala, TIWALA } from '../tiwala.js';
+import { issueVouchers, releaseVoucher, cancelVoucher, addStock, lookupCode, handOut, monthReport } from '../rewards.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
 import { SELECT_REQUEST, mapRequest } from './requests.js';
 import { impactNumbers } from './community.js';
@@ -171,7 +172,7 @@ router.get('/admin/tiwala', wrap(async (_req, res) => {
   }));
   const tiers = { gold: 0, silver: 0, bronze: 0, starter: 0 };
   for (const r of residents) tiers[r.tier] = (tiers[r.tier] || 0) + 1;
-  res.json({ shadow_mode: true, window_days: TIWALA.windowDays, tiers, residents });
+  res.json({ shadow_mode: false, window_days: TIWALA.windowDays, tiers, residents });
 }));
 
 // Recalculate now (normally nightly), for example after checking a signal.
@@ -190,6 +191,114 @@ router.post('/admin/users/:id/tiwala-freeze', requireAdmin, wrap(async (req, res
   await audit(req.user.id, until ? 'tiwala_frozen' : 'tiwala_unfrozen', `user #${u.id} ${u.name}`);
   await runTiwala();
   res.json({ id: u.id, tiwala_frozen_until: until });
+}));
+
+// ---------- food rewards (rice and vegetables from local producers, paid by the LGU) ----------
+router.get('/admin/rewards', wrap(async (_req, res) => {
+  res.json({
+    catalog: await q(
+      `SELECT c.*, s.name AS supplier FROM reward_catalog c LEFT JOIN suppliers s ON s.id = c.supplier_id ORDER BY c.active DESC, c.name_en`),
+    suppliers: await q('SELECT * FROM suppliers ORDER BY active DESC, name'),
+    held: await q(
+      `SELECT v.id, v.code, v.period, v.tier, v.issued_at, u.id AS user_id, u.name, u.purok, t.signals
+         FROM vouchers v JOIN users u ON u.id = v.user_id LEFT JOIN trust_scores t ON t.user_id = v.user_id AND t.period = v.period
+        WHERE v.status = 'held' ORDER BY v.id`),
+    counts: Object.fromEntries((await q('SELECT status, COUNT(*) AS n FROM vouchers GROUP BY status')).map((r) => [r.status, Number(r.n)])),
+    per_tier: { bronze: RULES.vouchersBronze, silver: RULES.vouchersSilver, gold: RULES.vouchersGold },
+  });
+}));
+
+const readCatalog = (b, partial = false) => {
+  const out = {};
+  for (const k of ['name_en', 'name_fil']) {
+    if (b?.[k] !== undefined || !partial) {
+      const v = String(b?.[k] || '').trim();
+      if (v.length < 2) throw bad('Write the reward in English and Filipino, for example "2 kg rice" / "2 kilong bigas".', 'bad_name');
+      out[k] = v.slice(0, 80);
+    }
+  }
+  if (b?.supplier_id !== undefined) out.supplier_id = b.supplier_id ? Number(b.supplier_id) : null;
+  if (b?.value_estimate !== undefined) {
+    const n = Number(b.value_estimate);
+    if (!Number.isInteger(n) || n < 0 || n > 100000) throw bad('Write the value in whole pesos.', 'bad_value');
+    out.value_estimate = n;
+  }
+  if (b?.active !== undefined) out.active = b.active ? 1 : 0;
+  return out;
+};
+
+router.post('/admin/rewards/catalog', requireAdmin, wrap(async (req, res) => {
+  const f = readCatalog(req.body);
+  const r = await q('INSERT INTO reward_catalog (name_en, name_fil, supplier_id, value_estimate) VALUES (?,?,?,?)', [f.name_en, f.name_fil, f.supplier_id ?? null, f.value_estimate ?? 0]);
+  await audit(req.user.id, 'reward_added', `reward #${r.insertId} ${f.name_en}`);
+  res.status(201).json({ id: r.insertId });
+}));
+
+router.patch('/admin/rewards/catalog/:id', requireAdmin, wrap(async (req, res) => {
+  const f = readCatalog(req.body, true);
+  const keys = Object.keys(f);
+  if (!keys.length) throw bad('Nothing to change.', 'bad_name');
+  const r = await q(`UPDATE reward_catalog SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => f[k]), req.params.id]);
+  if (!r.affectedRows) throw notFound('Reward not found.');
+  await audit(req.user.id, 'reward_edited', `reward #${req.params.id}`);
+  res.json({ ok: true });
+}));
+
+// Stock the LGU bought (purchase) or a corrected count. Staff record it; it is audited.
+router.post('/admin/rewards/catalog/:id/stock', wrap(async (req, res) => {
+  res.json(await addStock(Number(req.params.id), req.body?.qty, req.body?.reason || 'purchase', req.body?.note, req.user));
+}));
+
+const readSupplier = (b, partial = false) => {
+  const out = {};
+  if (b?.name !== undefined || !partial) {
+    const v = String(b?.name || '').trim();
+    if (v.length < 2) throw bad('Write the name of the producer.', 'bad_name');
+    out.name = v.slice(0, 120);
+  }
+  if (b?.kind !== undefined) {
+    if (!['farmer', 'fisherfolk', 'garden', 'program', 'other'].includes(b.kind)) throw bad('Choose the kind of producer.', 'bad_kind');
+    out.kind = b.kind;
+  }
+  for (const k of ['contact_name', 'phone']) if (b?.[k] !== undefined) out[k] = String(b[k] || '').trim().slice(0, k === 'phone' ? 30 : 120) || null;
+  if (b?.active !== undefined) out.active = b.active ? 1 : 0;
+  return out;
+};
+
+router.post('/admin/suppliers', requireAdmin, wrap(async (req, res) => {
+  const f = readSupplier(req.body);
+  const r = await q('INSERT INTO suppliers (name, kind, contact_name, phone) VALUES (?,?,?,?)', [f.name, f.kind || 'farmer', f.contact_name ?? null, f.phone ?? null]);
+  await audit(req.user.id, 'supplier_added', `supplier #${r.insertId} ${f.name}`);
+  res.status(201).json({ id: r.insertId });
+}));
+
+router.patch('/admin/suppliers/:id', requireAdmin, wrap(async (req, res) => {
+  const f = readSupplier(req.body, true);
+  const keys = Object.keys(f);
+  if (!keys.length) throw bad('Nothing to change.', 'bad_name');
+  const r = await q(`UPDATE suppliers SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => f[k]), req.params.id]);
+  if (!r.affectedRows) throw notFound('Supplier not found.');
+  await audit(req.user.id, 'supplier_edited', `supplier #${req.params.id}`);
+  res.json({ ok: true });
+}));
+
+router.post('/admin/vouchers/:id/release', wrap(async (req, res) => res.json(await releaseVoucher(Number(req.params.id), req.user))));
+router.post('/admin/vouchers/:id/cancel', requireAdmin, wrap(async (req, res) => res.json(await cancelVoucher(Number(req.params.id), req.body?.reason, req.user))));
+router.get('/admin/vouchers/code/:code', wrap(async (req, res) => res.json(await lookupCode(req.params.code))));
+router.post('/admin/vouchers/code/:code/give', wrap(async (req, res) => res.json(await handOut(req.params.code, req.user, req.body?.catalog_id || null))));
+router.get('/admin/rewards/report', wrap(async (req, res) => res.json(await monthReport(req.query.month || todayPH().slice(0, 7)))));
+
+// Issue vouchers now from today's scores (the first launch, or when the barangay decides): the live scores are
+// kept as a snapshot named after today, then every tier gets its vouchers. Admins only; audited.
+router.post('/admin/rewards/issue', requireAdmin, wrap(async (req, res) => {
+  const period = todayPH();
+  await q(
+    `INSERT INTO trust_scores (user_id, period, score, tier, parts, signals, needs_staff_check, counted_loans, computed_on)
+     SELECT user_id, ?, score, tier, parts, signals, needs_staff_check, counted_loans, computed_on FROM trust_scores WHERE period = 'live'
+     ON DUPLICATE KEY UPDATE score = VALUES(score)`, [period]);
+  const out = await issueVouchers(period);
+  await audit(req.user.id, 'vouchers_issued', `${period}: ${out.vouchers} vouchers to ${out.residents} residents`);
+  res.json(out);
 }));
 
 // ---------- donations ----------

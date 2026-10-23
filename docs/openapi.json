@@ -28,6 +28,10 @@
       "description": "Donate / free to take: claims and handovers"
     },
     {
+      "name": "rewards",
+      "description": "Tiwala score and food rewards (rice and vegetables, paid by the LGU)"
+    },
+    {
       "name": "community",
       "description": "Wanted board, kits, notifications, reports, announcements, impact"
     },
@@ -2223,6 +2227,144 @@
         }
       }
     },
+    "/me/tiwala": {
+      "get": {
+        "operationId": "getMeTiwala",
+        "tags": [
+          "rewards"
+        ],
+        "summary": "My Tiwala score, tier, how it was made and the next step",
+        "description": "Any logged-in account.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/vouchers": {
+      "get": {
+        "operationId": "getMeVouchers",
+        "tags": [
+          "rewards"
+        ],
+        "summary": "My reward vouchers (the code shows once it can be collected)",
+        "description": "Any logged-in account.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rewards/catalog": {
+      "get": {
+        "operationId": "getRewardsCatalog",
+        "tags": [
+          "rewards"
+        ],
+        "summary": "Rewards in stock to choose from",
+        "description": "Any logged-in account.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vouchers/{id}/choose": {
+      "post": {
+        "operationId": "postVouchersIdChoose",
+        "tags": [
+          "rewards"
+        ],
+        "summary": "Choose (or change) the reward for a voucher; reserves one unit",
+        "description": "Any logged-in account. Error codes: bad_state, bad_reward, out_of_stock, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "catalog_id": {}
+                },
+                "required": [
+                  "catalog_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/wanted": {
       "get": {
         "operationId": "getWanted",
@@ -3273,7 +3415,7 @@
         "tags": [
           "admin"
         ],
-        "summary": "Tiwala scores in shadow mode: score, tier, how it was made, signals",
+        "summary": "Tiwala scores: score, tier, how it was made, signals",
         "description": "LGU staff or admin.",
         "responses": {
           "200": {
@@ -3371,6 +3513,542 @@
                 "required": [
                   "frozen"
                 ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/rewards": {
+      "get": {
+        "operationId": "getAdminRewards",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Rewards: catalog and stock, producers, vouchers waiting for a check, counts",
+        "description": "LGU staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/rewards/catalog": {
+      "post": {
+        "operationId": "postAdminRewardsCatalog",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add a reward (English and Filipino name, producer, value per unit); audited",
+        "description": "LGU admin only. Error codes: bad_name, bad_value.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name_en": {},
+                  "name_fil": {},
+                  "supplier_id": {},
+                  "value_estimate": {}
+                },
+                "required": [
+                  "name_en",
+                  "name_fil"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/rewards/catalog/{id}": {
+      "patch": {
+        "operationId": "patchAdminRewardsCatalogId",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Edit or retire a reward; audited",
+        "description": "LGU admin only. Error codes: bad_name, bad_value, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name_en": {},
+                  "name_fil": {},
+                  "supplier_id": {},
+                  "value_estimate": {},
+                  "active": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/rewards/catalog/{id}/stock": {
+      "post": {
+        "operationId": "postAdminRewardsCatalogIdStock",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Record stock the LGU bought, or correct a count; audited",
+        "description": "LGU staff or admin. Error codes: bad_qty, bad_reason, out_of_stock, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "qty": {},
+                  "reason": {},
+                  "note": {}
+                },
+                "required": [
+                  "qty"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/suppliers": {
+      "post": {
+        "operationId": "postAdminSuppliers",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add a local producer; audited",
+        "description": "LGU admin only. Error codes: bad_name, bad_kind.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {},
+                  "kind": {},
+                  "contact_name": {},
+                  "phone": {}
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/suppliers/{id}": {
+      "patch": {
+        "operationId": "patchAdminSuppliersId",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Edit or retire a producer; audited",
+        "description": "LGU admin only. Error codes: bad_name, bad_kind, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {},
+                  "kind": {},
+                  "contact_name": {},
+                  "phone": {},
+                  "active": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/vouchers/{id}/release": {
+      "post": {
+        "operationId": "postAdminVouchersIdRelease",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Release a voucher after the staff check; audited",
+        "description": "LGU staff or admin. Error codes: bad_state, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/vouchers/{id}/cancel": {
+      "post": {
+        "operationId": "postAdminVouchersIdCancel",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Cancel a voucher with a reason (for example confirmed collusion); audited",
+        "description": "LGU admin only. Error codes: reason_required, bad_state, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {}
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/vouchers/code/{code}": {
+      "get": {
+        "operationId": "getAdminVouchersCodeCode",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Look up a code at the hall: first name, purok and reward",
+        "description": "LGU staff or admin. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/vouchers/code/{code}/give": {
+      "post": {
+        "operationId": "postAdminVouchersCodeCodeGive",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Hand out a reward (choose it at the hall if needed); audited",
+        "description": "LGU staff or admin. Error codes: already_given, bad_state, bad_reward, out_of_stock, not_found.",
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "catalog_id": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/rewards/report": {
+      "get": {
+        "operationId": "getAdminRewardsReport",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Monthly reward report per item and producer, with a 5% call-back list",
+        "description": "LGU staff or admin. Error codes: bad_month.",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/rewards/issue": {
+      "post": {
+        "operationId": "postAdminRewardsIssue",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Issue vouchers now from the scores of today (a snapshot named after today); audited",
+        "description": "LGU admin only.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
               }
             }
           }

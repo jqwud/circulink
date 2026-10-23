@@ -141,13 +141,13 @@ describe('reminders', () => {
 describe('job runner', () => {
   test('runs each job, records it, and skips it until its interval has passed', async () => {
     const first = await runDueJobs(later(40), { force: true });
-    for (const name of ['reminders', 'checkins', 'expire_requests', 'delete_old_id_photos', 'cleanup_uploads', 'delete_old_messages', 'donations', 'tiwala']) {
+    for (const name of ['reminders', 'checkins', 'expire_requests', 'delete_old_id_photos', 'cleanup_uploads', 'delete_old_messages', 'donations', 'tiwala', 'vouchers']) {
       assert.notEqual(first[name], 'skipped', name);
     }
     const second = await runDueJobs(later(40));
     assert.equal(second.reminders, 'skipped');
     const rows = await q('SELECT name, last_ok_at, last_error FROM job_runs');
-    assert.equal(rows.length, 8);
+    assert.equal(rows.length, 9);
     assert.ok(rows.every((r) => r.last_ok_at && !r.last_error));
   });
   test('one failing job is recorded and does not stop the others', async () => {

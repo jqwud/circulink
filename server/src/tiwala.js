@@ -5,6 +5,7 @@
 // scoreFrom(facts) is pure (the rules); gatherFacts(userId) reads the last 90 days from the database.
 import { q, one, todayPH } from './db.js';
 import { addDays } from './services.js';
+import { issueVouchers } from './rewards.js';
 
 export const TIWALA = {
   start: 40,
@@ -164,5 +165,7 @@ export async function runTiwala(now = new Date()) {
         [id, period, r.score, r.tier, JSON.stringify(r.parts), JSON.stringify(r.signals), r.needs_staff_check ? 1 : 0, r.counted_loans, today]);
     }
   }
-  return { residents: users.length, snapshot };
+  // A finished quarter's tiers become food-reward vouchers (rewards.js).
+  const rewards = snapshot ? await issueVouchers(snapshot, today) : null;
+  return { residents: users.length, snapshot, rewards };
 }
