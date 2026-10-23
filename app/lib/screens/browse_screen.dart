@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/constants.dart';
 import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/state.dart';
@@ -27,7 +28,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
   bool _shelfOnly = false;
 
   // Items come 30 at a time; "Load more" fetches the next page.
-  static const int _page = 30;
+  static const int _page = kBrowsePageSize;
   final List<Map<String, dynamic>> _more = <Map<String, dynamic>>[];
   bool _hasMore = false;
   bool _loadingMore = false;

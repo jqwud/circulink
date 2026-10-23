@@ -358,6 +358,71 @@ export async function deleteAccountTx(conn, userId, actor, { newPasswordHash, re
   return { id: u.id, deleted: true };
 }
 
+// ---------- verifying residents ----------
+// Approving needs an ID photo (unless already approved) and gives the starter credits once.
+export function approveResident(userId, actor) {
+  return withTx(async (conn) => {
+    const [[u]] = await conn.query('SELECT * FROM users WHERE id = ? AND role = ? FOR UPDATE', [userId, 'resident']);
+    if (!u) throw notFound('Resident not found.');
+    if (!u.id_photo_path && u.verification_status !== 'approved') throw bad('This resident has not sent an ID photo yet.', 'no_id_photo');
+    await conn.query("UPDATE users SET verification_status = 'approved', reject_reason = NULL, verification_decided_at = NOW() WHERE id = ?", [u.id]);
+    const [[given]] = await conn.query("SELECT COUNT(*) n FROM credit_ledger WHERE user_id = ? AND reason = 'starter'", [u.id]);
+    const starter = given.n ? 0 : await addCredits(conn, u.id, RULES.starterCredits, 'starter');
+    await notify(conn, u.id, 'verified', 'Welcome to Hiraman!', `Your account is verified. You have ${RULES.starterCredits} starter credits.`, null, { n: RULES.starterCredits });
+    await audit(actor.id, 'verification_approved', `user #${u.id} ${u.name}`, conn);
+    return { id: u.id, verification_status: 'approved', starter_credits: starter };
+  });
+}
+
+// Rejecting needs a reason the resident can act on.
+export async function rejectResident(userId, actor, reasonText) {
+  const reason = String(reasonText || '').trim();
+  if (!reason) throw bad('Please give a reason so the resident can fix it.', 'reason_required');
+  const u = await one('SELECT * FROM users WHERE id = ? AND role = ?', [userId, 'resident']);
+  if (!u) throw notFound('Resident not found.');
+  await withTx(async (conn) => {
+    await conn.query("UPDATE users SET verification_status = 'rejected', reject_reason = ?, verification_decided_at = NOW() WHERE id = ?", [reason.slice(0, 255), u.id]);
+    await notify(conn, u.id, 'verification_rejected', 'Verification needs a fix', reason, null, { reason });
+    await audit(actor.id, 'verification_rejected', `user #${u.id} ${u.name}: ${reason}`, conn);
+  });
+  return { id: u.id, verification_status: 'rejected' };
+}
+
+// ---------- booking a whole kit ----------
+// One request per kit line, using the first free matching item (shelf items first). Lines that cannot be
+// covered (nothing free, not enough credits, already asked for) are listed as missing.
+export async function bookKit(kitId, borrower, start, end) {
+  assertDates(start, end);
+  const kit = await one('SELECT * FROM kits WHERE id = ? AND active = 1', [kitId]);
+  if (!kit) throw notFound('Kit not found.');
+  const lines = await q('SELECT * FROM kit_items WHERE kit_id = ? ORDER BY id', [kit.id]);
+  return withTx(async (conn) => {
+    const created = [];
+    const missing = [];
+    const usedItems = new Set();
+    for (const l of lines) {
+      const [cands] = await conn.query(
+        `SELECT i.id FROM items i WHERE i.status = 'available' AND i.review_status = 'ok' AND i.category_id = ?
+            AND (? IS NULL OR i.title LIKE CONCAT('%', ?, '%')) AND (i.owner_id IS NULL OR i.owner_id <> ?)
+            AND NOT EXISTS (SELECT 1 FROM requests r WHERE r.item_id = i.id AND ${TAKEN_SQL('r')})
+          ORDER BY i.is_shelf DESC, i.id`,
+        [l.category_id, l.keyword, l.keyword, borrower.id, end, todayPH(), start]);
+      const pick = cands.find((c) => !usedItems.has(c.id));
+      if (!pick) { missing.push(l.label); continue; }
+      usedItems.add(pick.id);
+      try {
+        created.push({ label: l.label, ...(await createRequestTx(conn, { borrower, itemId: pick.id, start, end, kitId: kit.id })) });
+      } catch (e) {
+        if (e.code === 'insufficient_credits') { missing.push(`${l.label} (not enough credits)`); continue; }
+        if (e.code === 'duplicate_request') { missing.push(`${l.label} (you already asked for it)`); continue; }
+        throw e;
+      }
+    }
+    if (!created.length) throw bad('None of the items in this kit are free for those dates.', 'kit_unavailable');
+    return { created, missing };
+  });
+}
+
 // ---------- staff step in ----------
 // Staff may cancel any request that is waiting or booked (not one already out), with a reason both sides see.
 export function staffCancelRequest(requestId, actor, reason) {

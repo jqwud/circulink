@@ -55,7 +55,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 19 | Automatic flags: unusual or possibly harmful listings go to a staff review queue | Admin tools | M | Done |
 | 20 | Rule numbers editable by admins in the portal, within limits, audited | Rule numbers | M | Done |
 | 21 | Long lists in pages | B9 | M | Done |
-| 22 | Code tidy-up without behavior change | A6, A7, A3 | M | Planned |
+| 22 | Code tidy-up without behavior change | A6, A7, A3 | M | Done |
 | 23 | One rule for Philippine time everywhere | B14 | S–M | Planned |
 | 24 | API description (OpenAPI) | B12 | M | Planned |
 | 25 | End-to-end, accessibility and load tests | QA | L | Planned |

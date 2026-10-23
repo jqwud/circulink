@@ -27,6 +27,12 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN || '',
   // One log line per API request (LOG_REQUESTS=0 turns it off; the tests do).
   logRequests: process.env.LOG_REQUESTS !== '0',
+  // Photo uploads: the largest file accepted.
+  uploadMaxBytes: 5 * 1024 * 1024,
+  // Login and sign-up from one network: this many tries per 15 minutes.
+  authTriesPer15Min: 60,
+  // Page sizes for long lists (?limit=): default and maximum, for residents and for the portal.
+  pages: { residentDefault: 50, residentMax: 100, staffDefault: 100, staffMax: 200 },
   // Changes (POST, PATCH, DELETE) one person may make per 15 minutes.
   writeLimit: Number(process.env.WRITE_LIMIT) || 300,
   // Shown to borrowers of items the barangay handles. Optional.

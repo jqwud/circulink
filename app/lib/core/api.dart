@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'constants.dart';
+
 /// Server address, connection status and the plug button are for testing only. Real (release) builds show
 /// residents none of it: the address is built in. Test builds (debug, or --dart-define=HIRAMAN_SERVER_TOOLS=true) keep them.
 const bool kShowServerTools = kDebugMode || bool.fromEnvironment('HIRAMAN_SERVER_TOOLS');
@@ -73,7 +75,7 @@ class Api {
 
   Future<dynamic> _send(Future<http.Response> Function() call) async {
     try {
-      final http.Response res = await call().timeout(const Duration(seconds: 25));
+      final http.Response res = await call().timeout(kRequestTimeout);
       return _handle(res);
     } on SocketException {
       throw ApiException('Cannot reach the Hiraman server. Check your Wi-Fi and the server address.', code: 'network');

@@ -8,7 +8,7 @@ import multer from 'multer';
 import { config } from './config.js';
 import { HttpError } from './errors.js';
 
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = config.uploadMaxBytes;
 const LABELS_WE_TRY = ['image/jpeg', 'image/jpg', 'image/pjpeg', 'image/png', 'image/webp', 'application/octet-stream'];
 
 const badFileType = () => new HttpError(400, 'Only JPG, PNG or WEBP photos are allowed.', 'bad_file_type');

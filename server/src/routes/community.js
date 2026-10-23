@@ -1,10 +1,11 @@
 // Resident-facing community features: credits, wanted board, kits, notifications, reports, announcements, impact.
 import { Router } from 'express';
+import { config } from '../config.js';
 import { SCREENING } from '../rules.js';
 import { pool, q, one, withTx, todayPH, pageOf } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { assertDates, createRequestTx, notify, TAKEN_SQL, flagItemTx } from '../services.js';
+import { bookKit, notify, flagItemTx } from '../services.js';
 import { RULES } from '../rules.js';
 
 const router = Router();
@@ -24,7 +25,7 @@ router.get('/credits', wrap(async (req, res) => {
 router.get('/wanted', wrap(async (req, res) => {
   const rows = await q(
     `SELECT w.*, u.name, u.purok FROM wanted_posts w JOIN users u ON u.id = w.user_id
-      WHERE w.status = 'open' AND (w.needed_by IS NULL OR w.needed_by >= ?) ORDER BY w.created_at DESC, w.id DESC ${pageOf(req.query, 50, 100)}`, [todayPH()]);
+      WHERE w.status = 'open' AND (w.needed_by IS NULL OR w.needed_by >= ?) ORDER BY w.created_at DESC, w.id DESC ${pageOf(req.query, config.pages.residentDefault, config.pages.residentMax)}`, [todayPH()]);
   res.json(rows.map((w) => ({
     id: w.id, title: w.title, details: w.details, needed_by: w.needed_by, status: w.status, created_at: w.created_at,
     user: { id: w.user_id, name: firstName(w.name), purok: w.purok }, mine: w.user_id === req.user.id,
@@ -59,61 +60,27 @@ router.patch('/wanted/:id/close', wrap(async (req, res) => {
 // ---------- event kits ----------
 router.get('/kits', wrap(async (_req, res) => {
   const kits = await q('SELECT * FROM kits WHERE active = 1 ORDER BY id');
-  const out = [];
-  for (const k of kits) {
-    const lines = await q('SELECT * FROM kit_items WHERE kit_id = ? ORDER BY id', [k.id]);
-    const items = [];
-    for (const l of lines) {
-      const [{ n }] = await q(
-        "SELECT COUNT(*) AS n FROM items WHERE status = 'available' AND review_status = 'ok' AND category_id = ? AND (? IS NULL OR title LIKE CONCAT('%', ?, '%'))",
-        [l.category_id, l.keyword, l.keyword]);
-      items.push({ id: l.id, label: l.label, available: n });
-    }
-    out.push({ id: k.id, name_en: k.name_en, name_fil: k.name_fil, description: k.description, emoji: k.emoji, items });
-  }
-  res.json(out);
+  // Every line of every kit with how many matching items are free, in one grouped query.
+  const lines = await q(
+    `SELECT k.id, k.kit_id, k.label, COUNT(i.id) AS available
+       FROM kit_items k
+       LEFT JOIN items i ON i.status = 'available' AND i.review_status = 'ok' AND i.category_id = k.category_id
+                        AND (k.keyword IS NULL OR i.title LIKE CONCAT('%', k.keyword, '%'))
+      GROUP BY k.id, k.kit_id, k.label ORDER BY k.id`);
+  res.json(kits.map((k) => ({
+    id: k.id, name_en: k.name_en, name_fil: k.name_fil, description: k.description, emoji: k.emoji,
+    items: lines.filter((l) => l.kit_id === k.id).map((l) => ({ id: l.id, label: l.label, available: Number(l.available) })),
+  })));
 }));
 
-// Request a whole kit in one go: one request per line, using the first free matching item.
+// Request a whole kit in one go (see bookKit in services.js).
 router.post('/kits/:id/request', requireApproved, wrap(async (req, res) => {
-  const { start_date, end_date } = req.body || {};
-  assertDates(start_date, end_date);
-  const kit = await one('SELECT * FROM kits WHERE id = ? AND active = 1', [req.params.id]);
-  if (!kit) throw notFound('Kit not found.');
-  const lines = await q('SELECT * FROM kit_items WHERE kit_id = ? ORDER BY id', [kit.id]);
-
-  const result = await withTx(async (conn) => {
-    const created = [];
-    const missing = [];
-    const usedItems = new Set();
-    for (const l of lines) {
-      const [cands] = await conn.query(
-        `SELECT i.id FROM items i WHERE i.status = 'available' AND i.review_status = 'ok' AND i.category_id = ?
-            AND (? IS NULL OR i.title LIKE CONCAT('%', ?, '%')) AND (i.owner_id IS NULL OR i.owner_id <> ?)
-            AND NOT EXISTS (SELECT 1 FROM requests r WHERE r.item_id = i.id AND ${TAKEN_SQL('r')})
-          ORDER BY i.is_shelf DESC, i.id`,
-        [l.category_id, l.keyword, l.keyword, req.user.id, end_date, todayPH(), start_date]);
-      const pick = cands.find((c) => !usedItems.has(c.id));
-      if (!pick) { missing.push(l.label); continue; }
-      usedItems.add(pick.id);
-      try {
-        created.push({ label: l.label, ...(await createRequestTx(conn, { borrower: req.user, itemId: pick.id, start: start_date, end: end_date, kitId: kit.id })) });
-      } catch (e) {
-        // Out of credits, or already asked for: report the line as not covered and go on.
-        if (e.code === 'insufficient_credits') { missing.push(`${l.label} (not enough credits)`); continue; }
-        if (e.code === 'duplicate_request') { missing.push(`${l.label} (you already asked for it)`); continue; }
-        throw e;
-      }
-    }
-    if (!created.length) throw bad('None of the items in this kit are free for those dates.', 'kit_unavailable');
-    return { created, missing };
-  });
-  res.status(201).json(result);
+  res.status(201).json(await bookKit(Number(req.params.id), req.user, req.body?.start_date, req.body?.end_date));
 }));
 
 // ---------- notifications ----------
 router.get('/notifications', wrap(async (req, res) => {
-  res.json(await q(`SELECT id, type, title, body, params, ref_id, read_at, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC ${pageOf(req.query, 50, 100)}`, [req.user.id]));
+  res.json(await q(`SELECT id, type, title, body, params, ref_id, read_at, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC ${pageOf(req.query, config.pages.residentDefault, config.pages.residentMax)}`, [req.user.id]));
 }));
 router.post('/notifications/read', wrap(async (req, res) => {
   await q('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL', [req.user.id]);

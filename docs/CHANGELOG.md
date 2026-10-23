@@ -2,6 +2,13 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 22: Code tidy-up, no behavior change (2026-10-23)
+
+- **Fewer queries:** My items, the kit list and the portal's reports no longer query the database once per row; each uses one or two combined queries.
+- **Named limits:** upload size, login tries, and page sizes live in `server/src/config.js`; the app's request timeout, server probe time, splash time and Browse page size in `app/lib/core/constants.dart`.
+- **Smaller route files:** resident verification (approve, reject) and kit booking moved into `services.js` next to the request life cycle.
+- **Proof of no change:** all 209 tests pass unchanged, and the output of the changed endpoints was recorded before and after on the same test data and is identical.
+
 ## Batch 21: Long lists in pages (2026-10-23)
 
 - Lists take `?limit=` and `?offset=` and stay plain arrays (a page shorter than the limit is the last). Every paged list also sorts by id, so pages never overlap or skip (`pageOf` in `server/src/db.js`).

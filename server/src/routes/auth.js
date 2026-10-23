@@ -7,11 +7,12 @@ import { HttpError, bad, wrap } from '../errors.js';
 import { authRequired, signToken, publicUser } from '../auth.js';
 import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
 import { PRIVACY_VERSION, privacyNotice } from '../privacy.js';
+import { config } from '../config.js';
 import { audit, notify } from '../services.js';
 
 const router = Router();
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, limit: 60, standardHeaders: true, legacyHeaders: false,
+  windowMs: 15 * 60 * 1000, limit: config.authTriesPer15Min, standardHeaders: true, legacyHeaders: false,
   handler: (_req, res) => res.status(429).json({ error: 'Too many tries from this network. Please wait a few minutes.', code: 'too_many_requests' }),
 });
 

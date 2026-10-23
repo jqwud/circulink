@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { config } from '../config.js';
 import { pool, q, one, withTx, todayPH, likeText, purokNames, pageOf } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
@@ -69,7 +70,7 @@ router.get('/items', authRequired, wrap(async (req, res) => {
   if (['low', 'medium', 'high'].includes(tier)) { where.push('i.tier = ?'); params.push(tier); }
   if (shelf === '1') where.push('i.is_shelf = 1');
   if (owner === 'others') { where.push('(i.owner_id IS NULL OR i.owner_id <> ?)'); params.push(req.user.id); }
-  const rows = await q(`${SELECT_ITEM} WHERE ${where.join(' AND ')} ORDER BY i.is_shelf DESC, i.created_at DESC, i.id DESC ${pageOf(req.query, 50, 100)}`, params);
+  const rows = await q(`${SELECT_ITEM} WHERE ${where.join(' AND ')} ORDER BY i.is_shelf DESC, i.created_at DESC, i.id DESC ${pageOf(req.query, config.pages.residentDefault, config.pages.residentMax)}`, params);
   res.json(rows.map(mapItem));
 }));
 
@@ -89,14 +90,19 @@ router.get('/items/:id', authRequired, wrap(async (req, res) => {
 
 router.get('/my/items', authRequired, wrap(async (req, res) => {
   const rows = await q(`${SELECT_ITEM} WHERE i.owner_id = ? AND i.status <> 'removed' ORDER BY i.created_at DESC`, [req.user.id]);
-  const out = [];
-  for (const r of rows) {
-    const loan = await one(
-      `SELECT r.id, r.status, r.start_date, r.end_date, u.name AS borrower FROM requests r JOIN users u ON u.id = r.borrower_id
-        WHERE r.item_id = ? AND r.status IN ('pending','approved','handed_over') ORDER BY r.start_date LIMIT 1`, [r.id]);
-    out.push({ ...mapItem(r), current_request: loan ? { ...loan, borrower: String(loan.borrower).split(' ')[0] } : null });
-  }
-  res.json(out);
+  // Each item's next active request (the earliest by start date), all in one query.
+  const loans = await q(
+    `SELECT * FROM (
+       SELECT r.item_id, r.id, r.status, r.start_date, r.end_date, u.name AS borrower,
+              ROW_NUMBER() OVER (PARTITION BY r.item_id ORDER BY r.start_date, r.id) AS nth
+         FROM requests r JOIN users u ON u.id = r.borrower_id JOIN items i ON i.id = r.item_id
+        WHERE i.owner_id = ? AND r.status IN ('pending','approved','handed_over')) x
+      WHERE x.nth = 1`, [req.user.id]);
+  const byItem = new Map(loans.map(({ item_id: itemId, nth: _nth, ...loan }) => [itemId, loan]));
+  res.json(rows.map((r) => {
+    const loan = byItem.get(r.id);
+    return { ...mapItem(r), current_request: loan ? { ...loan, borrower: String(loan.borrower).split(' ')[0] } : null };
+  }));
 }));
 
 function readItemBody(body, { partial = false } = {}) {

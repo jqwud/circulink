@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
+import 'constants.dart';
 import 'format.dart';
 import 'strings_fil.dart';
 import 'theme.dart';
@@ -68,7 +69,7 @@ class AppState extends ChangeNotifier {
     add(api.baseUrl);
     serverCandidates().forEach(add);
     if (!kIsWeb) add('http://10.0.2.2:4000');
-    final List<bool> ok = await Future.wait<bool>(candidates.map((String u) => api.ping(u, timeout: const Duration(milliseconds: 2500))));
+    final List<bool> ok = await Future.wait<bool>(candidates.map((String u) => api.ping(u, timeout: kServerProbeTimeout)));
     final int hit = ok.indexOf(true);
     if (hit >= 0) {
       if (candidates[hit] != api.baseUrl) await setBaseUrl(candidates[hit]);
@@ -89,7 +90,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> init() async {
     // The splash always shows for a moment, so it is seen even when the server answers at once.
-    final Future<void> minSplash = Future<void>.delayed(const Duration(milliseconds: 1400));
+    final Future<void> minSplash = Future<void>.delayed(kSplashMinimum);
     _prefs = await SharedPreferences.getInstance();
     // A build from run-phone.cmd starts on its address (the USB cable) once.
     // After that, an address saved with the plug icon (like Wi-Fi) is kept.

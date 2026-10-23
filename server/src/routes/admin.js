@@ -8,7 +8,10 @@ import { config } from '../config.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { temporaryPassword } from './auth.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
-import { OUT_LOANS_SQL, addCredits, audit, checkinState, deleteAccountTx, hideItem, notify, removeItemTx, settleDisputeTx, showItem, staffCancelRequest } from '../services.js';
+import {
+  OUT_LOANS_SQL, approveResident, audit, checkinState, deleteAccountTx, hideItem, notify, rejectResident, removeItemTx, settleDisputeTx,
+  showItem, staffCancelRequest,
+} from '../services.js';
 import { removePrivateFile } from '../uploads.js';
 import { listRuleSettings, saveRuleSettings } from '../settings.js';
 import crypto from 'node:crypto';
@@ -60,7 +63,7 @@ router.get('/admin/users', wrap(async (req, res) => {
             (SELECT COUNT(*) FROM items i WHERE i.owner_id = u.id AND i.status <> 'removed') AS items,
             (SELECT COUNT(*) FROM requests r WHERE r.borrower_id = u.id AND r.status = 'closed') AS loans
        FROM users u WHERE ${where.join(' AND ')}
-      ORDER BY FIELD(u.verification_status,'pending','unverified','approved','rejected'), u.created_at DESC, u.id DESC ${pageOf(req.query, 100, 200)}`, params);
+      ORDER BY FIELD(u.verification_status,'pending','unverified','approved','rejected'), u.created_at DESC, u.id DESC ${pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`, params);
   res.json(rows.map((u) => ({ ...u, has_id_photo: !!u.has_id_photo, suspended: !!u.suspended })));
 }));
 
@@ -82,34 +85,8 @@ router.get('/admin/users/:id/id-photo', wrap(async (req, res) => {
   res.sendFile(file);
 }));
 
-router.post('/admin/users/:id/approve', wrap(async (req, res) => {
-  const r = await withTx(async (conn) => {
-    const [[u]] = await conn.query('SELECT * FROM users WHERE id = ? AND role = ? FOR UPDATE', [req.params.id, 'resident']);
-    if (!u) throw notFound('Resident not found.');
-    if (!u.id_photo_path && u.verification_status !== 'approved') throw bad('This resident has not sent an ID photo yet.', 'no_id_photo');
-    await conn.query("UPDATE users SET verification_status = 'approved', reject_reason = NULL, verification_decided_at = NOW() WHERE id = ?", [u.id]);
-    // Starter credits are given once.
-    const [[given]] = await conn.query("SELECT COUNT(*) n FROM credit_ledger WHERE user_id = ? AND reason = 'starter'", [u.id]);
-    const starter = given.n ? 0 : await addCredits(conn, u.id, RULES.starterCredits, 'starter');
-    await notify(conn, u.id, 'verified', 'Welcome to Hiraman!', `Your account is verified. You have ${RULES.starterCredits} starter credits.`, null, { n: RULES.starterCredits });
-    await audit(req.user.id, 'verification_approved', `user #${u.id} ${u.name}`, conn);
-    return { id: u.id, verification_status: 'approved', starter_credits: starter };
-  });
-  res.json(r);
-}));
-
-router.post('/admin/users/:id/reject', wrap(async (req, res) => {
-  const reason = String(req.body?.reason || '').trim();
-  if (!reason) throw bad('Please give a reason so the resident can fix it.', 'reason_required');
-  const u = await one('SELECT * FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
-  if (!u) throw notFound('Resident not found.');
-  await withTx(async (conn) => {
-    await conn.query("UPDATE users SET verification_status = 'rejected', reject_reason = ?, verification_decided_at = NOW() WHERE id = ?", [reason.slice(0, 255), u.id]);
-    await notify(conn, u.id, 'verification_rejected', 'Verification needs a fix', reason, null, { reason });
-    await audit(req.user.id, 'verification_rejected', `user #${u.id} ${u.name}: ${reason}`, conn);
-  });
-  res.json({ id: u.id, verification_status: 'rejected' });
-}));
+router.post('/admin/users/:id/approve', wrap(async (req, res) => res.json(await approveResident(Number(req.params.id), req.user))));
+router.post('/admin/users/:id/reject', wrap(async (req, res) => res.json(await rejectResident(Number(req.params.id), req.user, req.body?.reason))));
 
 for (const [action, value, logged] of [['suspend', 1, 'user_suspended'], ['reinstate', 0, 'user_reinstated']]) {
   router.post(`/admin/users/:id/${action}`, wrap(async (req, res) => {
@@ -151,7 +128,7 @@ router.get('/admin/items', wrap(async (req, res) => {
   if (['ok', 'flagged', 'hidden'].includes(req.query.review)) { where.push('i.review_status = ?'); params.push(req.query.review); }
   if (req.query.tier) { where.push('i.tier = ?'); params.push(req.query.tier); }
   if (req.query.q) { where.push('(i.title LIKE ? OR u.name LIKE ?)'); params.push(like(req.query.q), like(req.query.q)); }
-  const rows = await q(`${SELECT_ITEM_SQL} WHERE ${where.join(' AND ')} ORDER BY i.created_at DESC, i.id DESC ${pageOf(req.query, 100, 200)}`, params);
+  const rows = await q(`${SELECT_ITEM_SQL} WHERE ${where.join(' AND ')} ORDER BY i.created_at DESC, i.id DESC ${pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`, params);
   res.json(rows.map((r) => ({ ...mapItem(r), owner_full_name: r.owner_name || null, review_flags: r.review_flags ? r.review_flags.split(',') : [] })));
 }));
 
@@ -222,7 +199,7 @@ router.get('/admin/requests', wrap(async (req, res) => {
   const rows = await q(
     `${SELECT_REQUEST} WHERE ${where.join(' AND ')}
       ORDER BY (r.status='pending' AND r.handled_by_staff=1) DESC, (r.status='handed_over' AND r.end_date < CURDATE()) DESC, r.id DESC
-      ${req.query.checkins === '1' ? 'LIMIT 500' : pageOf(req.query, 100, 200)}`, params);
+      ${req.query.checkins === '1' ? 'LIMIT 500' : pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`, params);
   // The portal gets full names and contact numbers so staff can follow up on late items.
   const full = await q('SELECT id, name, phone FROM users WHERE id IN (?)', [rows.length ? [...new Set(rows.map((r) => r.borrower_id))] : [0]]);
   const byId = Object.fromEntries(full.map((u) => [u.id, u]));
@@ -246,22 +223,28 @@ router.get('/admin/reports', wrap(async (req, res) => {
   const where = req.query.status ? 'WHERE rp.status = ?' : '';
   const rows = await q(
     `SELECT rp.*, u.name AS reporter_name FROM reports rp JOIN users u ON u.id = rp.reporter_id
-      ${where} ORDER BY FIELD(rp.status,'open','in_mediation','resolved'), rp.id DESC ${pageOf(req.query, 100, 200)}`, req.query.status ? [req.query.status] : []);
+      ${where} ORDER BY FIELD(rp.status,'open','in_mediation','resolved'), rp.id DESC ${pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`, req.query.status ? [req.query.status] : []);
+  // What each report is about, fetched once per kind instead of once per report.
+  const ids = (kind) => [...new Set(rows.filter((r) => r.target_type === kind).map((r) => r.target_id))];
+  const inList = async (sql, list) => (list.length ? q(sql, [list]) : []);
+  const loans = new Map((await inList(
+    `SELECT x.id, i.title AS item_title, x.status, x.return_condition, b.name AS borrower, b.phone AS borrower_phone, o.name AS owner
+       FROM requests x JOIN users b ON b.id = x.borrower_id JOIN items i ON i.id = x.item_id LEFT JOIN users o ON o.id = i.owner_id
+      WHERE x.id IN (?)`, ids('request'))).map((x) => [x.id, x]));
+  const itemTitles = new Map((await inList('SELECT id, title FROM items WHERE id IN (?)', ids('item'))).map((x) => [x.id, x.title]));
+  const userNames = new Map((await inList('SELECT id, name FROM users WHERE id IN (?)', ids('user'))).map((x) => [x.id, x.name]));
   const out = [];
   for (const r of rows) {
     let target = null;
     if (r.target_type === 'request') {
-      const rr = await one(`${SELECT_REQUEST} WHERE r.id = ?`, [r.target_id]);
+      const rr = loans.get(r.target_id);
       if (rr) {
-        const people = await one('SELECT b.name AS borrower, b.phone AS borrower_phone, o.name AS owner FROM requests x JOIN users b ON b.id = x.borrower_id JOIN items i ON i.id = x.item_id LEFT JOIN users o ON o.id = i.owner_id WHERE x.id = ?', [r.target_id]);
-        target = { label: `${rr.item_title} (request #${rr.id})`, request_status: rr.status, borrower: people?.borrower, borrower_phone: people?.borrower_phone, owner: people?.owner || 'Barangay Shelf', condition: rr.return_condition };
+        target = { label: `${rr.item_title} (request #${rr.id})`, request_status: rr.status, borrower: rr.borrower, borrower_phone: rr.borrower_phone, owner: rr.owner || 'Barangay Shelf', condition: rr.return_condition };
       }
     } else if (r.target_type === 'item') {
-      const it = await one('SELECT title, owner_id FROM items WHERE id = ?', [r.target_id]);
-      target = it ? { label: it.title } : null;
+      target = itemTitles.has(r.target_id) ? { label: itemTitles.get(r.target_id) } : null;
     } else {
-      const us = await one('SELECT name FROM users WHERE id = ?', [r.target_id]);
-      target = us ? { label: us.name } : null;
+      target = userNames.has(r.target_id) ? { label: userNames.get(r.target_id) } : null;
     }
     out.push({ id: r.id, target_type: r.target_type, target_id: r.target_id, reason: r.reason, details: r.details, status: r.status,
       mediator_notes: r.mediator_notes, outcome: r.outcome, reporter: r.reporter_name, created_at: r.created_at, resolved_at: r.resolved_at, target });
@@ -432,7 +415,7 @@ router.post('/admin/staff/:id/enable', requireAdmin, wrap(async (req, res) => {
 }));
 
 router.get('/admin/audit', requireAdmin, wrap(async (req, res) => {
-  res.json(await q(`SELECT a.id, a.action, a.target, a.created_at, u.name AS actor FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id ORDER BY a.id DESC ${pageOf(req.query, 100, 200)}`));
+  res.json(await q(`SELECT a.id, a.action, a.target, a.created_at, u.name AS actor FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id ORDER BY a.id DESC ${pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`));
 }));
 
 export default router;
