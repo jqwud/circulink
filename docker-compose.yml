@@ -1,0 +1,51 @@
+# Hiraman on one machine: MySQL 8 and the API (which also serves the LGU portal on the same port).
+#   1. Copy docker.env.example to docker.env and fill in the passwords and the secret.
+#   2. docker compose up -d --build
+#   3. Open http://localhost:4000 for the portal; point the phone app at http://<this computer's address>:4000
+# Data lives in named volumes (database, uploaded photos, backups), so it survives restarts and rebuilds.
+# More in docs/CONTAINERS.md.
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    env_file: docker.env
+    environment:
+      MYSQL_DATABASE: hiraman
+      MYSQL_USER: hiraman
+      TZ: Asia/Manila
+    volumes:
+      - db-data:/var/lib/mysql
+      # Runs once, when the database volume is new: creates the tables and the reference lists.
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file: docker.env
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: hiraman
+      DB_NAME: hiraman
+      TZ: Asia/Manila
+    ports:
+      - "4000:4000"
+    volumes:
+      - uploads:/app/server/uploads
+      - backups:/app/server/backups
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  uploads:
+  backups:

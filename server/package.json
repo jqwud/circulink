@@ -16,7 +16,8 @@
     "test": "node --test --test-concurrency=1 \"test/**/*.test.js\"",
     "test:unit": "node --test test/rules.test.js",
     "lint": "eslint .",
-    "format": "prettier --write"
+    "format": "prettier --write",
+    "create-admin": "node scripts/create-admin.js"
   },
   "engines": {
     "node": ">=22"

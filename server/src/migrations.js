@@ -62,6 +62,22 @@ async function run(conn, id, list) {
   }
 }
 
+// A brand-new install: no migration has ever been applied and nobody has an account yet, so there is
+// nothing to back up. `npm run migrate` then skips its safety backup (a container's first start relies on
+// this). Anything else, or any doubt, counts as not fresh, so it is backed up.
+export async function isFreshInstall() {
+  const conn = await connect();
+  try {
+    if ((await appliedIds(conn)).length) return false;
+    const [[row]] = await conn.query('SELECT COUNT(*) AS n FROM users');
+    return Number(row.n) === 0;
+  } catch {
+    return false;
+  } finally {
+    await conn.end();
+  }
+}
+
 // Applies every migration not yet applied. Returns the ids it applied.
 export async function migrateUp({ log = () => {} } = {}) {
   const conn = await connect();

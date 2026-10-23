@@ -2,6 +2,14 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 15: Containers (2026-10-23)
+
+- `Dockerfile`: one image with the API and the built portal. `docker-compose.yml`: MySQL 8 and the API, with the database, photos and backups in volumes, health checks, Philippine time. `docker-compose.dev.yml`: the API restarts on save and MySQL is open on port 3307.
+- On every start the container brings the database up to date, backing it up first (a brand-new database with no accounts is not backed up: there is nothing in it yet).
+- `npm run create-admin -- "Full Name" email` creates the first admin of a real install with a one-time password.
+- `docs/CONTAINERS.md`: first start, demo data, everyday commands, backups, the phone app, development, troubleshooting.
+- CI builds the image, starts both containers and checks the health and the portal page on every push.
+
 ## Batch 14: Screens and accessibility (2026-10-23)
 
 - Lists load with grey placeholder cards instead of a spinner.

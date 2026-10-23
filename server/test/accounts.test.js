@@ -140,6 +140,21 @@ describe('sessions', () => {
   });
 });
 
+describe('the first admin of a new install', () => {
+  test('npm run create-admin makes an admin with a one-time password that must be changed', async () => {
+    const out = execFileSync(process.execPath, ['scripts/create-admin.js', 'Kapitan Reyes', 'kapitan@hiraman.test'], { cwd: serverDir, env: process.env }).toString();
+    const temp = out.match(/Temporary password: (\S+)/)[1];
+    const r = await login('kapitan@hiraman.test', temp);
+    assert.equal(r.status, 200);
+    assert.equal(r.json.user.role, 'lgu_admin');
+    assert.equal(r.json.user.must_change_password, true);
+    const again = (() => {
+      try { execFileSync(process.execPath, ['scripts/create-admin.js', 'Kapitan Reyes', 'kapitan@hiraman.test'], { cwd: serverDir, env: process.env, stdio: 'pipe' }); return 0; } catch (e) { return e.status; }
+    })();
+    assert.equal(again, 1, 'the same email twice is refused');
+  });
+});
+
 describe('safer defaults', () => {
   test('only listed web origins may call the API; local development is allowed by default', () => {
     assert.equal(corsAllowed('http://localhost:5173', ''), true);

@@ -2,7 +2,7 @@
 // npm run migrate:status   list migrations and whether they are applied
 // npm run migrate:down     undo the most recent migration (takes a backup first)
 // Add --no-backup to skip the automatic backup (used for test databases).
-import { migrateUp, migrateDown, status, pendingMigrations } from '../src/migrations.js';
+import { migrateUp, migrateDown, status, pendingMigrations, isFreshInstall } from '../src/migrations.js';
 import { backup } from '../src/backup.js';
 import { config } from '../src/config.js';
 
@@ -22,7 +22,8 @@ try {
     if (!(await pendingMigrations()).length) {
       console.log(`"${config.db.database}" is up to date.`);
     } else {
-      safetyBackup('before-migrate');
+      if (await isFreshInstall()) console.log('New database with no accounts yet: nothing to back up.');
+      else safetyBackup('before-migrate');
       const done = await migrateUp({ log: (m) => console.log(m) });
       console.log(`Applied ${done.length} migration(s) to "${config.db.database}".`);
     }

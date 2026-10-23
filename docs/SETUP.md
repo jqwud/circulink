@@ -57,7 +57,15 @@ npm install
 npm run build
 ```
 
-Now open **http://localhost:4000** and log in as `admin@hiraman.test` / `hiraman123`. The server shows the built portal at the same address.
+Now open **http://localhost:4000** and log in as `admin@hiraman.test` / `hiraman123` (the demo data). The server shows the built portal at the same address.
+
+**A real install has no demo data.** Create its first admin account instead (in `server/`):
+
+```
+npm run create-admin -- "Full Name" email@example.com
+```
+
+It prints a temporary password once. Log in with it; the portal asks you to choose your own password. More staff are then added from the portal's Staff page.
 
 To edit the portal and see changes instantly, run `npm run dev` instead and open http://localhost:5173.
 

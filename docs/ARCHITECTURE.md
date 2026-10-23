@@ -42,13 +42,14 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | `server/src/uploads.js` | Photo uploads: 5 MB limit, real-type check from the file's first bytes, own-upload paths only, ID photo clean-up | |
 | `server/test/` | One file per area (rules, the borrow loop, uploads, booking, jobs, check-ins, disputes, contact, privacy, accounts, data rules, notifications, logging), all against `hiraman_test`; `helpers/` | `npm test` |
 | `database/` | `schema.sql` (starting point for a new database), `migrations/` (numbered changes, each with an undo part), `create-test-db.sql` | |
-| `server/scripts/` | `migrate.js`, `backup.js`, `restore.js` (run through `npm run migrate`, `backup`, `restore`) | |
+| `server/scripts/` | `migrate.js`, `backup.js`, `restore.js`, `create-admin.js` (run through `npm run migrate`, `backup`, `restore`, `create-admin`) | |
 | `portal/` | React + Vite staff portal, 12 pages | `src/main.jsx` → `src/App.jsx` |
 | `app/` | Flutter resident app | `lib/main.dart` → `screens/gate.dart`; `lib/main_gallery.dart` opens the component gallery |
 | `app/lib/core/` | API client, app state, theme, Filipino strings, notification sentences | |
 | `app/lib/widgets/ui/` | The UI kit, one component per file, exported by `widgets/common.dart` (see `docs/DESIGN_SYSTEM.md`) | |
 | `brand/` | Design tokens (`build-brand.mjs`), mascot art and icons (`build-icons.mjs`, `pawsa-art/`) | |
-| `docs/` | This file, setup, QA plan, roadmap, changelog, design system, build notes | |
+| `docs/` | This file, setup, containers, QA plan, roadmap, changelog, design system, build notes | |
+| `Dockerfile`, `docker-compose.yml`, `docker-compose.dev.yml`, `docker/` | One image for the API and the built portal; MySQL plus the API with data in volumes; a development overlay (see `docs/CONTAINERS.md`) | `docker compose up -d --build` |
 
 ## How a loan flows
 

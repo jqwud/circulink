@@ -1,0 +1,14 @@
+# Keep the image small and free of secrets and personal data.
+.git
+.github
+**/node_modules
+**/.env
+docker.env
+server/uploads
+server/backups
+portal/dist
+app
+brand/node_modules
+brand/pawsa-art
+docs
+*.log

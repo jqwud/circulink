@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { pool, q, one } from '../src/db.js';
-import { migrateUp, migrateDown, pendingMigrations, readMigrations } from '../src/migrations.js';
+import { migrateUp, migrateDown, pendingMigrations, readMigrations, isFreshInstall } from '../src/migrations.js';
 import { backup, restore } from '../src/backup.js';
 import { resetTestDatabase, seedTestDatabase } from './helpers/db.js';
 
@@ -27,6 +27,9 @@ describe('migration runner', () => {
   });
   test('running it again changes nothing', async () => {
     assert.deepEqual(await migrateUp(), []);
+  });
+  test('a database with migrations or accounts is never treated as a fresh install (so it is backed up first)', async () => {
+    assert.equal(await isFreshInstall(), false);
   });
 });
 

@@ -1,0 +1,16 @@
+# Development overlay: the API restarts when you save a file in server/src, and MySQL is reachable from
+# this computer on port 3307 (for MySQL Workbench or the tests). Use it together with the main file:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+services:
+  db:
+    ports:
+      - "3307:3306"
+
+  api:
+    environment:
+      NODE_ENV: development
+      LOG_REQUESTS: "1"
+    command: ["node", "--watch", "src/index.js"]
+    volumes:
+      - ./server/src:/app/server/src
+      - ./server/seed.js:/app/server/seed.js

@@ -13,7 +13,8 @@ Pawsa the energetic pusa is the mascot. Everything works in **Filipino and Engli
 | `server/` | The **API** (Node.js + Express) that both use. |
 | `database/` | The **MySQL** schema (`schema.sql`) and the test-database setup (`create-test-db.sql`). |
 | `brand/` | Pawsa, the icon and the colors. One source for both the app and the portal. |
-| `docs/` | `SETUP.md` (how to run it), `ARCHITECTURE.md` (how it fits together), `QA_PLAN.md` (how it is tested), `IMPROVEMENT_ROADMAP.md` and `CHANGELOG.md` (what is being improved), `BUILD_NOTES.md` (how we built it, for the instructor). |
+| `docs/` | `SETUP.md` (how to run it), `CONTAINERS.md` (run it with Docker), `ARCHITECTURE.md` (how it fits together), `DESIGN_SYSTEM.md` (how it looks), `QA_PLAN.md` (how it is tested), `IMPROVEMENT_ROADMAP.md` and `CHANGELOG.md` (what is being improved), `BUILD_NOTES.md` (how we built it, for the instructor). |
+| `Dockerfile`, `docker-compose*.yml` | Run MySQL, the API and the portal in containers (see `docs/CONTAINERS.md`). |
 
 ## Quick start (about 20 minutes)
 

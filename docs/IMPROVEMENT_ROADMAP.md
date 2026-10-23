@@ -41,7 +41,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Done |
 | 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Done |
 | 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Done |
-| 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Planned |
+| 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Done |
 | **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1), one-page summary for the instructor | | | Later |
 | **Skip** | Push notifications, hosting/HTTPS now, iOS build, ORM or framework switch, separate worker service, certificate pinning, root detection | | | Skipped |
 
@@ -76,6 +76,13 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** `flutter analyze` clean; Flutter 15/15 (new: sheets, gallery at 200% text). Screenshot check of the real web build against a test server, signed in as a borrower: Home with the check-in card, the loan with contact, timeline and check-in (English and Filipino), Requests, Wanted with its new sheet, Profile with the new rows.
 - **Not done:** a screen-reader walk-through on a real phone (TalkBack), and a full 200% text pass on every screen (only the gallery and onboarding are tested at large sizes).
 - **Undo:** `git revert` the four commits, newest first.
+
+### Batch 15: Containers
+- **Goal:** the server side runs the same way on any computer with Docker, with nothing else to install.
+- **Files:** `Dockerfile` (portal built into the API image), `docker-compose.yml` (MySQL 8 and the API, data in volumes, health checks), `docker-compose.dev.yml` (watch mode, MySQL on 3307), `docker/entrypoint.sh` (migrate, then start), `docker.env.example`, `.dockerignore`, `.gitattributes`, `.gitignore`, `docs/CONTAINERS.md` (new); `server/src/migrations.js` (`isFreshInstall`: no backup needed on a brand-new database), `scripts/migrate.js`, `src/config.js` (also reads `MYSQL_PASSWORD`), `scripts/create-admin.js` (new: the first admin of a real install), `package.json`; `.github/workflows/ci.yml` (new job: build, start, health check, portal page, migration status); `docs/SETUP.md`, `README.md`, `ARCHITECTURE.md`.
+- **Proof:** server 170/170 (new: `isFreshInstall` is false for a used database; `create-admin` makes an admin who must change the password, and refuses a taken email); lint clean; the workflow and both compose files parse as valid YAML; the entrypoint has Linux line endings.
+- **Not verified here:** Docker is not installed on this computer, so the image has not been built and the containers have not been started. The new CI job does exactly that on GitHub after the first push; watch its result.
+- **Undo:** `git revert` the batch commit. No database changes.
 
 ### Batch 5: Daily check-in, fair lateness, request timeline
 - **Goal:** a borrower is never charged for a slow confirmation, owners know their item is safe, and everyone can see where a request stands.

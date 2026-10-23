@@ -24,3 +24,6 @@ Thumbs.db
 
 # Database backups contain personal data (names, phone numbers, ID photos).
 server/backups/
+
+# Container settings with real passwords (keep docker.env.example)
+docker.env
