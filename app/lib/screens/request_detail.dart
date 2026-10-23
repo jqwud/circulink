@@ -346,7 +346,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     final Map<String, dynamic> c = mapOf(r['checkin']);
     final bool due = boolOf(c['due_today']);
     final int missed = intOf(c['missed_days']);
-    final bool doneToday = str(c['last_day']) == ymd(DateTime.now());
+    final bool doneToday = str(c['last_day']) == ymd(phToday());
     final String text = due
         ? (missed > 0 ? context.t('You missed a check-in. Please answer now.') : context.t('Is the item still with you?'))
         : (doneToday ? '${context.t('Thanks, you checked in today:')} ${_answerText(context, str(c['last_answer']))}.' : context.t('Your first check-in is tomorrow.'));

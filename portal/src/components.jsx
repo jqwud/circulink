@@ -306,9 +306,13 @@ export function useDateFormat() {
   const locale = lang === 'fil' ? 'fil-PH' : 'en-PH';
   return (s) => {
     if (!s) return '';
-    const d = new Date(String(s).replace(' ', 'T'));
+    // The server stores Philippine time without a zone: read it as +08:00 and show it in Manila time,
+    // so a computer set to another zone never shows the wrong day.
+    const text = String(s);
+    const iso = text.length <= 10 ? `${text}T12:00:00+08:00` : /([zZ]|[+-]\d\d:\d\d)$/.test(text) ? text : `${text.replace(' ', 'T')}+08:00`;
+    const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return s;
-    return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Manila' });
   };
 }
 

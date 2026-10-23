@@ -2,6 +2,12 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 23: Philippine time everywhere (2026-10-23)
+
+- The app works out "today" in Philippine time (`phToday()` in `core/format.dart`) for the date pickers, the wanted-post date and "you checked in today", whatever time zone the phone is set to, so it always agrees with the server near midnight.
+- The portal reads the server's times as Philippine time and shows dates in Manila time, so a computer set to another zone never shows the wrong day.
+- Tests: server dates around Manila midnight, also with the computer set to UTC, Los Angeles and Kiritimati; app dates around midnight and on a phone set to Los Angeles.
+
 ## Batch 22: Code tidy-up, no behavior change (2026-10-23)
 
 - **Fewer queries:** My items, the kit list and the portal's reports no longer query the database once per row; each uses one or two combined queries.

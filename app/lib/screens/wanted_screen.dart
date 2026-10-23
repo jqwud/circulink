@@ -139,7 +139,7 @@ class _WantedSheetState extends State<_WantedSheet> {
   }
 
   Future<void> _pickDate() async {
-    final DateTime now = DateTime.now();
+    final DateTime now = phToday();
     final DateTime? d = await showDatePicker(context: context, initialDate: now, firstDate: now, lastDate: now.add(const Duration(days: 90)));
     if (d != null && mounted) setState(() => _needed = d);
   }

@@ -6,8 +6,7 @@ import '../core/i18n.dart';
 /// Borrow dates: from today, at most [maxDays] days long, never across a booked day. Booked days are greyed
 /// out, so the picker never offers dates the server would refuse. [booked] is the item's `booked_ranges`.
 Future<DateTimeRange?> pickBorrowDates(BuildContext context, {required int maxDays, List<Map<String, dynamic>> booked = const <Map<String, dynamic>>[], DateTimeRange? initial}) {
-  final DateTime now = DateTime.now();
-  final DateTime first = DateTime(now.year, now.month, now.day);
+  final DateTime first = phToday();
   final List<DateTimeRange> taken = <DateTimeRange>[
     for (final Map<String, dynamic> b in booked)
       if (parseYmd(str(b['start_date'])) != null && parseYmd(str(b['end_date'])) != null)

@@ -9,6 +9,13 @@ String ymd(DateTime d) {
   return '$y-$m-$day';
 }
 
+/// Today in the Philippines (UTC+8, no daylight saving), whatever time zone the phone is set to.
+/// The server counts days in Philippine time too, so both agree near midnight.
+DateTime phToday([DateTime? now]) {
+  final DateTime ph = (now ?? DateTime.now()).toUtc().add(const Duration(hours: 8));
+  return DateTime(ph.year, ph.month, ph.day);
+}
+
 DateTime? parseYmd(String? s) {
   if (s == null || s.length < 10) return null;
   return DateTime.tryParse(s.substring(0, 10));
