@@ -2,6 +2,13 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 20: Rule numbers from the portal (2026-10-23)
+
+- Admins change ten rule numbers on the Rules page (starter credits, costs, lender reward, late penalty, monthly cap, maximum loan days, expiry days, missed check-ins before an alert), each within safe limits, after a confirm step that lists every change. Staff see them read-only.
+- Changes apply at once everywhere (booking, returns, jobs, the app's texts through `/meta`), survive restarts, and are written to the audit log (`rule_changed`). An admin can go back to the default.
+- Fixed in code on purpose: how long ID photos and phone numbers are kept (they are in the privacy notice) and the dispute outcomes (agreed decision).
+- `server/src/settings.js`; `GET`/`PUT /api/admin/settings`; migration 011 adds `rule_settings`.
+
 ## Batch 19: Automatic flags (2026-10-23)
 
 - New and edited listings are checked automatically. A listing is **held back (hidden from neighbors) until staff check it** when it has a banned word written in disguise ("g u n", "g@mot", "p1stol"), a valuable or hazardous thing listed below the high tier (laptop, generator, projector, chainsaw...), it is the third item from an account less than a day old, or two different neighbors reported it. Plainly banned words are still refused outright.

@@ -153,6 +153,14 @@ const FIL = {
   '{n} listing(s) may harm the community': '{n} listing ang posibleng makasama sa komunidad',
   'They are hidden from neighbors until you check them. Review them first.': 'Nakatago ang mga ito sa mga kapitbahay hanggang masuri mo. Unahin itong suriin.',
   'Review now': 'Suriin ngayon', 'flagged': 'naka-flag',
+  // editable rules
+  'Admins can change the rule numbers. Every change is written to the audit log.': 'Mababago ng admin ang mga numero ng patakaran. Nakatala sa audit log ang bawat pagbabago.',
+  'Change numbers': 'Baguhin ang mga numero', 'Change rule numbers': 'Baguhin ang mga numero ng patakaran',
+  'Changes apply right away to new requests and returns. Every change is written to the audit log.': 'Agad na gagana ang mga pagbabago sa mga bagong hiling at pagbabalik. Nakatala sa audit log ang bawat pagbabago.',
+  'Allowed': 'Puwede', 'Default': 'Orihinal', 'Review changes': 'Suriin ang mga pagbabago', 'Change these rules?': 'Babaguhin ang mga patakarang ito?',
+  'Rules updated. The app uses them right away.': 'Na-update ang mga patakaran. Agad itong gagamitin ng app.',
+  'Cost of an ordinary item (low or medium)': 'Halaga ng karaniwang gamit (low o medium)', 'Cost of a valuable item (high)': 'Halaga ng mamahaling gamit (high)',
+  'Days before an unanswered request expires': 'Araw bago mag-expire ang hiling na walang sagot', 'Missed check-ins before the owner is alerted': 'Hindi nasagot na check-in bago abisuhan ang may-ari',
   'flag_disguised_word': 'mukhang bawal na gamit na itinago ang pagkakasulat', 'flag_value_tier': 'mamahaling gamit na hindi high tier',
   'flag_new_account_burst': 'maraming listing mula sa bagong account', 'flag_reported': 'inireport ng ilang kapitbahay',
   'Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.':

@@ -3,6 +3,7 @@ import { config } from './config.js';
 import { pool } from './db.js';
 import { startScheduler } from './jobs.js';
 import { pendingMigrations } from './migrations.js';
+import { loadRuleSettings } from './settings.js';
 
 try {
   await pool.query('SELECT 1');
@@ -19,6 +20,13 @@ try {
   }
 } catch (e) {
   console.warn('[hiraman] Could not check migrations:', e.message);
+}
+
+// Rule numbers an admin changed in the portal (defaults otherwise).
+try {
+  await loadRuleSettings();
+} catch (e) {
+  console.warn('[hiraman] Could not load rule settings, using the defaults:', e.message);
 }
 
 const app = createApp();

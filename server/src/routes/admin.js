@@ -10,6 +10,7 @@ import { temporaryPassword } from './auth.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
 import { OUT_LOANS_SQL, addCredits, audit, checkinState, deleteAccountTx, hideItem, notify, removeItemTx, settleDisputeTx, showItem, staffCancelRequest } from '../services.js';
 import { removePrivateFile } from '../uploads.js';
+import { listRuleSettings, saveRuleSettings } from '../settings.js';
 import crypto from 'node:crypto';
 import { runReminders } from '../jobs.js';
 import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG } from '../rules.js';
@@ -395,6 +396,10 @@ router.get('/admin/rules', wrap(async (_req, res) => {
     pickup_points: await q('SELECT id, name, note, hours FROM pickup_points ORDER BY id'),
   });
 }));
+
+// Rule numbers: staff can read them with their limits; only an admin changes them (audited, live at once).
+router.get('/admin/settings', wrap(async (_req, res) => res.json(listRuleSettings())));
+router.put('/admin/settings', requireAdmin, wrap(async (req, res) => res.json(await saveRuleSettings(req.body, req.user))));
 
 // ---------- staff accounts and audit log ----------
 router.get('/admin/staff', requireAdmin, wrap(async (_req, res) => {
