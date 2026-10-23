@@ -159,4 +159,18 @@ flutter analyze
 flutter test
 ```
 
+Bigger tests, also on `hiraman_test` (each starts its own server on port 4300 with fresh demo data):
+
+```
+cd portal
+npx playwright install chromium   # once; on Windows the installed Google Chrome is used instead
+npm run test:e2e                   # staff journeys in a real browser + accessibility scan of every page
+
+cd app
+node tools/e2e.mjs                 # the app's real screens against the real API: borrow and cancel, sign up
+
+cd server
+npm run test:load                  # 50 people at once for 20 s; add -- --users 200 --seconds 30 for more
+```
+
 See `docs/QA_PLAN.md` for what is tested and what is planned.

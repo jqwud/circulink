@@ -4,7 +4,7 @@ import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
-  { ignores: ['dist/', 'node_modules/'] },
+  { ignores: ['dist/', 'node_modules/', 'test-results/', 'playwright-report/'] },
   js.configs.recommended,
   {
     files: ['**/*.{js,jsx}'],
@@ -21,5 +21,5 @@ export default [
       'react-hooks/exhaustive-deps': 'warn',
     },
   },
-  { files: ['vite.config.js'], languageOptions: { globals: globals.node } },
+  { files: ['vite.config.js', 'playwright.config.js', 'e2e/**'], languageOptions: { globals: { ...globals.node, ...globals.browser } } },
 ];

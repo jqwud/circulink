@@ -84,6 +84,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab-browse', // each tab stays built (IndexedStack), so each button needs its own tag
         backgroundColor: HiColors.primary,
         foregroundColor: HiColors.onPrimary,
         icon: const Icon(Icons.add),

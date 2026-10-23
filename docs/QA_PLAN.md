@@ -8,12 +8,12 @@ A risk-based test plan: test hardest where a bug would hurt residents most (cred
 |---|---|---|---|
 | Unit (many, fast) | `rules.js`, date and credit maths, banned words, Dart formatting | Node `node:test`; `flutter_test` | 🟡 `server/test/rules.test.js` (20 tests); `app/test/onboarding_layout_test.dart` (3 screen sizes) |
 | API and integration | Every endpoint: codes, roles, state changes, credits, against `hiraman_test` | `node:test` + `createApp().listen(0)` | 🟡 `loop.test.js` (21 steps), `uploads.test.js`, `booking.test.js`, `api-basics.test.js`, `migrations.test.js`, `jobs.test.js` (44) |
-| End to end (few) | App: sign up and verify, borrow and return, share an item. Portal: verify a resident, settle a dispute | Flutter `integration_test`; Playwright | ⬜ |
-| Accessibility | Contrast, tap targets, labels, portal WCAG | Flutter `meetsGuideline`; `@axe-core/playwright` | 🟡 portal dialog focus checked by a browser script (batch 4); automated suite not yet |
-| Load | API with 50–200 users | `autocannon` or k6 | ⬜ |
+| End to end (few) | Portal: verify a resident, settle a dispute, review a flagged listing. App: log in and borrow, cancel and get the credit back; sign up | Playwright (real browser); the app's real screens on real HTTP (`app/test/e2e/`) | ✅ batch 25: `portal/e2e/journeys.spec.js` (3), `app/test/e2e/journeys_test.dart` (2), on a fresh `hiraman_test`, also in CI |
+| Accessibility | Contrast, tap targets, labels, portal WCAG | Flutter `meetsGuideline`; `@axe-core/playwright` | ✅ portal: axe (WCAG 2.2 A/AA and best practice) on the login page and all 11 pages, any finding fails (`portal/e2e/a11y.spec.js`, batch 25); 🟡 app: gallery checks at 200% text |
+| Load | API with 50–200 users | `server/scripts/load-test.js` (plain Node, no extra tools) | ✅ batch 25: 50 people p95 32 ms, 200 people p95 224 ms, 0 failures (laptop, run by hand) |
 | Security | Dependencies, secrets, web scan | `npm audit`, gitleaks, OWASP ZAP baseline | 🟡 `npm audit` run manually: 0 vulnerabilities |
 
-Run: `cd server && npm test` (all server tests), `npm run test:unit` (no database), `cd app && flutter analyze && flutter test`.
+Run: `cd server && npm test` (all server tests), `npm run test:unit` (no database), `npm run test:load` (load test); `cd app && flutter analyze && flutter test`, `node tools/e2e.mjs` (app end to end); `cd portal && npm run test:e2e` (browser journeys and accessibility).
 
 ## Risk areas
 
@@ -107,7 +107,7 @@ Contact and messages (✅ `contact.test.js`): phone numbers only for the two nei
 
 | Measure | Target | Today |
 |---|---|---|
-| API p95, 50 concurrent users, laptop | < 300 ms | median 12–34 ms on demo data, not load-tested |
+| API p95, 50 concurrent users, laptop | < 300 ms | 32 ms (200 users: 224 ms), `npm run test:load`, batch 25 |
 | App cold start to splash / to usable | < 2 s / < 4 s | not measured |
 | Photo shown in lists | < 200 KB | app uploads 1280 px q80; portal uploads not resized |
 | Mascot images | < 100 KB each | 52–102 KB |

@@ -18,7 +18,8 @@
     "lint": "eslint .",
     "format": "prettier --write",
     "create-admin": "node scripts/create-admin.js",
-    "docs:api": "node scripts/openapi.js"
+    "docs:api": "node scripts/openapi.js",
+    "test:load": "node scripts/load-test.js"
   },
   "engines": {
     "node": ">=22"

@@ -45,6 +45,7 @@ class MyItemsScreen extends StatelessWidget {
     return Scaffold(
       appBar: hiAppBar(context.t('My items')),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab-my-items',
         backgroundColor: HiColors.primary,
         foregroundColor: HiColors.onPrimary,
         icon: const Icon(Icons.add),

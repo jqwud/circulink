@@ -43,7 +43,7 @@ export default function Shelf() {
       {data && (items.length === 0 ? <div className="card"><Empty>{t('Nothing here yet.')}</Empty></div> : (
         <div className="card flush table-wrap">
           <table>
-            <thead><tr><th>{t('Item')}</th><th>{t('Category')}</th><th>{t('Tier')}</th><th>{t('Status')}</th><th /></tr></thead>
+            <thead><tr><th>{t('Item')}</th><th>{t('Category')}</th><th>{t('Tier')}</th><th>{t('Status')}</th><th><span className="sr-only">{t('Actions')}</span></th></tr></thead>
             <tbody>
               {items.map((i) => (
                 <tr key={i.id}>

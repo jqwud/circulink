@@ -49,7 +49,7 @@ export default function Reports() {
       {data && (data.length === 0 ? <div className="card"><Empty pose="cheer">{t('No reports. Pawsa is happy.')}</Empty></div> : (
         <div className="card flush table-wrap">
           <table>
-            <thead><tr><th>{t('Target')}</th><th>{t('Reason')}</th><th>{t('Reporter')}</th><th>{t('Created')}</th><th>{t('Status')}</th><th /></tr></thead>
+            <thead><tr><th>{t('Target')}</th><th>{t('Reason')}</th><th>{t('Reporter')}</th><th>{t('Created')}</th><th>{t('Status')}</th><th><span className="sr-only">{t('Actions')}</span></th></tr></thead>
             <tbody>
               {data.map((r) => (
                 <tr key={r.id}>

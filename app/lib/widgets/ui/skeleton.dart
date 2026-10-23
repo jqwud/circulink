@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 /// Grey blocks in the shape of the cards that are about to appear, shown while a list loads.
 /// Calmer than a spinner, and nothing jumps when the data arrives. There is no animation, so it is
 /// also comfortable for people who turn motion off. Screen readers hear "Loading".
+/// It takes only the height of its cards, so it also works inside a scrolling page (the Me tab's badges).
 class SkeletonList extends StatelessWidget {
   final int count;
   const SkeletonList({super.key, this.count = 4});
@@ -17,6 +18,7 @@ class SkeletonList extends StatelessWidget {
       liveRegion: true,
       child: ExcludeSemantics(
         child: ListView.builder(
+          shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.all(HiSpace.md),
           itemCount: count,

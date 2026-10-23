@@ -1,5 +1,6 @@
 # Checks every push and pull request: the API tests on a real MySQL, the app's analysis and tests,
-# and the portal's lint and build. Nothing here deploys anything.
+# the portal's lint and build, and end-to-end tests of the portal and the app against a real server.
+# Nothing here deploys anything.
 name: CI
 
 on:
@@ -96,3 +97,50 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+
+  e2e:
+    name: End to end (portal in a browser, app screens on the real API)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          MYSQL_DATABASE: hiraman_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-root-password"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ci-root-password
+      JWT_SECRET: ci-only-secret-not-used-anywhere-else
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            server/package-lock.json
+            portal/package-lock.json
+      - run: npm ci
+        working-directory: server
+      - run: npm ci
+        working-directory: portal
+      - run: npx playwright install --with-deps chromium
+        working-directory: portal
+      - run: npm run test:e2e
+        working-directory: portal
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.35.4
+          channel: stable
+          cache: true
+      - run: flutter pub get
+        working-directory: app
+      - run: node tools/e2e.mjs
+        working-directory: app

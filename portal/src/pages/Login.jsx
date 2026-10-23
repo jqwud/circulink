@@ -20,7 +20,7 @@ export default function Login({ LangToggle }) {
   }
 
   return (
-    <div className="login">
+    <main className="login">
       <div className="login-card">
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}><LangToggle /></div>
         <Pawsa pose="wink" size={120} />
@@ -40,6 +40,6 @@ export default function Login({ LangToggle }) {
         </form>
         <p className="hint">{t('Demo accounts (password hiraman123): admin@hiraman.test or staff@hiraman.test')}</p>
       </div>
-    </div>
+    </main>
   );
 }

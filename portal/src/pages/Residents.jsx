@@ -54,7 +54,7 @@ export default function Residents() {
       {data && (data.length === 0 ? <div className="card"><Empty>{t('Nothing here yet.')}</Empty></div> : (
         <div className="card flush table-wrap">
           <table>
-            <thead><tr><th>{t('Name')}</th><th>{t('Purok')}</th><th>{t('Status')}</th><th>{t('Credits')}</th><th>{t('Items listed')}</th><th>{t('Loans done')}</th><th /></tr></thead>
+            <thead><tr><th>{t('Name')}</th><th>{t('Purok')}</th><th>{t('Status')}</th><th>{t('Credits')}</th><th>{t('Items listed')}</th><th>{t('Loans done')}</th><th><span className="sr-only">{t('Actions')}</span></th></tr></thead>
             <tbody>
               {data.map((u) => (
                 <tr key={u.id}>
@@ -89,7 +89,7 @@ export default function Residents() {
               <h3 style={{ marginTop: 18 }}>{t('Loan history')}</h3>
               {detail.data.history.length === 0 ? <p className="muted">{t('Nothing here yet.')}</p> : (
                 <div className="table-wrap"><table>
-                  <thead><tr><th>{t('Item')}</th><th /><th>{t('Dates')}</th><th>{t('Status')}</th></tr></thead>
+                  <thead><tr><th>{t('Item')}</th><th>{t('With')}</th><th>{t('Dates')}</th><th>{t('Status')}</th></tr></thead>
                   <tbody>{detail.data.history.map((h) => (
                     <tr key={h.id}><td>{h.item.title}</td><td><small>{h.my_role === 'owner' ? '→ ' + h.borrower.name : '← ' + (h.owner?.name || 'Shelf')}</small></td>
                       <td>{fmt(h.start_date)} – {fmt(h.end_date)}</td><td><Badge value={h.status} /></td></tr>

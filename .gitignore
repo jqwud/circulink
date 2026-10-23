@@ -27,3 +27,7 @@ server/backups/
 
 # Container settings with real passwords (keep docker.env.example)
 docker.env
+
+# Playwright output (end-to-end tests)
+portal/test-results/
+portal/playwright-report/

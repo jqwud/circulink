@@ -4,7 +4,7 @@ import { config } from './config.js';
 export const pool = mysql.createPool({
   ...config.db,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: config.dbPoolSize,
   dateStrings: true,        // dates come back as 'YYYY-MM-DD' strings, no timezone surprises
   charset: 'utf8mb4',
 });

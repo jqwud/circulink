@@ -43,7 +43,7 @@ export default function StaffAudit() {
       {staff.data && (
         <div className="card flush table-wrap">
           <table>
-            <thead><tr><th>{t('Name')}</th><th>{t('Role')}</th><th>{t('Status')}</th><th /></tr></thead>
+            <thead><tr><th>{t('Name')}</th><th>{t('Role')}</th><th>{t('Status')}</th><th><span className="sr-only">{t('Actions')}</span></th></tr></thead>
             <tbody>{staff.data.map((s) => (
               <tr key={s.id}>
                 <td><b>{s.name}</b><small>{s.email}</small></td>

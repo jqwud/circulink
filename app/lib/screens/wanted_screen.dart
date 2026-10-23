@@ -58,6 +58,7 @@ class WantedScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'fab-wanted',
         backgroundColor: HiColors.primary,
         foregroundColor: HiColors.onPrimary,
         icon: const Icon(Icons.add),

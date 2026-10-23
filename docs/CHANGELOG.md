@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 25: Bigger tests (2026-10-23)
+
+- **Portal in a real browser** (`portal/e2e/`, Playwright): staff verify a new resident (who then has 3 credits), settle a damaged return as an accident (the owner gets a credit back), and clear a flagged listing from the red dashboard alert. `npm run test:e2e`.
+- **App end to end** (`app/test/e2e/`): the app's real screens over real HTTP: log in, accept the privacy notice, search, borrow with typed dates, cancel and get the credit back; and a newcomer signs up and is asked to verify. `node tools/e2e.mjs`. A plain `flutter test` skips these.
+- **Accessibility scan** (axe, WCAG 2.2 A and AA plus best practice) of the login page and all 11 portal pages; any finding fails. Fixed what it found: the dashboard's flag alert is now a real link inside an alert (screen readers said "alert", not "link"), the login page has a main landmark, and button columns have a hidden "Actions" header (the loan history column is now "With").
+- **Load test** (`npm run test:load`, plain Node): 50 people p95 32 ms, 200 people p95 224 ms, no failures. The database pool size can be set with `DB_POOL_SIZE` (default unchanged).
+- **App bugs found by the end-to-end tests and fixed:** on the Me tab the badge loading placeholder could not lay out (a grey box on a phone while badges loaded), and the floating buttons of Browse, Wanted and My items shared one animation tag (an error when opening a page from the home screen). A widget test now covers the placeholder.
+- CI has a new job that runs both end-to-end suites on MySQL 8.
+
 ## Batch 24: API description (2026-10-23)
 
 - `docs/openapi.json` (OpenAPI 3.1) describes all 88 operations: who may call each one, its inputs, its success code and its error codes. Open it in any OpenAPI viewer (for example editor.swagger.io).

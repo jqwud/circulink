@@ -27,6 +27,8 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN || '',
   // One log line per API request (LOG_REQUESTS=0 turns it off; the tests do).
   logRequests: process.env.LOG_REQUESTS !== '0',
+  // Database connections the API keeps open (DB_POOL_SIZE). 10 serves a barangay; raise it for heavy use.
+  dbPoolSize: Number(process.env.DB_POOL_SIZE) || 10,
   // Photo uploads: the largest file accepted.
   uploadMaxBytes: 5 * 1024 * 1024,
   // Login and sign-up from one network: this many tries per 15 minutes.

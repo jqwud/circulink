@@ -43,7 +43,7 @@ const FIL = {
   'Registered': 'Nagparehistro', 'Reject with reason': 'Tanggihan na may dahilan',
   // residents
   'Search name, email or phone': 'Hanapin ang pangalan, email o telepono', 'Items listed': 'Mga naka-list na gamit',
-  'Loans done': 'Natapos na hiraman', 'Suspend': 'I-suspend', 'Reinstate': 'Ibalik', 'Loan history': 'Kasaysayan ng hiraman',
+  'Loans done': 'Natapos na hiraman', 'Suspend': 'I-suspend', 'Reinstate': 'Ibalik', 'Loan history': 'Kasaysayan ng hiraman', 'With': 'Kasama',
   'Credit history': 'Kasaysayan ng credits', 'Resident': 'Residente', 'Back to residents': 'Bumalik sa mga residente',
   // listings
   'Listings moderation': 'Moderasyon ng mga listahan', 'Remove listings that break the community rules. The owner is told why.': 'Alisin ang mga listahang lumalabag sa patakaran. Sasabihan ang may-ari kung bakit.',
