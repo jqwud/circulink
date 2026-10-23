@@ -34,7 +34,7 @@ void main() {
   test('every kind of notice fills all its blanks, in both languages', () {
     const Map<String, dynamic> p = <String, dynamic>{
       'name': 'Ana', 'item': 'Ladder', 'start': '2026-10-21', 'end': '2026-10-23', 'days': 2, 'n': 1, 'credits': '+1',
-      'wanted': 'Calculator', 'note': 'It wobbles', 'reason': 'Blurry', 'outcome': 'accident', 'preview': 'Hi', 'why': 'no_answer', 'until': '2026-11-22',
+      'wanted': 'Calculator', 'note': 'It wobbles', 'reason': 'Blurry', 'outcome': 'accident', 'preview': 'Hi', 'why': 'no_answer', 'until': '2026-11-22', 'tier': 'silver', 'date': '2026-11-20',
     };
     const List<String> types = <String>[
       'request_new', 'request_auto', 'request_staff', 'request_approved', 'request_rejected', 'request_cancelled', 'request_dates_changed',
@@ -44,6 +44,7 @@ void main() {
       'request_cancelled_by_staff', 'item_hidden', 'item_shown', 'item_flagged', 'request_extended', 'shelf_paused',
       'claim_new', 'claim_released', 'claim_cancelled', 'claim_no_show', 'claim_paused', 'donate_paused', 'claim_expired', 'donation_given',
       'donation_chosen', 'donation_chosen_donor', 'donation_not_chosen', 'donation_unclaimed', 'donation_withdrawn', 'donation_to_shelf', 'claim_message',
+      'voucher_issued', 'voucher_released', 'voucher_given', 'voucher_expiring', 'voucher_expired', 'voucher_cancelled',
     ];
     for (final String type in types) {
       for (final (String Function(String), String) lang in <(String Function(String), String)>[(fil, 'fil'), (en, 'en')]) {

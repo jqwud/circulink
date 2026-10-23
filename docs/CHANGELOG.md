@@ -2,6 +2,26 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 34: Food rewards, app and portal (2026-10-24)
+
+- **App, Me tab:** a **Tiwala score** card (score, tier, and one next step such as "2 more loans returned on time to reach Gold") that opens **My rewards**. There, each voucher shows its state:
+    - checked by staff;
+    - choose your reward (rice or vegetables in stock);
+    - the 6-digit code to show at the barangay hall, with the collect-by date;
+    - received.
+
+  Notices about vouchers open My rewards.
+- **Portal, Rewards page:**
+    - **Hand out a reward:** type the code; see the first name, purok and reward; choose with the resident if needed; hand it out.
+    - Vouchers waiting for a staff check (release, or an admin cancels with a reason).
+    - Rewards and stock (admins add rewards; staff record what the LGU bought or correct a count).
+    - Local producers.
+    - The monthly report with the call-back list.
+    - Admin **Issue vouchers now**.
+
+  The menu shows how many vouchers wait for a check. Vouchers per tier are on the Rules page. The Tiwala page is no longer a preview.
+- Tests: a portal journey (issue, choose rice, hand out by code), an app journey (see the score, choose rice, get the code), the Rewards page in the accessibility scan, and new notice texts.
+
 ## Batch 33: Food rewards, server (2026-10-24)
 
 Rewards are rice grains and fresh vegetables from local producers, paid for by the LGU (decided 2026-10-24). No money moves in the app.

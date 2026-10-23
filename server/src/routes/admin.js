@@ -51,6 +51,7 @@ router.get('/admin/stats', wrap(async (_req, res) => {
     urgent_reports: await n("SELECT COUNT(*) n FROM reports WHERE status <> 'resolved' AND reason IN (?)", [URGENT_REASONS]),
     unkind_refusals_7d: await n("SELECT COUNT(*) n FROM audit_log WHERE action = 'unkind_words_refused' AND created_at >= NOW() - INTERVAL 7 DAY"),
     messaging_paused: await n("SELECT COUNT(*) n FROM users WHERE messaging_paused = 1 AND deleted_at IS NULL"),
+    vouchers_held: await n("SELECT COUNT(*) n FROM vouchers WHERE status = 'held'"),
     donations_to_handle: await n("SELECT COUNT(*) n FROM items WHERE listing_type = 'donate' AND status <> 'removed' AND (donation_status = 'to_shelf' OR (claim_mode = 'barangay' AND donation_status = 'open'))"),
     barangay_service_rating: await one('SELECT ROUND(AVG(stars), 1) AS average, COUNT(*) AS count FROM ratings WHERE ratee_id IS NULL')
       .then((r) => ({ average: r.average === null ? null : Number(r.average), count: Number(r.count) })),

@@ -32,11 +32,11 @@ export default function Tiwala() {
 
   return (
     <>
-      <PageHeader title={t('Tiwala score (preview)')} subtitle={t('How reliable each lender is over the last 90 days. Separate from credits; it can never be spent.')}>
+      <PageHeader title={t('Tiwala score')} subtitle={t('How reliable each lender is over the last 90 days. Separate from credits; it can never be spent.')}>
         {admin && <button className="btn" onClick={recalc}>{t('Recalculate now')}</button>}
       </PageHeader>
       <div className="alert-info" role="note">
-        <b>{t('Shadow mode')}</b> {t('Only staff see these scores. Residents are not told, and no reward is promised until the barangay decides the reward budget and suppliers (open questions Q1 to Q3).')}
+        {t('Each resident sees only their own score in the app. Each quarter, tiers become vouchers for rice and vegetables from local producers, paid for by the LGU (see Rewards).')}
       </div>
       {loading && !data && <Loading />}
       {error && <ErrorBox error={error} onRetry={reload} />}

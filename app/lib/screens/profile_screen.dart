@@ -16,6 +16,7 @@ import 'help_screen.dart';
 import 'impact_screen.dart';
 import 'password_screen.dart';
 import 'privacy_screens.dart';
+import 'rewards_screen.dart';
 import 'my_items_screen.dart';
 import 'verification_screen.dart';
 import 'wallet_screen.dart';
@@ -78,6 +79,7 @@ class ProfileScreen extends StatelessWidget {
             ]),
           ),
         ]),
+        if (app.isApproved) ...<Widget>[const SizedBox(height: 14), const TiwalaCard()],
         const SizedBox(height: 14),
         AsyncView<Map<String, dynamic>>(
           refreshKey: app.version,

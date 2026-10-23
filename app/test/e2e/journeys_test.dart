@@ -64,6 +64,7 @@ Future<void> settle(WidgetTester tester) async {
 
 Future<void> tapAndWait(WidgetTester tester, Finder target, Finder then) async {
   await tester.ensureVisible(target);
+  await tester.pump(); // draw the scrolled position before tapping
   await tester.tap(target);
   await waitFor(tester, then);
 }
@@ -189,6 +190,21 @@ void main() {
     final Map<String, dynamic> claim = claims.cast<Map<String, dynamic>>().firstWhere((Map<String, dynamic> c) => (c['item'] as Map<String, dynamic>)['id'] == gift['id']);
     final Map<String, dynamic> done = (await tester.runAsync(() => call('POST', '/donations/claims/${claim['id']}/given', token: ana))) as Map<String, dynamic>;
     expect(done['status'], 'given', reason: 'both sides confirmed');
+    await settle(tester);
+  }, skip: skip);
+
+  testWidgets('a reliable lender sees their Tiwala score, chooses rice, and gets a code for the hall', (WidgetTester tester) async {
+    final String admin = await tester.runAsync(() => tokenOf('admin')) as String;
+    await tester.runAsync(() => call('POST', '/admin/rewards/issue', token: admin)); // Ana is Silver in the test data
+
+    await openApp(tester);
+    await logIn(tester, 'ana@hiraman.test', 'hiraman123');
+    await tapAndWait(tester, find.text('Me'), find.text('Tiwala score'));
+    expect(find.text('72'), findsOneWidget);
+    await tapAndWait(tester, find.text('Tiwala score'), find.text('My vouchers'));
+    await tester.scrollUntilVisible(find.text('Choose your reward').first, 300, scrollable: find.byType(Scrollable).last);
+    await tapAndWait(tester, find.text('Choose your reward').first, find.textContaining('2 kg rice'));
+    await tapAndWait(tester, find.textContaining('2 kg rice'), find.text('Show this code at the barangay hall:'));
     await settle(tester);
   }, skip: skip);
 

@@ -12,6 +12,7 @@ import Listings from './pages/Listings.jsx';
 import Shelf from './pages/Shelf.jsx';
 import Donations from './pages/Donations.jsx';
 import Tiwala from './pages/Tiwala.jsx';
+import Rewards from './pages/Rewards.jsx';
 import Transactions from './pages/Transactions.jsx';
 import Reports from './pages/Reports.jsx';
 import Announcements from './pages/Announcements.jsx';
@@ -56,7 +57,8 @@ function Shell() {
     { to: '/reports', label: 'Reports & disputes', pill: counts.open_reports },
     { to: '/announcements', label: 'Announcements' },
     { to: '/impact', label: 'Impact' },
-    { to: '/tiwala', label: 'Tiwala (preview)' },
+    { to: '/tiwala', label: 'Tiwala score' },
+    { to: '/rewards', label: 'Rewards', pill: counts.vouchers_held },
     { to: '/rules', label: 'Rules' },
     ...(user.role === 'lgu_admin' ? [{ to: '/staff', label: 'Staff & audit log' }] : []),
   ];
@@ -103,6 +105,7 @@ function Shell() {
           <Route path="/announcements" element={<Announcements />} />
           <Route path="/impact" element={<Impact />} />
           <Route path="/tiwala" element={<Tiwala />} />
+          <Route path="/rewards" element={<Rewards />} />
           <Route path="/rules" element={<Rules />} />
           {user.role === 'lgu_admin' && <Route path="/staff" element={<StaffAudit />} />}
           <Route path="*" element={<Navigate to="/" replace />} />

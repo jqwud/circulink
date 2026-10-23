@@ -8,6 +8,7 @@ const RULE_LABELS = {
   starterCredits: 'Starter credits', costLowMedium: 'Cost of an ordinary item (low or medium)', costHigh: 'Cost of a valuable item (high)',
   shelfCost: 'Shelf item cost', lenderReward: 'Lender reward', latePenalty: 'Late return penalty', pairRewardCapPerMonth: 'Monthly reward cap per pair',
   maxLoanDays: 'Maximum loan days', pendingExpiryDays: 'Days before an unanswered request expires', checkinAlertAfterMissedDays: 'Missed check-ins before the owner is alerted',
+  vouchersBronze: 'Reward vouchers per quarter: Bronze', vouchersSilver: 'Reward vouchers per quarter: Silver', vouchersGold: 'Reward vouchers per quarter: Gold',
 };
 
 // Admins change the rule numbers within safe limits. A confirm step shows exactly what changes; every change is audited.

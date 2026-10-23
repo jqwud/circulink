@@ -9,6 +9,7 @@ import '../widgets/common.dart';
 import 'request_detail.dart';
 import 'claim_screen.dart';
 import 'item_detail.dart';
+import 'rewards_screen.dart';
 
 /// M15: everything the app told me. Tapping a loan notice opens that request.
 class NotificationsScreen extends StatefulWidget {
@@ -31,10 +32,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     'claim_new', 'claim_released', 'claim_cancelled', 'claim_no_show', 'claim_paused', 'claim_expired', 'claim_message',
     'donation_given', 'donation_chosen', 'donation_chosen_donor', 'donation_not_chosen', 'donate_paused',
   };
+  static const Set<String> _rewardTypes = <String>{
+    'voucher_issued', 'voucher_released', 'voucher_given', 'voucher_expiring', 'voucher_expired', 'voucher_cancelled',
+  };
   static const Set<String> _itemTypes = <String>{'item_hidden', 'item_shown', 'item_flagged', 'donation_unclaimed', 'donation_to_shelf'};
 
   Widget _target(String type, int ref) {
     if (_claimTypes.contains(type)) return ClaimScreen(claimId: ref);
+    if (_rewardTypes.contains(type)) return const RewardsScreen();
     if (_itemTypes.contains(type)) return ItemDetailScreen(itemId: ref);
     return RequestDetailScreen(requestId: ref);
   }
@@ -77,6 +82,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'donation_unclaimed':
       case 'donation_to_shelf':
         return Icons.volunteer_activism;
+      case 'voucher_issued':
+      case 'voucher_released':
+      case 'voucher_given':
+      case 'voucher_expiring':
+        return Icons.eco;
       case 'item_hidden':
       case 'request_cancelled_by_staff':
         return Icons.visibility_off_outlined;
@@ -124,12 +134,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               final String type = str(n['type']);
               final bool unread = n['read_at'] == null;
               final ({String title, String body}) text = notificationText(n, ctx.app.tr, ctx.lang);
-              final bool opens = n['ref_id'] != null && !_noRequest.contains(type);
+              final bool opens = (n['ref_id'] != null && !_noRequest.contains(type)) || _rewardTypes.contains(type);
               return HiCard(
                 color: unread ? HiColors.primarySoft : Colors.white,
                 borderColor: unread ? HiColors.primarySoft : HiColors.line,
                 onTap: opens
-                    ? () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => _target(type, intOf(n['ref_id']))))
+                    ? () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => _target(type, intOf(n['ref_id'], 0))))
                     : null,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

@@ -93,3 +93,24 @@ test('staff choose who receives a gift, and the priority household is listed fir
   const mine = (await api('GET', '/donations/mine', dina)).json;
   expect(mine.find((c) => c.item.id === gift.json.id).status).toBe('reserved');
 });
+
+test('rewards: an admin issues vouchers, the resident chooses rice, and staff hand it out by code', async ({ page }) => {
+  await portalLogin(page, 'admin');
+  await page.getByRole('link', { name: /^Rewards/ }).click();
+  await page.getByRole('button', { name: 'Issue vouchers now' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Issue vouchers' }).click();
+  await expect(page.getByText('2 vouchers issued.')).toBeVisible();
+
+  const ana = await loginApi('ana');
+  const [first] = (await api('GET', '/me/vouchers', ana)).json;
+  const rice = (await api('GET', '/rewards/catalog', ana)).json.find((c) => c.name_en === '2 kg rice');
+  expect((await api('POST', `/vouchers/${first.id}/choose`, ana, { catalog_id: rice.id })).json.status).toBe('chosen');
+  const code = (await api('GET', '/me/vouchers', ana)).json.find((v) => v.status === 'chosen').code;
+
+  await page.getByLabel('Voucher code').fill(code);
+  await page.getByRole('button', { name: 'Look up' }).click();
+  await expect(page.getByText('Ana · Purok 1')).toBeVisible();
+  await page.getByRole('button', { name: 'Hand it out' }).click();
+  await expect(page.getByText('Handed out: 2 kg rice.')).toBeVisible();
+  expect((await api('GET', '/me/vouchers', ana)).json.find((v) => v.id === first.id).status).toBe('given');
+});

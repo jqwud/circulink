@@ -187,3 +187,7 @@ tr.row-flash td { animation: rowflash 150ms ease-out; }
 
 /* A calm note above a page (for example: the Tiwala score is in shadow mode). */
 .alert-info { padding: 12px 16px; margin-bottom: 16px; border-radius: var(--r-md); background: #e3efff; color: #1b4f9c; }
+
+/* A plain list (no bullets), for short lists inside cards. */
+ul.plain { list-style: none; padding: 0; margin: 8px 0 0; }
+ul.plain li { padding: 6px 0; border-bottom: 1px solid var(--c-line); }

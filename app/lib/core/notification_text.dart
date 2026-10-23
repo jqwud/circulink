@@ -134,6 +134,22 @@ import 'format.dart';
       if (p['staff'] == true) p['name'] = tr('Barangay staff');
       final String filC = str(p['preview_fil']);
       return (title: fill('{name} wrote about {item}'), body: lang == 'fil' && filC.isNotEmpty ? filC : str(p['preview']));
+    case 'voucher_issued':
+      final String tierWord = tr(switch (str(p['tier'])) { 'gold' => 'Gold', 'silver' => 'Silver', _ => 'Bronze' });
+      return (
+        title: tr(intOf(p['n']) == 1 ? 'You reached {tier}! 1 reward voucher' : 'You reached {tier}! {n} reward vouchers').replaceAll('{tier}', tierWord).replaceAll('{n}', str(p['n'])),
+        body: fill(p['held'] == true ? 'Barangay staff check rewards for this tier first, within 2 working days.' : 'Choose your reward in the app and collect it at the barangay hall.'),
+      );
+    case 'voucher_released':
+      return (title: fill('Your reward is ready'), body: fill('Choose your reward in the app and collect it at the barangay hall.'));
+    case 'voucher_given':
+      return (title: fill('Received: {item}'), body: fill('Thank you for lending to your neighbors!'));
+    case 'voucher_expiring':
+      return (title: fill('Collect your reward soon'), body: tr('Your voucher expires on {date}.').replaceAll('{date}', fmtDate(str(p['date']), lang)));
+    case 'voucher_expired':
+      return (title: fill('A reward voucher expired'), body: fill('It was not collected in time. You can earn more next quarter.'));
+    case 'voucher_cancelled':
+      return (title: fill('A reward voucher was cancelled'), body: str(p['reason']));
     case 'request_extended':
       return (title: fill('More time for {item}'), body: fill('Please return it by {end_date}.'));
     case 'shelf_paused':
