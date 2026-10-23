@@ -140,13 +140,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ),
           ),
           const SizedBox(height: 14),
-          TextField(controller: _title, textCapitalization: TextCapitalization.sentences, decoration: InputDecoration(labelText: context.t('Item name'), border: const OutlineInputBorder())),
+          TextField(controller: _title, textCapitalization: TextCapitalization.sentences, decoration: InputDecoration(labelText: context.t('Item name'))),
           const SizedBox(height: 12),
-          TextField(controller: _desc, maxLines: 3, decoration: InputDecoration(labelText: context.t('Description (optional)'), border: const OutlineInputBorder())),
+          TextField(controller: _desc, maxLines: 3, decoration: InputDecoration(labelText: context.t('Description (optional)'))),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
             initialValue: _categoryId,
-            decoration: InputDecoration(labelText: context.t('Category'), border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: context.t('Category')),
             items: cats.map((Map<String, dynamic> c) => DropdownMenuItem<int>(value: intOf(c['id']), child: Text(context.lang == 'fil' ? str(c['name_fil']) : str(c['name_en'])))).toList(),
             onChanged: (int? v) => setState(() => _categoryId = v),
           ),
@@ -154,14 +154,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
           DropdownButtonFormField<int>(
             initialValue: _pickupId,
             isExpanded: true,
-            decoration: InputDecoration(labelText: context.t('Pickup point'), border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: context.t('Pickup point')),
             items: points.map((Map<String, dynamic> p) => DropdownMenuItem<int>(value: intOf(p['id']), child: Text(str(p['name']), overflow: TextOverflow.ellipsis))).toList(),
             onChanged: (int? v) => setState(() => _pickupId = v),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _condition,
-            decoration: InputDecoration(labelText: context.t('Condition'), border: const OutlineInputBorder()),
+            decoration: InputDecoration(labelText: context.t('Condition')),
             items: <DropdownMenuItem<String>>[
               DropdownMenuItem<String>(value: 'new', child: Text(context.t('Like new'))),
               DropdownMenuItem<String>(value: 'good', child: Text(context.t('Good'))),

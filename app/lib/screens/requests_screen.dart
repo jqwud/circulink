@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/state.dart';
-import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'my_items_screen.dart';
 import 'request_detail.dart';
@@ -19,26 +18,15 @@ class RequestsScreen extends StatelessWidget {
       length: 2,
       child: Column(
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 8, 0),
-            child: Row(
-              children: <Widget>[
-                Expanded(child: Text(context.t('Requests'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: HiColors.ink))),
-                TextButton.icon(
-                  icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                  label: Text(context.t('My items')),
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (BuildContext c) => const MyItemsScreen())),
-                ),
-              ],
+          ScreenHeader(
+            context.t('Requests'),
+            trailing: TextButton.icon(
+              icon: const Icon(Icons.inventory_2_outlined, size: 18),
+              label: Text(context.t('My items')),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (BuildContext c) => const MyItemsScreen())),
             ),
           ),
-          TabBar(
-            labelColor: HiColors.ink,
-            unselectedLabelColor: HiColors.muted,
-            indicatorColor: HiColors.accent,
-            labelStyle: const TextStyle(fontWeight: FontWeight.w800),
-            tabs: <Widget>[Tab(text: context.t('I am borrowing')), Tab(text: context.t('For my items'))],
-          ),
+          TabBar(tabs: <Widget>[Tab(text: context.t('I am borrowing')), Tab(text: context.t('For my items'))]),
           const Expanded(
             child: TabBarView(children: <Widget>[_RequestList(as: 'borrower'), _RequestList(as: 'owner')]),
           ),

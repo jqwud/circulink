@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _email,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const <String>[AutofillHints.email],
-              decoration: InputDecoration(labelText: context.t('Email'), border: const OutlineInputBorder(), prefixIcon: const Icon(Icons.mail_outline)),
+              decoration: InputDecoration(labelText: context.t('Email'), prefixIcon: const Icon(Icons.mail_outline)),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -91,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
               onSubmitted: (_) => _submit(),
               decoration: InputDecoration(
                 labelText: context.t('Password'),
-                border: const OutlineInputBorder(),
+                
                 prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   tooltip: _hide ? context.t('Show password') : context.t('Hide password'),
@@ -220,20 +220,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: <Widget>[
             const Center(child: PawsaImage(pose: 'happy', size: 120)),
             const SizedBox(height: 12),
-            TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: context.t('Full name'), border: const OutlineInputBorder())),
+            TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: context.t('Full name'))),
             const SizedBox(height: 14),
-            TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: context.t('Email'), border: const OutlineInputBorder())),
+            TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: context.t('Email'))),
             const SizedBox(height: 14),
-            TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: '${context.t('Phone')} (${context.t('Optional')})', border: const OutlineInputBorder())),
+            TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: '${context.t('Phone')} (${context.t('Optional')})')),
             const SizedBox(height: 14),
             DropdownButtonFormField<String>(
               initialValue: _purok,
-              decoration: InputDecoration(labelText: context.t('Purok'), border: const OutlineInputBorder()),
+              decoration: InputDecoration(labelText: context.t('Purok')),
               items: _puroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
               onChanged: (String? v) => setState(() => _purok = v ?? _purok),
             ),
             const SizedBox(height: 14),
-            TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: context.t('Password'), helperText: context.t('At least 8 characters'), border: const OutlineInputBorder())),
+            TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: context.t('Password'), helperText: context.t('At least 8 characters'))),
             const SizedBox(height: 8),
             CheckboxListTile(
               value: _agreed,

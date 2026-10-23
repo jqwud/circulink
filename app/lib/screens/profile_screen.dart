@@ -171,64 +171,21 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _tile(BuildContext context, IconData icon, String label, VoidCallback onTap) {
-    return HiCard(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      onTap: onTap,
-      child: Row(children: <Widget>[
-        Icon(icon, color: HiColors.accent),
-        const SizedBox(width: 12),
-        Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15))),
-        const Icon(Icons.chevron_right, color: HiColors.muted),
-      ]),
-    );
-  }
+  Widget _tile(BuildContext context, IconData icon, String label, VoidCallback onTap) => HiListTile(icon: icon, label: label, onTap: onTap);
 
   Future<void> _editProfile(BuildContext context) async {
     final Map<String, dynamic> u = context.app.user ?? <String, dynamic>{};
-    final TextEditingController name = TextEditingController(text: str(u['name']));
-    final TextEditingController phone = TextEditingController(text: str(u['phone']));
     final List<String> puroks = <String>{...context.app.puroks.isEmpty ? kPuroks : context.app.puroks, if (str(u['purok']).isNotEmpty) str(u['purok'])}.toList();
-    String purok = str(u['purok']).isNotEmpty ? str(u['purok']) : puroks.first;
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => StatefulBuilder(
-        builder: (BuildContext ctx2, void Function(void Function()) setLocal) => AlertDialog(
-          title: Text(ctx2.tx('Edit profile')),
-          content: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-              TextField(controller: name, decoration: InputDecoration(labelText: ctx2.tx('Full name'), border: const OutlineInputBorder())),
-              const SizedBox(height: 10),
-              TextField(controller: phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: ctx2.tx('Phone'), border: const OutlineInputBorder())),
-              const SizedBox(height: 10),
-              DropdownButtonFormField<String>(
-                initialValue: purok,
-                decoration: InputDecoration(labelText: ctx2.tx('Purok'), border: const OutlineInputBorder()),
-                items: puroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
-                onChanged: (String? v) => setLocal(() => purok = v ?? purok),
-              ),
-            ]),
-          ),
-          actions: <Widget>[
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx2.tx('Cancel'))),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx2.tx('Save'), style: const TextStyle(fontWeight: FontWeight.w800))),
-          ],
-        ),
-      ),
-    );
-    final String n = name.text.trim();
-    final String p = phone.text.trim();
-    name.dispose();
-    phone.dispose();
-    if (ok != true || !context.mounted) return;
+    final Map<String, dynamic>? f = await showHiSheet<Map<String, dynamic>>(context,
+        title: context.tx('Edit profile'), builder: (BuildContext s) => _ProfileSheet(user: u, puroks: puroks));
+    if (f == null || !context.mounted) return;
     final AppState app = context.app;
     try {
       // An empty phone clears it; the purok is sent only if it changed (a removed purok can be kept).
       await app.api.patch('/me', <String, dynamic>{
-        if (n.isNotEmpty) 'name': n,
-        'phone': p,
-        if (purok != str(u['purok'])) 'purok': purok,
+        if (str(f['name']).isNotEmpty) 'name': f['name'],
+        'phone': f['phone'],
+        if (f['purok'] != str(u['purok'])) 'purok': f['purok'],
       });
       await app.refreshMe();
       if (context.mounted) showMessage(context, context.tx('Profile saved.'));
@@ -237,3 +194,53 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 }
+
+/// Name, phone and purok. The sheet owns its text fields.
+class _ProfileSheet extends StatefulWidget {
+  final Map<String, dynamic> user;
+  final List<String> puroks;
+  const _ProfileSheet({required this.user, required this.puroks});
+
+  @override
+  State<_ProfileSheet> createState() => _ProfileSheetState();
+}
+
+class _ProfileSheetState extends State<_ProfileSheet> {
+  late final TextEditingController _name = TextEditingController(text: str(widget.user['name']));
+  late final TextEditingController _phone = TextEditingController(text: str(widget.user['phone']));
+  late String _purok = str(widget.user['purok']).isNotEmpty ? str(widget.user['purok']) : widget.puroks.first;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        HiTextField(controller: _name, label: context.t('Full name'), textCapitalization: TextCapitalization.words, autofillHints: const <String>[AutofillHints.name]),
+        const SizedBox(height: HiSpace.ms),
+        HiTextField(controller: _phone, label: context.t('Phone'), keyboardType: TextInputType.phone, autofillHints: const <String>[AutofillHints.telephoneNumber]),
+        const SizedBox(height: HiSpace.ms),
+        DropdownButtonFormField<String>(
+          initialValue: _purok,
+          decoration: InputDecoration(labelText: context.t('Purok')),
+          items: widget.puroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
+          onChanged: (String? v) => setState(() => _purok = v ?? _purok),
+        ),
+        const SizedBox(height: HiSpace.md),
+        PrimaryButton(
+          label: context.t('Save'),
+          onPressed: () => Navigator.pop(context, <String, dynamic>{'name': _name.text.trim(), 'phone': _phone.text.trim(), 'purok': _purok}),
+        ),
+        const SizedBox(height: HiSpace.sm),
+        SoftButton(label: context.t('Cancel'), onPressed: () => Navigator.pop(context)),
+      ],
+    );
+  }
+}
+

@@ -57,7 +57,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     }
   }
 
-  InputDecoration _field(String label) => InputDecoration(labelText: label, border: const OutlineInputBorder());
+  InputDecoration _field(String label) => InputDecoration(labelText: label);
 
   @override
   Widget build(BuildContext context) {

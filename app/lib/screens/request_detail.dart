@@ -46,22 +46,10 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       context.app.api.post('/requests/${widget.requestId}/$action', body);
 
   Future<void> _reject() async {
-    final TextEditingController reason = TextEditingController();
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(ctx.tx('Reject this request?')),
-        content: TextField(controller: reason, decoration: InputDecoration(labelText: ctx.tx('Reason (optional)'), border: const OutlineInputBorder())),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tx('Cancel'))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tx('Reject'), style: const TextStyle(color: HiColors.danger, fontWeight: FontWeight.w800))),
-        ],
-      ),
-    );
-    final String text = reason.text.trim();
-    reason.dispose();
-    if (ok != true || !mounted) return;
-    await _run(() => _post('reject', <String, dynamic>{'reason': text.isEmpty ? null : text}));
+    final String? reason = await askText(context,
+        title: context.tx('Reject this request?'), label: context.tx('Reason (optional)'), confirmLabel: context.tx('Reject'), danger: true, maxLength: 200);
+    if (reason == null || !mounted) return;
+    await _run(() => _post('reject', <String, dynamic>{'reason': reason.isEmpty ? null : reason}));
   }
 
   Future<void> _changeDates(Map<String, dynamic> r) async {
@@ -137,25 +125,9 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   }
 
   Future<void> _reportProblem() async {
-    final TextEditingController note = TextEditingController();
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => AlertDialog(
-        title: Text(ctx.tx("What's the problem?")),
-        content: TextField(controller: note, maxLines: 3, maxLength: 300, decoration: InputDecoration(labelText: ctx.tx('Tell us briefly what happened'), border: const OutlineInputBorder())),
-        actions: <Widget>[
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx.tx('Cancel'))),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx.tx('Send'), style: const TextStyle(fontWeight: FontWeight.w800))),
-        ],
-      ),
-    );
-    final String text = note.text.trim();
-    note.dispose();
-    if (ok != true || !mounted) return;
-    if (text.isEmpty) {
-      showMessage(context, context.tx('Tell us briefly what happened'), bad: true);
-      return;
-    }
+    final String? text = await askText(context,
+        title: context.tx("What's the problem?"), label: context.tx('Tell us briefly what happened'), confirmLabel: context.tx('Send'), required: true);
+    if (text == null || !mounted) return;
     await _checkin('problem', note: text, done: context.tx('The owner and the barangay were told. They will contact you.'), doneTitle: context.tx('Problem sent'));
   }
 
@@ -176,42 +148,9 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
   }
 
   Future<void> _rate(String whom) async {
-    int stars = 5;
-    final TextEditingController comment = TextEditingController();
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => StatefulBuilder(
-        builder: (BuildContext ctx2, void Function(void Function()) setLocal) => AlertDialog(
-          title: Text('${ctx2.tx('Rate')} $whom'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List<Widget>.generate(
-                  5,
-                  (int i) => IconButton(
-                    tooltip: '${i + 1} / 5',
-                    isSelected: i < stars,
-                    icon: Icon(i < stars ? Icons.star : Icons.star_border, color: HiColors.sun, size: 34),
-                    onPressed: () => setLocal(() => stars = i + 1),
-                  ),
-                ),
-              ),
-              TextField(controller: comment, decoration: InputDecoration(labelText: ctx2.tx('Comment (optional)'), border: const OutlineInputBorder())),
-            ],
-          ),
-          actions: <Widget>[
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx2.tx('Cancel'))),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx2.tx('Send'), style: const TextStyle(fontWeight: FontWeight.w800))),
-          ],
-        ),
-      ),
-    );
-    final String text = comment.text.trim();
-    comment.dispose();
-    if (ok != true || !mounted) return;
-    await _run(() => _post('rate', <String, dynamic>{'stars': stars, 'comment': text.isEmpty ? null : text}), done: context.tx('Thanks for rating!'));
+    final Map<String, dynamic>? r = await showHiSheet<Map<String, dynamic>>(context, title: '${context.tx('Rate')} $whom', builder: (BuildContext s) => const _RateSheet());
+    if (r == null || !mounted) return;
+    await _run(() => _post('rate', r), done: context.tx('Thanks for rating!'));
   }
 
   @override
@@ -289,14 +228,14 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
                 StatusChip(costLabel(context, cost), tone: Tone.muted),
               ]),
               const Divider(height: 24),
-              _row(context.t('Dates'), fmtRange(str(r['start_date']), str(r['end_date']), context.lang)),
-              _row(asOwner ? context.t('Borrower') : context.t('Lender'), otherName),
-              if (str(r['pickup_point']).isNotEmpty) _row(context.t('Pickup'), str(r['pickup_point'])),
-              if (asOwner && status == 'handed_over' && str(r['borrower_returned_at']).isEmpty) _row(context.t('Last check-in'), _lastCheckin(context, mapOf(r['checkin']))),
-              if (str(r['return_condition']).isNotEmpty) _row(context.t('Condition at return'), _conditionText(context, str(r['return_condition']))),
-              if (str(r['dispute_outcome']).isNotEmpty) _row(context.t('Settled'), _outcomeText(context, str(r['dispute_outcome']))),
-              if (r['on_time'] != null && (status == 'closed' || status == 'disputed')) _row(context.t('Returned'), boolOf(r['on_time']) ? context.t('On time') : context.t('Late')),
-              if (str(r['note']).isNotEmpty) _row(context.t('Note'), str(r['note'])),
+              KeyValueRow(context.t('Dates'), fmtRange(str(r['start_date']), str(r['end_date']), context.lang)),
+              KeyValueRow(asOwner ? context.t('Borrower') : context.t('Lender'), otherName),
+              if (str(r['pickup_point']).isNotEmpty) KeyValueRow(context.t('Pickup'), str(r['pickup_point'])),
+              if (asOwner && status == 'handed_over' && str(r['borrower_returned_at']).isEmpty) KeyValueRow(context.t('Last check-in'), _lastCheckin(context, mapOf(r['checkin']))),
+              if (str(r['return_condition']).isNotEmpty) KeyValueRow(context.t('Condition at return'), _conditionText(context, str(r['return_condition']))),
+              if (str(r['dispute_outcome']).isNotEmpty) KeyValueRow(context.t('Settled'), _outcomeText(context, str(r['dispute_outcome']))),
+              if (r['on_time'] != null && (status == 'closed' || status == 'disputed')) KeyValueRow(context.t('Returned'), boolOf(r['on_time']) ? context.t('On time') : context.t('Late')),
+              if (str(r['note']).isNotEmpty) KeyValueRow(context.t('Note'), str(r['note'])),
             ],
           ),
         ),
@@ -461,19 +400,6 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     }
   }
 
-  Widget _row(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          SizedBox(width: 120, child: Text(label, style: const TextStyle(color: HiColors.muted))),
-          Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700))),
-        ],
-      ),
-    );
-  }
-
   /// A plain sentence that says what happens next.
   Widget _guide(BuildContext context, Map<String, dynamic> r, bool asOwner, bool staff) {
     final String status = str(r['status']);
@@ -497,11 +423,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       text = context.t('The barangay is reviewing this return.');
     }
     if (text == null) return const SizedBox.shrink();
-    return HiCard(color: HiColors.infoSoft, borderColor: HiColors.infoSoft, child: Row(children: <Widget>[
-      const Icon(Icons.info_outline, color: HiColors.info),
-      const SizedBox(width: 10),
-      Expanded(child: Text(text, style: const TextStyle(color: HiColors.info, fontWeight: FontWeight.w600))),
-    ]));
+    return InfoBanner(text);
   }
 }
 
@@ -575,6 +497,55 @@ class _Step {
   final bool done;
   final bool stop;
   const _Step(this.label, this.date, this.done, {this.stop = false});
+}
+
+/// Stars and a comment. The sheet owns its text field, so it is never used after it is gone.
+class _RateSheet extends StatefulWidget {
+  const _RateSheet();
+
+  @override
+  State<_RateSheet> createState() => _RateSheetState();
+}
+
+class _RateSheetState extends State<_RateSheet> {
+  final TextEditingController _comment = TextEditingController();
+  int _stars = 5;
+
+  @override
+  void dispose() {
+    _comment.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List<Widget>.generate(
+            5,
+            (int i) => IconButton(
+              tooltip: '${i + 1} / 5',
+              isSelected: i < _stars,
+              icon: Icon(i < _stars ? Icons.star : Icons.star_border, color: HiColors.sun, size: 36),
+              onPressed: () => setState(() => _stars = i + 1),
+            ),
+          ),
+        ),
+        const SizedBox(height: HiSpace.sm),
+        HiTextField(controller: _comment, label: context.t('Comment (optional)'), minLines: 1, maxLines: 3, maxLength: 200, textCapitalization: TextCapitalization.sentences),
+        const SizedBox(height: HiSpace.md),
+        PrimaryButton(
+          label: context.t('Send'),
+          onPressed: () => Navigator.pop(context, <String, dynamic>{'stars': _stars, 'comment': _comment.text.trim().isEmpty ? null : _comment.text.trim()}),
+        ),
+        const SizedBox(height: HiSpace.sm),
+        SoftButton(label: context.t('Cancel'), onPressed: () => Navigator.pop(context)),
+      ],
+    );
+  }
 }
 
 class _ReturnSheet extends StatefulWidget {
@@ -651,7 +622,7 @@ class _ReturnSheetState extends State<_ReturnSheet> {
               onPressed: _takePhoto,
             ),
             const SizedBox(height: 12),
-            TextField(controller: _note, maxLines: 2, decoration: InputDecoration(labelText: context.t('Note (optional)'), border: const OutlineInputBorder())),
+            TextField(controller: _note, maxLines: 2, decoration: InputDecoration(labelText: context.t('Note (optional)'))),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 8),
               Text(_error!, style: const TextStyle(color: HiColors.danger, fontWeight: FontWeight.w700)),

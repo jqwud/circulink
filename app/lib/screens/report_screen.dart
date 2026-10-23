@@ -71,7 +71,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 .toList(),
           ),
           const SizedBox(height: 14),
-          TextField(controller: _details, maxLines: 4, decoration: InputDecoration(labelText: context.t('Details (optional)'), border: const OutlineInputBorder())),
+          TextField(controller: _details, maxLines: 4, decoration: InputDecoration(labelText: context.t('Details (optional)'))),
           const SizedBox(height: 16),
           PrimaryButton(label: context.t('Send report'), busy: _busy, onPressed: _send),
         ],

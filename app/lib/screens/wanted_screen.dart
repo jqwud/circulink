@@ -16,46 +16,11 @@ class WantedScreen extends StatelessWidget {
       showMessage(context, context.tx('Verify your account first to post.'), bad: true);
       return;
     }
-    final TextEditingController title = TextEditingController();
-    final TextEditingController details = TextEditingController();
-    DateTime? needed;
-    final bool? ok = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext ctx) => StatefulBuilder(
-        builder: (BuildContext ctx2, void Function(void Function()) setLocal) => AlertDialog(
-          title: Text(ctx2.tx('What do you need?')),
-          content: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
-              TextField(controller: title, decoration: InputDecoration(labelText: ctx2.tx('For example: Ladder'), border: const OutlineInputBorder())),
-              const SizedBox(height: 10),
-              TextField(controller: details, maxLines: 2, decoration: InputDecoration(labelText: ctx2.tx('Details (optional)'), border: const OutlineInputBorder())),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                icon: const Icon(Icons.event),
-                label: Text(needed == null ? ctx2.tx('Needed by (optional)') : fmtDate(ymd(needed!), ctx2.lang)),
-                onPressed: () async {
-                  final DateTime now = DateTime.now();
-                  final DateTime? d = await showDatePicker(context: ctx2, initialDate: now, firstDate: now, lastDate: now.add(const Duration(days: 90)));
-                  if (d != null) setLocal(() => needed = d);
-                },
-              ),
-            ]),
-          ),
-          actions: <Widget>[
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(ctx2.tx('Cancel'))),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(ctx2.tx('Post'), style: const TextStyle(fontWeight: FontWeight.w800))),
-          ],
-        ),
-      ),
-    );
-    final String t = title.text.trim();
-    final String d = details.text.trim();
-    title.dispose();
-    details.dispose();
-    if (ok != true || !context.mounted) return;
+    final Map<String, dynamic>? f = await showHiSheet<Map<String, dynamic>>(context, title: context.tx('What do you need?'), builder: (BuildContext s) => const _WantedSheet());
+    if (f == null || !context.mounted) return;
     final AppState app = context.app;
     try {
-      await app.api.post('/wanted', <String, dynamic>{'title': t, 'details': d.isEmpty ? null : d, 'needed_by': needed == null ? null : ymd(needed!)});
+      await app.api.post('/wanted', f);
       await app.bump();
       if (context.mounted) showMessage(context, context.tx('Posted. Neighbors can now offer to help.'));
     } catch (e) {
@@ -101,14 +66,7 @@ class WantedScreen extends StatelessWidget {
       ),
       body: Column(
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Align(alignment: Alignment.centerLeft, child: Text(context.t('Wanted'), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: HiColors.ink))),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Align(alignment: Alignment.centerLeft, child: Text(context.t('Can you lend what a neighbor needs?'), style: const TextStyle(color: HiColors.muted))),
-          ),
+          ScreenHeader(context.t('Wanted'), subtitle: context.t('Can you lend what a neighbor needs?')),
           Expanded(
             child: AsyncView<List<Map<String, dynamic>>>(
               refreshKey: app.version,
@@ -155,6 +113,64 @@ class WantedScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// What is needed, details and an optional date. The sheet owns its text fields.
+class _WantedSheet extends StatefulWidget {
+  const _WantedSheet();
+
+  @override
+  State<_WantedSheet> createState() => _WantedSheetState();
+}
+
+class _WantedSheetState extends State<_WantedSheet> {
+  final TextEditingController _title = TextEditingController();
+  final TextEditingController _details = TextEditingController();
+  DateTime? _needed;
+  String? _error;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _details.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime? d = await showDatePicker(context: context, initialDate: now, firstDate: now, lastDate: now.add(const Duration(days: 90)));
+    if (d != null && mounted) setState(() => _needed = d);
+  }
+
+  void _submit() {
+    if (_title.text.trim().length < 2) {
+      setState(() => _error = context.tx('Please enter the item name.'));
+      return;
+    }
+    Navigator.pop(context, <String, dynamic>{
+      'title': _title.text.trim(),
+      'details': _details.text.trim().isEmpty ? null : _details.text.trim(),
+      'needed_by': _needed == null ? null : ymd(_needed!),
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        HiTextField(controller: _title, label: context.t('For example: Ladder'), error: _error, maxLength: 120, textCapitalization: TextCapitalization.sentences),
+        const SizedBox(height: HiSpace.ms),
+        HiTextField(controller: _details, label: context.t('Details (optional)'), minLines: 2, maxLines: 3, maxLength: 300, textCapitalization: TextCapitalization.sentences),
+        const SizedBox(height: HiSpace.ms),
+        SoftButton(icon: Icons.event, label: _needed == null ? context.t('Needed by (optional)') : fmtDate(ymd(_needed!), context.lang), onPressed: _pickDate),
+        const SizedBox(height: HiSpace.md),
+        PrimaryButton(label: context.t('Post'), onPressed: _submit),
+        const SizedBox(height: HiSpace.sm),
+        SoftButton(label: context.t('Cancel'), onPressed: () => Navigator.pop(context)),
+      ],
     );
   }
 }
