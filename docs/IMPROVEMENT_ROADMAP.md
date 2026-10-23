@@ -42,7 +42,8 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Done |
 | 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Done |
 | 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Done |
-| **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1), one-page summary for the instructor | | | Later |
+| **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1) | | | Later |
+| Summary | One-page summary for the instructor (`docs/INSTRUCTOR_SUMMARY.md`) | | S | Done |
 | **Skip** | Push notifications, hosting/HTTPS now, iOS build, ORM or framework switch, separate worker service, certificate pinning, root detection | | | Skipped |
 
 ## Batch log
