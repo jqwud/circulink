@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
+import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/date_range.dart';
@@ -25,9 +26,10 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
 
   Future<void> _run(Future<dynamic> Function() action, {String? done, String? doneTitle, String pose = 'happy'}) async {
     setState(() => _busy = true);
+    final AppState app = context.app;
     try {
       await action();
-      await context.app.bump();
+      await app.bump();
       if (!mounted) return;
       setState(() => _reloadTick++);
       if (done != null) {

@@ -14,9 +14,10 @@ class MyItemsScreen extends StatelessWidget {
   const MyItemsScreen({super.key});
 
   Future<void> _setStatus(BuildContext context, Map<String, dynamic> it, String status) async {
+    final AppState app = context.app;
     try {
-      await context.app.api.patch('/items/${it['id']}', <String, dynamic>{'status': status});
-      await context.app.bump();
+      await app.api.patch('/items/${it['id']}', <String, dynamic>{'status': status});
+      await app.bump();
       if (context.mounted) {
         showMessage(context, status == 'paused' ? context.tx('Paused. Neighbors will not see it until you resume.') : context.tx('Back on the list. Neighbors can borrow it again.'));
       }
@@ -28,9 +29,10 @@ class MyItemsScreen extends StatelessWidget {
   Future<void> _remove(BuildContext context, Map<String, dynamic> it) async {
     final bool ok = await confirmDialog(context, title: context.tx('Remove this item?'), message: context.tx('Neighbors will no longer see it.'), confirmLabel: context.tx('Remove'), danger: true);
     if (!ok || !context.mounted) return;
+    final AppState app = context.app;
     try {
-      await context.app.api.delete('/items/${it['id']}');
-      await context.app.bump();
+      await app.api.delete('/items/${it['id']}');
+      await app.bump();
       if (context.mounted) showMessage(context, context.tx('Item removed.'));
     } catch (e) {
       if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);

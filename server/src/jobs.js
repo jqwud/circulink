@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { RULES } from './rules.js';
 import { OUT_LOANS_SQL, addCredits, audit, checkinState, loadRequest, notify } from './services.js';
 import { removePrivateFile } from './uploads.js';
+import { safeErrorLine, safeMessage } from './errors.js';
 
 const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
@@ -176,12 +177,12 @@ export async function runDueJobs(now = new Date(), { jobs = JOBS, force = false 
         [job.name, at, at, JSON.stringify(result ?? null).slice(0, 255)]);
       results[job.name] = result;
     } catch (e) {
-      console.error(`[hiraman] job ${job.name} failed:`, e.message);
+      console.error(safeErrorLine(e, `job:${job.name}`));
       await q(
         `INSERT INTO job_runs (name, last_run_at, last_error) VALUES (?,?,?)
          ON DUPLICATE KEY UPDATE last_run_at = VALUES(last_run_at), last_error = VALUES(last_error)`,
-        [job.name, at, String(e.message).slice(0, 255)]);
-      results[job.name] = { error: e.message };
+        [job.name, at, safeMessage(e).slice(0, 255)]);
+      results[job.name] = { error: safeMessage(e) };
     }
   }
   return results;
@@ -189,7 +190,7 @@ export async function runDueJobs(now = new Date(), { jobs = JOBS, force = false 
 
 // Checks every 10 minutes which jobs are due. Each job keeps its own interval.
 export function startScheduler() {
-  const tick = () => runDueJobs().catch((e) => console.error('[hiraman] scheduled jobs failed:', e.message));
+  const tick = () => runDueJobs().catch((e) => console.error(safeErrorLine(e, 'jobs')));
   setTimeout(tick, 5000);
   return setInterval(tick, 10 * MINUTE);
 }

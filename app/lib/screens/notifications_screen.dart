@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
+import '../core/state.dart';
 import '../core/notification_text.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
@@ -56,12 +57,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<List<Map<String, dynamic>>> _load() async {
-    final List<Map<String, dynamic>> rows = listOf(await context.app.api.get('/notifications'));
+    final AppState app = context.app;
+    final List<Map<String, dynamic>> rows = listOf(await app.api.get('/notifications'));
     if (!_markedRead && rows.any((Map<String, dynamic> n) => n['read_at'] == null)) {
       _markedRead = true;
       try {
-        await context.app.api.post('/notifications/read');
-        await context.app.refreshMe();
+        await app.api.post('/notifications/read');
+        await app.refreshMe();
       } catch (_) {
         // Not important enough to interrupt the screen.
       }

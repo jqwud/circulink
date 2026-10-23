@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../core/i18n.dart';
+import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/pawsa.dart';
@@ -38,10 +39,11 @@ class _VerificationScreenState extends State<VerificationScreen> {
   Future<void> _send() async {
     if (_file == null) return;
     setState(() => _busy = true);
+    final AppState app = context.app;
     try {
-      if (context.app.user?['id_consent'] != true) await context.app.api.post('/me/id-consent');
-      await context.app.api.upload('/me/id-photo', _file!);
-      await context.app.bump();
+      if (app.user?['id_consent'] != true) await app.api.post('/me/id-consent');
+      await app.api.upload('/me/id-photo', _file!);
+      await app.bump();
       if (!mounted) return;
       Navigator.pop(context);
       pawsaDialog(context, pose: 'happy', title: context.tx('ID sent'), message: context.tx('Barangay staff will check it. You will get a notice when you are verified.'));

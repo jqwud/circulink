@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
 import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +33,24 @@ export function createApp(options = {}) {
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cors({ origin: (origin, done) => done(null, corsAllowed(origin)) }));
   app.use(express.json({ limit: '200kb' }));
+
+  // Every API request gets a short id, sent back as X-Request-Id and shown with server errors, so a resident
+  // can quote it. One log line per request: time, id, method, path (never the query string, which can hold
+  // search words or emails), status, duration and the user's id.
+  const logRequests = options.logRequests ?? config.logRequests;
+  app.use('/api', (req, res, next) => {
+    req.id = crypto.randomBytes(4).toString('hex');
+    res.setHeader('X-Request-Id', req.id);
+    if (logRequests) {
+      const started = process.hrtime.bigint();
+      const where = req.originalUrl.split('?')[0];
+      res.on('finish', () => {
+        const ms = Math.round(Number(process.hrtime.bigint() - started) / 1e6);
+        console.log(`${new Date().toISOString()} ${req.id} ${req.method} ${where} ${res.statusCode} ${ms}ms${req.user ? ` user=${req.user.id}` : ''}`);
+      });
+    }
+    next();
+  });
 
   // Each logged-in person may make a limited number of changes (POST, PATCH, DELETE) per 15 minutes, so one
   // account cannot flood others with requests, messages or uploads. Reading is never limited. Login and

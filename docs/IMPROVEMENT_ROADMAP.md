@@ -38,7 +38,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 9 | Change password, staff-assisted reset, real logout, per-user rate limits, stronger defaults | S2, S4, S5 | M | Done |
 | 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Done |
 | 11 | Notifications in the user's language | D6 | M | Done |
-| 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Planned |
+| 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Done |
 | 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Planned |
 | 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Planned |
 | 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Planned |
@@ -112,6 +112,15 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** server 164/164 (the new test runs the main flows and finds no notice without values except staff announcements); Flutter 9/9 (Filipino and English sentences, friendly dates, every type fills its blanks, old rows keep their text); `flutter analyze` clean. Migration applied to the demo database with a backup first; row counts unchanged.
 - **Behavior changes users can notice:** notices appear in the app's language with dates like "Okt 21, 2026" instead of "2026-10-21". Older notices and staff announcements show as they were sent.
 - **Undo:** `npm run migrate:down` (drops the values; the English text stays), then `git revert` the batch commit.
+
+### Batch 12: Logs, lint and automatic checks
+- **Goal:** when a resident says "it failed" there is something to look at, logs never leak personal data, and every push is checked automatically.
+- **Files:** `server/src/app.js` (request id and request log), `errors.js` (`safeMessage`, `safeErrorLine`, `request_id` in 500 answers), `config.js` (`LOG_REQUESTS`), `jobs.js` (cleaned job errors), `migrations.js`, `seed.js`, `test/helpers/env.js`, `test/logging.test.js` (new, 4), `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `package.json`; portal `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `package.json`, `components.jsx`, `i18n.jsx`; app `analysis_options.yaml`, `pubspec.yaml` (`flutter_lints` 6) and 12 screens fixed for the context lint; `.github/workflows/ci.yml` (new), `.editorconfig` (new).
+- **Proof:** server 168/168 (the logging test failed first: missing `safeErrorLine`); `npm run lint` clean in server and portal; `flutter analyze` clean with `use_build_context_synchronously` back on (17 findings fixed); Flutter 9/9; portal builds; the workflow file parses as valid YAML. The workflow itself has not run yet: it runs on GitHub after the first push.
+- **Behavior changes users can notice:** none in the app. Server errors now include a short `request_id` the person can quote; the server prints one line per request (`LOG_REQUESTS=0` turns it off).
+- **Decision:** Prettier is set up to match the current style but not applied to the whole code base (it would reformat 55 files and hide real changes in the history). Use `npm run format -- <file>` on files you edit.
+- **New libraries (dev only):** ESLint, `@eslint/js`, `globals`, `eslint-plugin-react-hooks`, Prettier.
+- **Undo:** `git revert` the batch commit. No database changes.
 
 ### Batch 2: Migrations and backups
 - **Goal:** change the database safely from now on, and be able to undo and restore.

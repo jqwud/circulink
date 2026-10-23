@@ -17,3 +17,4 @@ process.env.BACKUP_DIR = path.join(os.tmpdir(), 'hiraman-test-backups');
 fs.rmSync(process.env.BACKUP_DIR, { recursive: true, force: true });
 
 process.env.JWT_SECRET ||= 'test-only-secret';
+process.env.LOG_REQUESTS = '0';   // keep test output readable; logging.test.js turns it on for its own server

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
+import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/pawsa.dart';
@@ -24,9 +25,10 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
 
   Future<void> _accept() async {
     setState(() => _busy = true);
+    final AppState app = context.app;
     try {
-      await context.app.api.post('/me/privacy');
-      await context.app.refreshMe();
+      await app.api.post('/me/privacy');
+      await app.refreshMe();
     } catch (e) {
       if (mounted) showMessage(context, context.app.errorText(e), bad: true);
     } finally {
@@ -170,9 +172,10 @@ Future<void> askToDeleteAccount(BuildContext context) async {
         message: context.tx('Your request to delete your account will be cancelled.'),
         confirmLabel: context.tx('Keep my account'));
     if (!ok || !context.mounted) return;
+    final AppState app = context.app;
     try {
-      await context.app.api.delete('/me/delete-request');
-      await context.app.refreshMe();
+      await app.api.delete('/me/delete-request');
+      await app.refreshMe();
       if (context.mounted) showMessage(context, context.tx('Your account stays. Welcome back!'));
     } catch (e) {
       if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
@@ -185,9 +188,10 @@ Future<void> askToDeleteAccount(BuildContext context) async {
       confirmLabel: context.tx('Ask to delete'),
       danger: true);
   if (!ok || !context.mounted) return;
+  final AppState app = context.app;
   try {
-    await context.app.api.post('/me/delete-request');
-    await context.app.refreshMe();
+    await app.api.post('/me/delete-request');
+    await app.refreshMe();
     if (context.mounted) showMessage(context, context.tx('Request sent. The barangay will delete your account soon.'));
   } catch (e) {
     if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);

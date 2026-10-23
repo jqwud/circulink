@@ -28,7 +28,7 @@ const ledger = async (userId, amount, reason, requestId = null) => {
 };
 
 // Staff (password for the demo accounts is "hiraman123")
-const admin = await user('Barangay Admin', 'admin@hiraman.test', 'lgu_admin', null, 'approved');
+await user('Barangay Admin', 'admin@hiraman.test', 'lgu_admin', null, 'approved');
 const staff = await user('Maria Santos (Secretary)', 'staff@hiraman.test', 'lgu_staff', null, 'approved');
 
 // Residents

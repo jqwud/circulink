@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
+import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/date_range.dart';
@@ -22,12 +23,13 @@ class KitsScreen extends StatelessWidget {
       showMessage(context, context.txv('You can borrow for up to {n} days.', <String, Object>{'n': maxDays}), bad: true);
       return;
     }
+    final AppState app = context.app;
     try {
-      final Map<String, dynamic> res = mapOf(await context.app.api.post('/kits/${kit['id']}/request', <String, dynamic>{
+      final Map<String, dynamic> res = mapOf(await app.api.post('/kits/${kit['id']}/request', <String, dynamic>{
         'start_date': ymd(range.start),
         'end_date': ymd(range.end),
       }));
-      await context.app.bump();
+      await app.bump();
       if (!context.mounted) return;
       final int made = listOf(res['created']).length;
       final List<dynamic> missing = res['missing'] is List ? res['missing'] as List<dynamic> : <dynamic>[];

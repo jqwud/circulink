@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
+import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/photo.dart';
@@ -74,6 +75,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _busy = true;
       _error = null;
     });
+    final AppState app = context.app;
     try {
       final Map<String, dynamic> body = <String, dynamic>{
         'title': _title.text.trim(),
@@ -86,11 +88,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'photo_url': _photo,
       };
       if (_editing) {
-        await context.app.api.patch('/items/${widget.item!['id']}', body);
+        await app.api.patch('/items/${widget.item!['id']}', body);
       } else {
-        await context.app.api.post('/items', body);
+        await app.api.post('/items', body);
       }
-      await context.app.bump();
+      await app.bump();
       if (!mounted) return;
       Navigator.pop(context);
       if (_editing) {

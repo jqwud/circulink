@@ -42,7 +42,7 @@ const FIL = {
   'Check that the name matches the account, the photo is clear, and the address is in this barangay.': 'Tiyaking tugma ang pangalan sa account, malinaw ang larawan, at nasa barangay na ito ang tirahan.',
   'Registered': 'Nagparehistro', 'Reject with reason': 'Tanggihan na may dahilan',
   // residents
-  'Residents': 'Mga Residente', 'Search name, email or phone': 'Hanapin ang pangalan, email o telepono', 'Items listed': 'Mga naka-list na gamit',
+  'Search name, email or phone': 'Hanapin ang pangalan, email o telepono', 'Items listed': 'Mga naka-list na gamit',
   'Loans done': 'Natapos na hiraman', 'Suspend': 'I-suspend', 'Reinstate': 'Ibalik', 'Loan history': 'Kasaysayan ng hiraman',
   'Credit history': 'Kasaysayan ng credits', 'Resident': 'Residente', 'Back to residents': 'Bumalik sa mga residente',
   // listings

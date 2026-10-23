@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 12: Logs, lint and automatic checks (2026-10-23)
+
+- **Request log:** one line per API request (time, request id, method, path without the query string, status, duration, user id). Every answer carries `X-Request-Id`; a server error also returns `request_id` so a resident can quote it. `LOG_REQUESTS=0` turns the log off.
+- **Errors without personal data:** unexpected errors are logged as one short line; quoted values, emails and long numbers are hidden. Failed jobs store the cleaned message.
+- **App lint:** `use_build_context_synchronously` is back on and `flutter_lints` is at 6; 17 places that used a screen after waiting now keep the app state first.
+- **JavaScript lint:** ESLint for the API and the portal (`npm run lint`); it found and we fixed an error rethrown without its cause, a duplicate translation key and a ref read in a cleanup. Prettier is available on demand (`npm run format -- <file>`).
+- **CI:** `.github/workflows/ci.yml` runs the API lint and tests on MySQL 8, the app's analysis and tests, and the portal's lint and build on every push and pull request.
+- `.editorconfig` for consistent indentation.
+
 ## Batch 11: Notifications in the reader's language (2026-10-22)
 
 - Every notice now stores its values (`notifications.params`: item, dates, names, numbers). The app writes the sentence in Filipino or English with friendly dates (`app/lib/core/notification_text.dart`); 62 notice sentences have Filipino text.

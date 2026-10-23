@@ -57,7 +57,7 @@ async function run(conn, id, list) {
     try {
       await conn.query(sql);
     } catch (e) {
-      throw new Error(`${id} failed at:\n${sql}\n${e.message}`);
+      throw new Error(`${id} failed at:\n${sql}\n${e.message}`, { cause: e });
     }
   }
 }

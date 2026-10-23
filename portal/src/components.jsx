@@ -94,12 +94,13 @@ export function Modal({ title, onClose, children, wide }) {
   const box = useRef(null);
   const me = useRef({});
   useEffect(() => {
-    openModals.push(me.current);
+    const mine = me.current;
+    openModals.push(mine);
     const before = document.activeElement;
     const target = box.current.querySelector(`.modal-body :is(${FOCUSABLE})`) || box.current.querySelector(FOCUSABLE) || box.current;
     target.focus();
     return () => {
-      openModals.splice(openModals.indexOf(me.current), 1);
+      openModals.splice(openModals.indexOf(mine), 1);
       if (before && document.contains(before)) before.focus();
     };
   }, []);

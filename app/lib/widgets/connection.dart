@@ -45,8 +45,9 @@ Future<void> showServerDialog(BuildContext context) async {
               ),
               TextButton(
                 onPressed: () async {
-                  await ctx2.app.setBaseUrl(controller.text);
-                  await ctx2.app.checkServer();
+                  final AppState app = ctx2.app;
+                  await app.setBaseUrl(controller.text);
+                  await app.checkServer();
                   if (ctx2.mounted) Navigator.pop(ctx2);
                 },
                 child: Text(ctx2.tx('Save'), style: const TextStyle(fontWeight: FontWeight.w800)),

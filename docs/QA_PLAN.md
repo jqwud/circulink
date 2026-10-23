@@ -34,8 +34,8 @@ Run: `cd server && npm test` (all server tests), `npm run test:unit` (no databas
 | 13 | Reliability and recovery | Connection card, Find server, retry; one failing job does not stop the others (✅ batch 3) | Airplane mode mid-borrow; MySQL stopped while the API runs; app killed during upload |
 | 14 | Localization | 278 app and 184 portal strings translated; portal English mode shows words, not raw status codes (✅ batch 4); notifications written in the reader's language from stored values (✅ batch 11, `notifications.test.js`, `notification_text_test.dart`) | Every screen in Filipino at 320 px |
 | 15 | Installation and upgrade | `run-phone.cmd`; migrations apply once, undo and redo cleanly, backup and restore round-trip (✅ batch 2) | App upgrade keeps the login |
-| 16 | Observability | Audit log; health checks the database (batch 1); `/api/admin/jobs` shows each job's last run, result and error (batch 3) | Request log |
-| 17 | Regression | `npm test`, `flutter test` | CI on every push |
+| 16 | Observability | Audit log; health checks the database (batch 1); `/api/admin/jobs` shows each job's last run, result and error (batch 3); request log and request ids, errors logged without personal data (✅ batch 12, `logging.test.js`) | Log rotation when hosted |
+| 17 | Regression | `npm test`, `flutter test`; CI on every push and pull request: API lint and tests on MySQL 8, app analyze and tests, portal lint and build (✅ batch 12) | Watch the first CI run after pushing |
 | 18 | Exploratory | — | Charters below |
 | 19 | Release readiness | — | Checklist below |
 | 20 | Bug reporting | — | Template and severity below |

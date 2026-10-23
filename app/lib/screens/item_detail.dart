@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/i18n.dart';
+import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/date_range.dart';
@@ -238,9 +239,10 @@ class _RequestSheetState extends State<_RequestSheet> {
       _busy = true;
       _error = null;
     });
+    final AppState app = context.app;
     final dynamic res;
     try {
-      res = await context.app.api.post('/requests', <String, dynamic>{
+      res = await app.api.post('/requests', <String, dynamic>{
         'item_id': intOf(widget.item['id']),
         'start_date': ymd(_start!),
         'end_date': ymd(_end!),
@@ -259,7 +261,7 @@ class _RequestSheetState extends State<_RequestSheet> {
     final String status = str(out['status']);
     final bool staff = boolOf(out['handled_by_staff']);
     if (mounted) Navigator.pop(context);
-    await parent.app.bump();
+    await app.bump();
     if (!parent.mounted) return;
     String title;
     String msg;

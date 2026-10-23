@@ -213,14 +213,15 @@ class ProfileScreen extends StatelessWidget {
     name.dispose();
     phone.dispose();
     if (ok != true || !context.mounted) return;
+    final AppState app = context.app;
     try {
       // An empty phone clears it; the purok is sent only if it changed (a removed purok can be kept).
-      await context.app.api.patch('/me', <String, dynamic>{
+      await app.api.patch('/me', <String, dynamic>{
         if (n.isNotEmpty) 'name': n,
         'phone': p,
         if (purok != str(u['purok'])) 'purok': purok,
       });
-      await context.app.refreshMe();
+      await app.refreshMe();
       if (context.mounted) showMessage(context, context.tx('Profile saved.'));
     } catch (e) {
       if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
