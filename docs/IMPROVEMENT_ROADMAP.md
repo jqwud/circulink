@@ -39,7 +39,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 10 | Rules from the server, puroks from the DB, booked days greyed out, Edit item, change dates while pending, small data rules | A1, A5, D7, D8, B15 | M | Done |
 | 11 | Notifications in the user's language | D6 | M | Done |
 | 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Done |
-| 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Planned |
+| 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Done |
 | 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Planned |
 | 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Planned |
 | **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1), one-page summary for the instructor | | | Later |
@@ -59,6 +59,13 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** 18 new tests written first; 17 failed before the fixes. After: 61/61 pass.
 - **Behavior changes users can notice:** uploads that are not real JPG, PNG or WEBP files get a clear message; asking twice for the same item and dates is refused; `/api/health` answers 503 when the database is down.
 - **Undo:** `git revert` the batch commit. No database changes.
+
+### Batch 13: Component library, gallery, design system
+- **Goal:** one place for every UI piece, so screens stop growing their own variants (the "unequal proportions" feeling).
+- **Files:** `app/lib/widgets/ui/` (new: 16 files; `common.dart` split one component per file, code unchanged, plus new `HiTextField`, `showHiSheet`, `HiTabs`, `InfoBanner`, `SkeletonList`, `HiListTile`, `KeyValueRow`), `widgets/common.dart` (now exports the kit, so no screen import changed), `screens/dev/gallery_screen.dart` and `lib/main_gallery.dart` (new), `profile_screen.dart` (gallery link in debug builds only), `app/test/gallery_test.dart` (new, 4), `docs/DESIGN_SYSTEM.md` (new).
+- **Proof:** `flutter analyze` clean; Flutter 13/13 (the gallery lays out without errors at 320 px, 400 px and 400 px with 200% text; tabs announce which one is selected); screenshots of the gallery at 400 px checked by eye.
+- **Behavior changes users can notice:** none. Screens adopt the new pieces in Batch 14.
+- **Undo:** `git revert` the batch commit.
 
 ### Batch 5: Daily check-in, fair lateness, request timeline
 - **Goal:** a borrower is never charged for a slow confirmation, owners know their item is safe, and everyone can see where a request stands.

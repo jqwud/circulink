@@ -2,6 +2,13 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 13: Component library, gallery, design system (2026-10-23)
+
+- The app's shared widgets moved from one 600-line file into `app/lib/widgets/ui/`, one component per file, with the code unchanged; `widgets/common.dart` exports them all, so no screen changed.
+- New components for the screens to adopt: `HiTextField` (one field style), `showHiSheet` (short forms as bottom sheets), `HiTabs` (pill tabs with counts), `InfoBanner` (tinted notes with icons), `SkeletonList` (loading without a spinner), `HiListTile` and `KeyValueRow` (stack on narrow screens and large text).
+- Component gallery: every token and component on one screen (Profile in debug builds, or `flutter run -t lib/main_gallery.dart`), tested at 320 px, 400 px and 200% text.
+- `docs/DESIGN_SYSTEM.md`: principles, tokens, components, patterns, accessibility rules and how to add something new.
+
 ## Batch 12: Logs, lint and automatic checks (2026-10-23)
 
 - **Request log:** one line per API request (time, request id, method, path without the query string, status, duration, user id). Every answer carries `X-Request-Id`; a server error also returns `request_id` so a resident can quote it. `LOG_REQUESTS=0` turns the log off.

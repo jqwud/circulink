@@ -40,14 +40,15 @@ There are no push notifications: reminders and alerts are rows in `notifications
 | `server/src/services.js` | The request life cycle and credit movements, shared by app and portal routes. `TAKEN_SQL` / `findClash` is the one definition of "this item is taken on these dates". | |
 | `server/src/jobs.js` | Scheduled jobs: reminders, missed check-ins, request expiry, ID photo deletion, unused upload cleanup, and the runner that records each run in `job_runs` | |
 | `server/src/uploads.js` | Photo uploads: 5 MB limit, real-type check from the file's first bytes, own-upload paths only, ID photo clean-up | |
-| `server/test/` | `rules.test.js` (unit), `loop.test.js` (the whole borrow loop against `hiraman_test`), `helpers/` | `npm test` |
+| `server/test/` | One file per area (rules, the borrow loop, uploads, booking, jobs, check-ins, disputes, contact, privacy, accounts, data rules, notifications, logging), all against `hiraman_test`; `helpers/` | `npm test` |
 | `database/` | `schema.sql` (starting point for a new database), `migrations/` (numbered changes, each with an undo part), `create-test-db.sql` | |
 | `server/scripts/` | `migrate.js`, `backup.js`, `restore.js` (run through `npm run migrate`, `backup`, `restore`) | |
 | `portal/` | React + Vite staff portal, 12 pages | `src/main.jsx` → `src/App.jsx` |
-| `app/` | Flutter resident app, 19 screens | `lib/main.dart` → `screens/gate.dart` |
-| `app/lib/core/` | API client, app state, theme, Filipino strings | |
+| `app/` | Flutter resident app | `lib/main.dart` → `screens/gate.dart`; `lib/main_gallery.dart` opens the component gallery |
+| `app/lib/core/` | API client, app state, theme, Filipino strings, notification sentences | |
+| `app/lib/widgets/ui/` | The UI kit, one component per file, exported by `widgets/common.dart` (see `docs/DESIGN_SYSTEM.md`) | |
 | `brand/` | Design tokens (`build-brand.mjs`), mascot art and icons (`build-icons.mjs`, `pawsa-art/`) | |
-| `docs/` | This file, setup, QA plan, roadmap, changelog, build notes | |
+| `docs/` | This file, setup, QA plan, roadmap, changelog, design system, build notes | |
 
 ## How a loan flows
 
