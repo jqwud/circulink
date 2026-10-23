@@ -17,7 +17,8 @@
     "test:unit": "node --test test/rules.test.js",
     "lint": "eslint .",
     "format": "prettier --write",
-    "create-admin": "node scripts/create-admin.js"
+    "create-admin": "node scripts/create-admin.js",
+    "docs:api": "node scripts/openapi.js"
   },
   "engines": {
     "node": ">=22"

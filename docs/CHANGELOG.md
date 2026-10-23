@@ -2,6 +2,12 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 24: API description (2026-10-23)
+
+- `docs/openapi.json` (OpenAPI 3.1) describes all 88 operations: who may call each one, its inputs, its success code and its error codes. Open it in any OpenAPI viewer (for example editor.swagger.io).
+- It is generated from `server/scripts/api-catalog.js` with `npm run docs:api`. A test fails if a route exists that is not described, if a description has no route, or if the file is out of date. Checked as valid with Redocly.
+- A wrong password now answers 401 (`bad_login`) instead of 400. The app and the portal show the same message as before.
+
 ## Batch 23: Philippine time everywhere (2026-10-23)
 
 - The app works out "today" in Philippine time (`phToday()` in `core/format.dart`) for the date pickers, the wanted-post date and "you checked in today", whatever time zone the phone is set to, so it always agrees with the server near midnight.

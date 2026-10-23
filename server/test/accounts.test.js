@@ -51,7 +51,7 @@ describe('passwords', () => {
     assert.equal(ok.status, 200); assert.ok(ok.json.token);
     assert.equal((await s.api('GET', '/me', second)).status, 401, 'the other session ended');
     assert.equal((await s.api('GET', '/me', ok.json.token)).status, 200, 'this device stays logged in');
-    assert.equal((await login('long@hiraman.test', 'abcd1234')).status, 400);
+    assert.equal((await login('long@hiraman.test', 'abcd1234')).status, 401, 'a wrong password is 401');
     assert.equal((await login('long@hiraman.test', 'newpass12')).status, 200);
   });
 });
@@ -100,7 +100,7 @@ describe('staff-assisted password reset', () => {
 describe('too many failed logins', () => {
   test('five wrong passwords lock that email for a while; other emails still work', async () => {
     await register('lockme@hiraman.test', 'rightpass1');
-    for (let i = 0; i < 5; i++) assert.equal((await login('lockme@hiraman.test', 'wrongpass')).status, 400);
+    for (let i = 0; i < 5; i++) assert.equal((await login('lockme@hiraman.test', 'wrongpass')).status, 401);
     const locked = await login('lockme@hiraman.test', 'rightpass1');
     assert.equal(locked.status, 429); assert.equal(locked.json.code, 'too_many_attempts');
     assert.equal((await login('fidel@hiraman.test', 'hiraman123')).status, 200);

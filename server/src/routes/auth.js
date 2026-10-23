@@ -100,7 +100,7 @@ router.post('/auth/login', limiter, wrap(async (req, res) => {
   const ok = user && (await bcrypt.compare(String(password || ''), user.password_hash));
   if (!ok) {
     loginFailed(key);
-    throw bad('Wrong email or password.', 'bad_login');
+    throw new HttpError(401, 'Wrong email or password.', 'bad_login');
   }
   failures.delete(key);
   if (user.suspended) throw bad('This account is suspended. Please contact the barangay.', 'suspended');

@@ -118,7 +118,7 @@ describe('deleting an account', () => {
     assert.equal(u.phone, null); assert.equal(u.purok, null); assert.equal(u.id_photo_path, null);
     assert.ok(u.deleted_at);
     assert.notEqual(u.email, 'ben@hiraman.test');
-    assert.equal((await s.api('POST', '/auth/login', null, { email: 'ben@hiraman.test', password: 'hiraman123' })).status, 400);
+    assert.equal((await s.api('POST', '/auth/login', null, { email: 'ben@hiraman.test', password: 'hiraman123' })).status, 401);
     assert.equal((await q("SELECT COUNT(*) n FROM items WHERE owner_id = ? AND status <> 'removed'", [benId]))[0].n, 0);
     assert.equal((await one('SELECT status FROM requests WHERE id = ?', [pending.id])).status, 'cancelled');
     assert.equal((await q('SELECT COUNT(*) n FROM request_messages WHERE sender_id = ?', [benId]))[0].n, 0);

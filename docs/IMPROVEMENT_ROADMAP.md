@@ -57,7 +57,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 21 | Long lists in pages | B9 | M | Done |
 | 22 | Code tidy-up without behavior change | A6, A7, A3 | M | Done |
 | 23 | One rule for Philippine time everywhere | B14 | S–M | Done |
-| 24 | API description (OpenAPI) | B12 | M | Planned |
+| 24 | API description (OpenAPI) | B12 | M | Done |
 | 25 | End-to-end, accessibility and load tests | QA | L | Planned |
 | 26 | Release-ready app: signing key (kept by the team), no cloud backup of app data, versions, checklist | S1 | S | Planned |
 | **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1) | | | Later |

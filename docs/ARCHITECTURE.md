@@ -99,6 +99,6 @@ The app's server address: set at build time by `run-phone.cmd` (`HIRAMAN_SERVER`
 
 ## Run, build and test
 
-See `docs/SETUP.md`. In short: `npm start` in `server/`, `npm run build` in `portal/`, `run-phone.cmd` or `flutter run` in `app/`, `npm test` in `server/`, `flutter analyze` and `flutter test` in `app/`. `npm run lint` checks the API and the portal. GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push.
+See `docs/SETUP.md`. In short: `npm start` in `server/`, `npm run build` in `portal/`, `run-phone.cmd` or `flutter run` in `app/`, `npm test` in `server/`, `flutter analyze` and `flutter test` in `app/`. `npm run lint` checks the API and the portal. The API is described in `docs/openapi.json` (`npm run docs:api` regenerates it from `server/scripts/api-catalog.js`). GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push.
 
 **Logs:** the API prints one line per request with a short request id (also sent as `X-Request-Id` and returned with server errors). Unexpected errors are logged as one line with personal values hidden (`safeErrorLine` in `server/src/errors.js`).
