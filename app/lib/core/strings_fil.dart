@@ -528,6 +528,17 @@ const Map<String, String> kFil = <String, String>{
   "No connection. Check your internet and try again.": "Walang koneksyon. Tingnan ang internet mo at subukan muli.",
   "Earned": "Nakuha na",
   "Locked": "Hindi pa nakukuha",
+  "Hidden by the barangay": "Itinago ng barangay",
+  "Being checked by the barangay": "Sinusuri ng barangay",
+  "Neighbors cannot see this item.": "Hindi nakikita ng mga kapitbahay ang gamit na ito.",
+  "Neighbors will see this item once the barangay has checked it. This keeps everyone safe.": "Makikita ito ng mga kapitbahay kapag nasuri na ng barangay. Para ito sa kaligtasan ng lahat.",
+  "Cancelled by the barangay: {item}": "Kinansela ng barangay: {item}",
+  "Hidden by the barangay: {item}": "Itinago ng barangay: {item}",
+  "Visible again: {item}": "Nakikita na ulit: {item}",
+  "Neighbors can see and borrow it again.": "Nakikita at nahihiram na ulit ito ng mga kapitbahay.",
+  "The barangay is checking: {item}": "Sinusuri ng barangay: {item}",
+  "Neighbors will see it once it has been checked. This keeps everyone safe.": "Makikita ito ng mga kapitbahay kapag nasuri na. Para ito sa kaligtasan ng lahat.",
+  "The barangay is checking this item. Your credits were returned.": "Sinusuri ng barangay ang gamit na ito. Ibinalik ang credits mo.",
 };
 
 /// Messages from the server, by error code, in Filipino.
@@ -592,4 +603,5 @@ const Map<String, String> kErrorFil = <String, String>{
   'bad_phone': 'Ilagay ang numero ng telepono gamit ang mga numero lang, gaya ng 0917 123 4567.',
   'no_id_photo': 'Hindi pa nagpapadala ng litrato ng ID ang residenteng ito.',
   'owner_removed': 'Inalis ito ng may-ari. Siya lang ang makakapaglista ulit.',
+  'reason_required': 'Isulat ang dahilan.',
 };

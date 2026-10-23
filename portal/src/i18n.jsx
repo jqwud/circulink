@@ -137,6 +137,19 @@ const FIL = {
   'New purok name': 'Pangalan ng bagong purok', 'Purok added.': 'Naidagdag ang purok.', 'Purok removed.': 'Inalis ang purok.',
   'Remove {name}?': 'Alisin ang {name}?', 'New residents will not see it. People who already chose it keep it.': 'Hindi na ito makikita ng mga bagong residente. Mananatili ito sa mga nakapili na.',
   'Removed by the owner': 'Inalis ng may-ari',
+  // staff control
+  'Edit, hide or remove any listing. The owner is told why.': 'I-edit, itago o alisin ang anumang listing. Sasabihan ang may-ari kung bakit.',
+  'Review': 'Pagsusuri', 'Flagged for review': 'Naka-flag para suriin', 'Hidden by staff': 'Itinago ng staff', 'Visible': 'Nakikita',
+  'Note to owner': 'Paalala sa may-ari', 'Hide': 'Itago', 'Show': 'Ipakita', 'Looks fine, show it': 'Maayos, ipakita na', 'Restored.': 'Naibalik.',
+  'Visible to neighbors again.': 'Nakikita na ulit ng mga kapitbahay.', 'Hide listing': 'Itago ang listing',
+  'Neighbors stop seeing it and its waiting requests are refunded. The owner sees your reason and you can show it again later.':
+    'Hindi na ito makikita ng mga kapitbahay at ibabalik ang credits ng mga naghihintay na hiling. Makikita ng may-ari ang dahilan mo at maipapakita mo ulit ito mamaya.',
+  'The listing is removed for good. Its waiting requests are refunded.': 'Permanenteng aalisin ang listing. Ibabalik ang credits ng mga naghihintay na hiling.',
+  'Reason the owner will see': 'Dahilang makikita ng may-ari', 'Hidden from neighbors.': 'Itinago sa mga kapitbahay.', 'Removed.': 'Inalis.',
+  'Edit listing': 'I-edit ang listing',
+  'Cancel request': 'Kanselahin ang hiling', 'Keep it': 'Huwag na',
+  'The borrower gets the held credits back. Both neighbors see your reason.': 'Maibabalik sa humiram ang nakalaang credits. Makikita ng dalawang kapitbahay ang dahilan mo.',
+  'Listings flagged as possibly harmful': 'Mga listing na posibleng mapanganib',
   'Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.':
     'Permanenteng aalisin ang pangalan, contact, litrato ng ID at mga mensahe nila. Mananatili ang mga tala ng hiraman nang walang pangalan nila. Hindi na ito maibabalik.',
 };

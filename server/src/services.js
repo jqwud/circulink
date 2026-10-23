@@ -118,7 +118,7 @@ export async function createRequestTx(conn, { borrower, itemId, start, end, kitI
   assertDates(start, end);
 
   const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
-  if (!item || item.status !== 'available') throw bad('This item is not available right now.', 'item_unavailable');
+  if (!item || item.status !== 'available' || item.review_status !== 'ok') throw bad('This item is not available right now.', 'item_unavailable');
   if (item.owner_id === borrower.id) throw bad('You cannot borrow your own item.', 'own_item');
 
   // The same person asking again for overlapping dates (a double tap, or a kit sent twice).
@@ -303,9 +303,14 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
 // ---------- removing an item ----------
 // The item stops being listed. Its waiting and booked requests are rejected and their credits refunded.
 // `conn` is an open transaction. The caller decides whether an item out on loan may be removed.
-// `reason` tells the app which sentence to show: removed (by staff), lost, or owner_left.
+// `reason` tells the app which sentence to show: removed (by staff), lost, owner_left, or hidden.
 export async function removeItemTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.', by = 'staff', reason = 'removed' } = {}) {
   await conn.query("UPDATE items SET status = 'removed', removed_by = ? WHERE id = ?", [by, item.id]);
+  return closeOpenRequestsTx(conn, item, { exceptRequestId, why, reason });
+}
+
+// The item's waiting and booked requests are rejected and their credits refunded (a loan already out is not touched).
+export async function closeOpenRequestsTx(conn, item, { exceptRequestId = 0, why = 'Your credits were returned.', reason = 'removed' } = {}) {
   const [open] = await conn.query("SELECT * FROM requests WHERE item_id = ? AND id <> ? AND status IN ('pending','approved') FOR UPDATE", [item.id, exceptRequestId]);
   for (const r of open) {
     await conn.query("UPDATE requests SET status = 'rejected', credits_held = 0 WHERE id = ?", [r.id]);
@@ -351,6 +356,54 @@ export async function deleteAccountTx(conn, userId, actor, { newPasswordHash, re
   await conn.query('DELETE FROM notifications WHERE user_id = ?', [u.id]);
   await audit(actor.id, 'account_deleted', `user #${u.id}`, conn);
   return { id: u.id, deleted: true };
+}
+
+// ---------- staff step in ----------
+// Staff may cancel any request that is waiting or booked (not one already out), with a reason both sides see.
+export function staffCancelRequest(requestId, actor, reason) {
+  const why = String(reason || '').trim().slice(0, 200);
+  if (!why) throw bad('Write the reason the neighbors will see.', 'reason_required');
+  return withTx(async (conn) => {
+    const r = await loadRequest(conn, requestId);
+    if (!['pending', 'approved'].includes(r.status)) throw bad('Only a waiting or booked request can be cancelled.', 'bad_state');
+    await conn.query("UPDATE requests SET status = 'cancelled', credits_held = 0, note = ? WHERE id = ?", [why, r.id]);
+    if (r.credits_held) await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_cancelled', r.id);
+    for (const userId of [r.borrower_id, r.owner_id].filter(Boolean)) {
+      await notify(conn, userId, 'request_cancelled_by_staff', `Cancelled by the barangay: ${r.item_title}`, why, r.id, { item: r.item_title, reason: why });
+    }
+    await audit(actor.id, 'request_cancelled_by_staff', `request #${r.id}: ${why}`, conn);
+    return { id: r.id, status: 'cancelled' };
+  });
+}
+
+// Staff hide a listing (neighbors stop seeing it; its open requests are refunded) or show it again.
+export function hideItem(itemId, actor, reason) {
+  const why = String(reason || '').trim().slice(0, 255);
+  if (!why) throw bad('Write the reason the owner will see.', 'reason_required');
+  return withTx(async (conn) => {
+    const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
+    if (!item || item.status === 'removed') throw notFound('Item not found.');
+    await conn.query("UPDATE items SET review_status = 'hidden', review_note = ?, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?", [why, actor.id, item.id]);
+    await closeOpenRequestsTx(conn, item, { why: 'The barangay is checking this item. Your credits were returned.', reason: 'hidden' });
+    if (item.owner_id) {
+      await notify(conn, item.owner_id, 'item_hidden', `Hidden by the barangay: ${item.title}`, why, item.id, { item: item.title, reason: why });
+    }
+    await audit(actor.id, 'item_hidden', `item #${item.id} ${item.title}: ${why}`, conn);
+    return { id: item.id, review_status: 'hidden' };
+  });
+}
+
+export function showItem(itemId, actor) {
+  return withTx(async (conn) => {
+    const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
+    if (!item || item.status === 'removed') throw notFound('Item not found.');
+    await conn.query("UPDATE items SET review_status = 'ok', review_note = NULL, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?", [actor.id, item.id]);
+    if (item.owner_id && item.review_status !== 'ok') {
+      await notify(conn, item.owner_id, 'item_shown', `Visible again: ${item.title}`, 'Neighbors can see and borrow it again.', item.id, { item: item.title });
+    }
+    await audit(actor.id, 'item_shown', `item #${item.id} ${item.title}`, conn);
+    return { id: item.id, review_status: 'ok' };
+  });
 }
 
 // ---------- settling a dispute ----------

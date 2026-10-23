@@ -94,12 +94,24 @@ class MyItemsScreen extends StatelessWidget {
                               Wrap(spacing: 6, runSpacing: 4, children: <Widget>[
                                 StatusChip(tierLabel(ctx, str(it['tier'])), tone: tierTone(str(it['tier']))),
                                 if (paused) StatusChip(ctx.t('Paused'), tone: Tone.muted),
+                                if (str(it['review_status']) == 'hidden') StatusChip(ctx.t('Hidden by the barangay'), tone: Tone.bad),
+                                if (str(it['review_status']) == 'flagged') StatusChip(ctx.t('Being checked by the barangay'), tone: Tone.warn),
                               ]),
                             ],
                           ),
                         ),
                       ],
                     ),
+                    // Why neighbors cannot see it right now, in the barangay's words.
+                    if (str(it['review_status']) == 'hidden' || str(it['review_status']) == 'flagged') ...<Widget>[
+                      const SizedBox(height: 10),
+                      InfoBanner(
+                        str(it['review_status']) == 'hidden'
+                            ? '${ctx.t('Neighbors cannot see this item.')} ${str(it['review_note'])}'
+                            : ctx.t('Neighbors will see this item once the barangay has checked it. This keeps everyone safe.'),
+                        tone: str(it['review_status']) == 'hidden' ? Tone.bad : Tone.warn,
+                      ),
+                    ],
                     if (loan.isNotEmpty) ...<Widget>[
                       const SizedBox(height: 10),
                       InkWell(

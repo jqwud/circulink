@@ -8,7 +8,7 @@ import { config } from '../config.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { temporaryPassword } from './auth.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
-import { OUT_LOANS_SQL, addCredits, audit, checkinState, deleteAccountTx, notify, removeItemTx, settleDisputeTx } from '../services.js';
+import { OUT_LOANS_SQL, addCredits, audit, checkinState, deleteAccountTx, hideItem, notify, removeItemTx, settleDisputeTx, showItem, staffCancelRequest } from '../services.js';
 import { removePrivateFile } from '../uploads.js';
 import crypto from 'node:crypto';
 import { runReminders } from '../jobs.js';
@@ -30,7 +30,8 @@ router.get('/admin/stats', wrap(async (_req, res) => {
   res.json({
     verified_users: await n("SELECT COUNT(*) n FROM users WHERE role='resident' AND verification_status='approved'"),
     pending_verifications: await n("SELECT COUNT(*) n FROM users WHERE verification_status='pending'"),
-    active_listings: await n("SELECT COUNT(*) n FROM items WHERE status='available'"),
+    active_listings: await n("SELECT COUNT(*) n FROM items WHERE status='available' AND review_status='ok'"),
+    flagged_listings: await n("SELECT COUNT(*) n FROM items WHERE status<>'removed' AND review_status='flagged'"),
     shelf_items: await n("SELECT COUNT(*) n FROM items WHERE is_shelf=1 AND status<>'removed'"),
     loans_this_week: await n('SELECT COUNT(*) n FROM requests WHERE created_at >= (NOW() - INTERVAL 7 DAY)'),
     active_loans: await n("SELECT COUNT(*) n FROM requests WHERE status='handed_over'"),
@@ -146,11 +147,16 @@ router.get('/admin/items', wrap(async (req, res) => {
   const params = [];
   if (req.query.status) { where.push('i.status = ?'); params.push(req.query.status); }
   if (req.query.shelf === '1') where.push('i.is_shelf = 1');
+  if (['ok', 'flagged', 'hidden'].includes(req.query.review)) { where.push('i.review_status = ?'); params.push(req.query.review); }
   if (req.query.tier) { where.push('i.tier = ?'); params.push(req.query.tier); }
   if (req.query.q) { where.push('(i.title LIKE ? OR u.name LIKE ?)'); params.push(like(req.query.q), like(req.query.q)); }
   const rows = await q(`${SELECT_ITEM_SQL} WHERE ${where.join(' AND ')} ORDER BY i.created_at DESC LIMIT 300`, params);
-  res.json(rows.map((r) => ({ ...mapItem(r), owner_full_name: r.owner_name || null })));
+  res.json(rows.map((r) => ({ ...mapItem(r), owner_full_name: r.owner_name || null, review_flags: r.review_flags ? r.review_flags.split(',') : [] })));
 }));
+
+// Hide a listing from neighbors (with a reason for the owner), or show it again.
+router.post('/admin/items/:id/hide', wrap(async (req, res) => res.json(await hideItem(Number(req.params.id), req.user, req.body?.reason))));
+router.post('/admin/items/:id/show', wrap(async (req, res) => res.json(await showItem(Number(req.params.id), req.user))));
 
 router.post('/admin/items/:id/remove', wrap(async (req, res) => {
   const item = await one('SELECT * FROM items WHERE id = ?', [req.params.id]);
@@ -189,7 +195,13 @@ router.post('/admin/shelf', wrap(async (req, res) => {
 }));
 
 router.patch('/admin/items/:id', wrap(async (req, res) => {
+  const item = await one('SELECT * FROM items WHERE id = ?', [req.params.id]);
+  if (!item) throw notFound('Item not found.');
   const f = readItemBody(req.body, { partial: true });
+  // Same rule as for owners: the tier decides the cost and who approves, so it stays put during a loan.
+  if (f.tier && f.tier !== item.tier && await one("SELECT id FROM requests WHERE item_id = ? AND status IN ('pending','approved','handed_over','disputed') LIMIT 1", [item.id])) {
+    throw bad('This item has an active request. Change its tier after the loan ends.', 'item_busy');
+  }
   if (['available', 'paused'].includes(req.body?.status)) f.status = req.body.status;
   const keys = Object.keys(f);
   if (keys.length) await q(`UPDATE items SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => f[k]), req.params.id]);
@@ -216,6 +228,9 @@ router.get('/admin/requests', wrap(async (req, res) => {
   if (req.query.checkins === '1') out = out.filter((r) => r.checkin.missed_days >= RULES.checkinAlertAfterMissedDays);
   res.json(out);
 }));
+
+// Staff cancel any waiting or booked request, with a reason both neighbors see.
+router.post('/admin/requests/:id/cancel', wrap(async (req, res) => res.json(await staffCancelRequest(Number(req.params.id), req.user, req.body?.reason))));
 
 router.post('/admin/run-reminders', wrap(async (_req, res) => res.json(await runReminders())));
 

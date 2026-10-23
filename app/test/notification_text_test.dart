@@ -41,6 +41,7 @@ void main() {
       'request_expired', 'handover', 'due_tomorrow', 'due_today', 'overdue', 'owner_overdue', 'checkin_missed', 'checkin_alert',
       'checkin_problem', 'borrower_returned', 'credit_earned', 'credit_capped', 'late_return', 'return_confirmed', 'dispute',
       'dispute_settled', 'verified', 'verification_rejected', 'item_removed', 'report_resolved', 'wanted_offer', 'message',
+      'request_cancelled_by_staff', 'item_hidden', 'item_shown', 'item_flagged',
     ];
     for (final String type in types) {
       for (final (String Function(String), String) lang in <(String Function(String), String)>[(fil, 'fil'), (en, 'en')]) {

@@ -2,6 +2,13 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 18: Staff can step in (2026-10-23)
+
+- **Requests:** on Transactions, staff can approve, reject, hand over or confirm the return of any request (owners still do it for their own), and cancel any waiting or booked request with a reason both neighbors see; held credits are refunded (`POST /admin/requests/:id/cancel`).
+- **Listings:** staff can edit any listing, hide it from neighbors with a reason the owner sees (its waiting and booked requests are refunded), show it again, or remove it (`POST /admin/items/:id/hide`, `/show`). A hidden listing disappears from browse, kits and booking; the owner sees "Hidden by the barangay" and the reason in My items.
+- Staff edits follow the owners' rule: no tier change while a request is active.
+- Migration 010 adds a review state to listings (`ok`, `hidden`, and `flagged` for batch 19).
+
 ## Batch 17: What residents see (2026-10-23)
 
 - Badges sit in an even grid: three equal tiles per row, earned ones bright, the rest muted with a lock and "Locked"; rows grow with large text (`BadgeGrid`, also in the gallery and its test).

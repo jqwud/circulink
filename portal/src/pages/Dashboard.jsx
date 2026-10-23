@@ -11,7 +11,9 @@ export default function Dashboard() {
   if (loading && !s) return <Loading />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
+  // Listings the automatic checks held back come first: they may harm the community.
   const attention = [
+    { n: s.flagged_listings, label: 'Listings flagged as possibly harmful', to: '/listings?review=flagged', bad: true, urgent: true },
     { n: s.pending_verifications, label: 'IDs waiting for review', to: '/verification' },
     { n: s.staff_requests_waiting, label: 'Staff approvals waiting', to: '/transactions' },
     { n: s.overdue, label: 'Overdue items', to: '/transactions', bad: true },

@@ -32,6 +32,8 @@ export function mapItem(r) {
     repair_reuse: !!r.repair_reuse,
     status: r.status,
     removed_by: r.removed_by || null,
+    review_status: r.review_status || 'ok',
+    review_note: r.review_note || null,
     is_out: r.is_out > 0,
     credit_cost: creditCost(r),
     handled_by_staff: handledByStaff(r),
@@ -59,7 +61,7 @@ router.get('/puroks', wrap(async (_req, res) => res.json(await purokNames())));
 
 router.get('/items', authRequired, wrap(async (req, res) => {
   const { q: text, category_id, tier, shelf, owner } = req.query;
-  const where = ["i.status = 'available'"];
+  const where = ["i.status = 'available'", "i.review_status = 'ok'"];
   const params = [];
   if (text) { where.push('(i.title LIKE ? OR i.description LIKE ?)'); params.push(likeText(text), likeText(text)); }
   if (category_id) { where.push('i.category_id = ?'); params.push(Number(category_id)); }
@@ -72,7 +74,8 @@ router.get('/items', authRequired, wrap(async (req, res) => {
 
 router.get('/items/:id', authRequired, wrap(async (req, res) => {
   const row = await one(`${SELECT_ITEM} WHERE i.id = ? AND i.status <> 'removed'`, [req.params.id]);
-  if (!row) throw notFound('Item not found.');
+  // A hidden or flagged listing is invisible to neighbors; its owner and staff still open it.
+  if (!row || (row.review_status !== 'ok' && row.owner_id !== req.user.id && req.user.role === 'resident')) throw notFound('Item not found.');
   // The same "taken" rule as booking (TAKEN_SQL): an item that is out and overdue stays taken until today.
   const today = todayPH();
   const booked = await q(

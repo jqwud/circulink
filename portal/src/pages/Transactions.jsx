@@ -42,7 +42,15 @@ function Thread({ req, onClose }) {
   );
 }
 
-// Which button does a staff member need on this row?
+// What staff may do on any request: owners normally handle their own, but staff can always step in.
+function actionFor(r) {
+  if (r.status === 'pending') return 'decide';
+  if (r.status === 'approved') return 'handover';
+  if (r.status === 'handed_over') return 'return';
+  return null;
+}
+
+// Which rows need staff (the "Needs action" tab)?
 function nextAction(r) {
   if (r.status === 'pending' && r.handled_by_staff) return 'decide';
   if (r.status === 'approved' && r.handled_by_staff) return 'handover';
@@ -111,7 +119,7 @@ export default function Transactions() {
             <thead><tr><th>{t('Item')}</th><th>{t('Borrower')}</th><th>{t('Owner')}</th><th>{t('Dates')}</th><th>{t('Status')}</th><th>{t('Actions')}</th></tr></thead>
             <tbody>
               {rows.map((r) => {
-                const act1 = nextAction(r);
+                const act1 = actionFor(r);
                 return (
                   <tr key={r.id} className={r.overdue ? 'hot' : ''}>
                     <td><b>{r.item.title}</b><small>#{r.id} · {r.credit_cost} {r.credit_cost === 1 ? 'credit' : 'credits'}{r.handled_by_staff ? ` · ${t('Barangay handles')}` : ''}</small></td>
@@ -128,6 +136,7 @@ export default function Transactions() {
                       </>}
                       {act1 === 'handover' && <button className="btn small primary" onClick={() => setDialog({ kind: 'handover', req: r })}>{t('Confirm handover')}</button>}
                       {act1 === 'return' && <button className="btn small primary" onClick={() => setDialog({ kind: 'return', req: r })}>{t('Confirm return')}</button>}
+                      {['pending', 'approved'].includes(r.status) && <button className="btn small danger" onClick={() => setDialog({ kind: 'cancel', req: r })}>{t('Cancel request')}</button>}
                       <button className="btn small" onClick={() => setDialog({ kind: 'thread', req: r })}>{t('Messages')}{r.message_count ? ` (${r.message_count})` : ''}</button>
                     </div></td>
                   </tr>
@@ -139,6 +148,17 @@ export default function Transactions() {
       ))}
 
       {dialog?.kind === 'thread' && <Thread req={dialog.req} onClose={close} />}
+
+      {dialog?.kind === 'cancel' && (
+        <Modal title={`${t('Cancel request')}: ${dialog.req.item.title}`} onClose={close}>
+          <p className="muted" style={{ marginTop: 0 }}>{t('The borrower gets the held credits back. Both neighbors see your reason.')}</p>
+          <div className="field"><label htmlFor="cr">{t('Reason')}</label><textarea id="cr" value={note} onChange={(e) => setNote(e.target.value)} /></div>
+          <div className="modal-actions">
+            <button className="btn" onClick={close}>{t('Keep it')}</button>
+            <button className="btn danger" disabled={busy || !note.trim()} onClick={() => act(`/admin/requests/${dialog.req.id}/cancel`, { reason: note })}>{t('Cancel request')}</button>
+          </div>
+        </Modal>
+      )}
 
       {dialog?.kind === 'reject' && (
         <Modal title={`${t('Reject')}: ${dialog.req.item.title}`} onClose={close}>

@@ -51,6 +51,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         return Icons.gavel;
       case 'message':
         return Icons.chat_bubble_outline;
+      case 'item_hidden':
+      case 'request_cancelled_by_staff':
+        return Icons.visibility_off_outlined;
+      case 'item_flagged':
+        return Icons.shield_outlined;
+      case 'item_shown':
+        return Icons.visibility_outlined;
       default:
         return Icons.notifications_none;
     }

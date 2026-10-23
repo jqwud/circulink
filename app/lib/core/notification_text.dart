@@ -37,11 +37,19 @@ import 'format.dart';
             : removed == 'owner_left'
                 ? 'The owner left Hiraman. Your credits were returned.'
                 : 'Your credits were returned.';
-        return (title: fill('Item removed: {item}'), body: fill(why));
+        return (title: fill('Item removed: {item}'), body: fill(removed == 'hidden' ? 'The barangay is checking this item. Your credits were returned.' : why));
       }
       return (title: fill('Not approved: {item}'), body: str(p['reason']).isNotEmpty ? str(p['reason']) : fill('Your credits were returned.'));
     case 'request_cancelled':
       return (title: fill('Cancelled: {item}'), body: fill('The borrower cancelled the request.'));
+    case 'request_cancelled_by_staff':
+      return (title: fill('Cancelled by the barangay: {item}'), body: str(p['reason']));
+    case 'item_hidden':
+      return (title: fill('Hidden by the barangay: {item}'), body: str(p['reason']));
+    case 'item_shown':
+      return (title: fill('Visible again: {item}'), body: fill('Neighbors can see and borrow it again.'));
+    case 'item_flagged':
+      return (title: fill('The barangay is checking: {item}'), body: fill('Neighbors will see it once it has been checked. This keeps everyone safe.'));
     case 'request_dates_changed':
       return (title: fill('New dates for {item}'), body: fill('{dates}. Open Requests to approve or reject.'));
     case 'request_expired':

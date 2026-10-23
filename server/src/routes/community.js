@@ -64,7 +64,7 @@ router.get('/kits', wrap(async (_req, res) => {
     const items = [];
     for (const l of lines) {
       const [{ n }] = await q(
-        "SELECT COUNT(*) AS n FROM items WHERE status = 'available' AND category_id = ? AND (? IS NULL OR title LIKE CONCAT('%', ?, '%'))",
+        "SELECT COUNT(*) AS n FROM items WHERE status = 'available' AND review_status = 'ok' AND category_id = ? AND (? IS NULL OR title LIKE CONCAT('%', ?, '%'))",
         [l.category_id, l.keyword, l.keyword]);
       items.push({ id: l.id, label: l.label, available: n });
     }
@@ -87,7 +87,7 @@ router.post('/kits/:id/request', requireApproved, wrap(async (req, res) => {
     const usedItems = new Set();
     for (const l of lines) {
       const [cands] = await conn.query(
-        `SELECT i.id FROM items i WHERE i.status = 'available' AND i.category_id = ?
+        `SELECT i.id FROM items i WHERE i.status = 'available' AND i.review_status = 'ok' AND i.category_id = ?
             AND (? IS NULL OR i.title LIKE CONCAT('%', ?, '%')) AND (i.owner_id IS NULL OR i.owner_id <> ?)
             AND NOT EXISTS (SELECT 1 FROM requests r WHERE r.item_id = i.id AND ${TAKEN_SQL('r')})
           ORDER BY i.is_shelf DESC, i.id`,
