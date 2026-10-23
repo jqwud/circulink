@@ -30,6 +30,14 @@ export async function withTx(fn) {
   }
 }
 
+// Paging for long lists: ?limit= (1 to max, default `size`) and ?offset= (0 or more). Lists stay plain arrays;
+// a page shorter than the limit is the last one. Every paged query also sorts by id, so pages never overlap.
+export function pageOf(query, size = 50, max = 100) {
+  const limit = Math.min(max, Math.max(1, Number.parseInt(query?.limit, 10) || size));
+  const offset = Math.max(0, Number.parseInt(query?.offset, 10) || 0);
+  return `LIMIT ${limit} OFFSET ${offset}`;
+}
+
 // A search term for LIKE: % and _ are matched as themselves, not as wildcards.
 export const likeText = (s) => `%${String(s).trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 

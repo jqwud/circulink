@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, useLoad, useToast, useDateFormat } from '../components.jsx';
+import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, LoadMore, usePaged, useLoad, useToast, useDateFormat } from '../components.jsx';
 
 export default function Residents() {
   const { t } = useI18n();
@@ -13,8 +13,8 @@ export default function Residents() {
   const [params] = useSearchParams();
   const [status, setStatus] = useState(params.get('deletion') === '1' ? 'deletion' : '');
   const [text, setText] = useState('');
-  const { data, loading, error, reload } = useLoad(
-    () => api(`/admin/users?${new URLSearchParams({ ...(status === 'deletion' ? { deletion: '1' } : status && { status }), ...(text && { q: text }) })}`), [status, text]);
+  const list = usePaged(() => `/admin/users?${new URLSearchParams({ ...(status === 'deletion' ? { deletion: '1' } : status && { status }), ...(text && { q: text }) })}`, [status, text]);
+  const { data, loading, error, reload } = list;
   const [openId, setOpenId] = useState(null);
   const detail = useLoad(() => (openId ? api(`/admin/users/${openId}`) : Promise.resolve(null)), [openId]);
 
@@ -69,6 +69,7 @@ export default function Residents() {
               ))}
             </tbody>
           </table>
+          <LoadMore list={list} />
         </div>
       ))}
 

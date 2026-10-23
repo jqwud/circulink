@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.jsx';
-import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, useLoad, useToast } from '../components.jsx';
+import { Badge, Empty, ErrorBox, LoadMore, Loading, Modal, PageHeader, usePaged, useToast } from '../components.jsx';
 
 // Staff can edit any listing, hide it from neighbors (the owner sees the reason), show it again, or remove it.
 // Listings the automatic checks held back ("flagged") wait here until staff decide.
@@ -16,7 +16,8 @@ export default function Listings() {
   const [source, setSource] = useState('');
   const [text, setText] = useState('');
   const qs = new URLSearchParams({ ...(status && { status }), ...(review && { review }), ...(tier && { tier }), ...(source === 'shelf' && { shelf: '1' }), ...(text && { q: text }) });
-  const { data, loading, error, reload } = useLoad(() => api(`/admin/items?${qs}`), [status, review, tier, source, text]);
+  const list = usePaged(() => `/admin/items?${qs}`, [status, review, tier, source, text]);
+  const { data, loading, error, reload } = list;
   const [dialog, setDialog] = useState(null);   // { kind: 'remove' | 'hide' | 'edit', item }
   const [reason, setReason] = useState('');
   const [form, setForm] = useState({});
@@ -94,6 +95,7 @@ export default function Listings() {
               ))}
             </tbody>
           </table>
+          <LoadMore list={list} />
         </div>
       ))}
 

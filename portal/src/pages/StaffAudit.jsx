@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { Badge, ConfirmModal, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, useDateFormat, useLoad, useToast } from '../components.jsx';
+import { Badge, ConfirmModal, LoadMore, usePaged, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, useDateFormat, useLoad, useToast } from '../components.jsx';
 
 export default function StaffAudit() {
   const { t } = useI18n();
@@ -10,7 +10,7 @@ export default function StaffAudit() {
   const toast = useToast();
   const fmt = useDateFormat();
   const staff = useLoad(() => api('/admin/staff'), []);
-  const audit = useLoad(() => api('/admin/audit'), []);
+  const audit = usePaged(() => '/admin/audit', []);
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -56,6 +56,7 @@ export default function StaffAudit() {
               </tr>
             ))}</tbody>
           </table>
+          <LoadMore list={audit} />
         </div>
       )}
 

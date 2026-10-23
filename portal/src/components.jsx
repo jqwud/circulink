@@ -24,6 +24,43 @@ export function useLoad(fn, deps = []) {
   return { ...state, reload: run };
 }
 
+// ---------- long lists in pages ----------
+const withPage = (path, limit, offset) => `${path}${path.includes('?') ? '&' : '?'}limit=${limit}&offset=${offset}`;
+
+// The first page loads with the screen; loadMore() adds the next one. A page shorter than `size` is the last.
+export function usePaged(pathFn, deps, size = 100) {
+  const [extra, setExtra] = useState([]);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const first = useLoad(async () => {
+    const rows = await api(withPage(pathFn(), size, 0));
+    setExtra([]);
+    setHasMore(rows.length === size);
+    return rows;
+  }, deps);
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const rows = await api(withPage(pathFn(), size, (first.data?.length || 0) + extra.length));
+      setExtra((e) => [...e, ...rows]);
+      setHasMore(rows.length === size);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+  return { ...first, data: first.data ? [...first.data, ...extra] : null, hasMore, loadMore, loadingMore };
+}
+
+export function LoadMore({ list }) {
+  const { t } = useI18n();
+  if (!list.hasMore) return null;
+  return (
+    <div className="load-more">
+      <button className="btn" disabled={list.loadingMore} onClick={list.loadMore}>{list.loadingMore ? t('Loading...') : t('Load more')}</button>
+    </div>
+  );
+}
+
 // ---------- toasts ----------
 const ToastCtx = createContext(() => {});
 export function ToastProvider({ children }) {

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool, q, one, withTx, todayPH, likeText, purokNames } from '../db.js';
+import { pool, q, one, withTx, todayPH, likeText, purokNames, pageOf } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
 import { RULES, SCREENING, creditCost, findProhibited, handledByStaff, screenListing } from '../rules.js';
@@ -69,7 +69,7 @@ router.get('/items', authRequired, wrap(async (req, res) => {
   if (['low', 'medium', 'high'].includes(tier)) { where.push('i.tier = ?'); params.push(tier); }
   if (shelf === '1') where.push('i.is_shelf = 1');
   if (owner === 'others') { where.push('(i.owner_id IS NULL OR i.owner_id <> ?)'); params.push(req.user.id); }
-  const rows = await q(`${SELECT_ITEM} WHERE ${where.join(' AND ')} ORDER BY i.is_shelf DESC, i.created_at DESC LIMIT 200`, params);
+  const rows = await q(`${SELECT_ITEM} WHERE ${where.join(' AND ')} ORDER BY i.is_shelf DESC, i.created_at DESC, i.id DESC ${pageOf(req.query, 50, 100)}`, params);
   res.json(rows.map(mapItem));
 }));
 

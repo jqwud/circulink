@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api, upload } from '../api.js';
 import { useI18n } from '../i18n.jsx';
-import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, Tabs, daysLate, useDateFormat, useLoad, useToast } from '../components.jsx';
+import { Badge, Empty, LoadMore, usePaged, ErrorBox, Loading, Modal, PageHeader, Tabs, daysLate, useDateFormat, useLoad, useToast } from '../components.jsx';
 
 // The request's message thread. Staff can read every thread and write in it.
 function Thread({ req, onClose }) {
@@ -66,7 +66,8 @@ export default function Transactions() {
   const [text, setText] = useState('');
 
   const path = tab === 'overdue' ? '/admin/requests?overdue=1' : tab === 'checkins' ? '/admin/requests?checkins=1' : tab === 'all' ? `/admin/requests${text ? `?q=${encodeURIComponent(text)}` : ''}` : '/admin/requests?staff=1';
-  const { data, loading, error, reload } = useLoad(() => api(path), [path]);
+  const list = usePaged(() => path, [path]);
+  const { data, loading, error, reload } = list;
   const all = useLoad(() => api('/admin/requests?overdue=1'), [tab]);
 
   const [dialog, setDialog] = useState(null);   // { kind: 'handover'|'return'|'reject'|'thread', req }
@@ -144,6 +145,7 @@ export default function Transactions() {
               })}
             </tbody>
           </table>
+          {tab === 'all' && <LoadMore list={list} />}
         </div>
       ))}
 

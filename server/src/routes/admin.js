@@ -3,7 +3,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import path from 'node:path';
 import fs from 'node:fs';
-import { pool, q, one, withTx, todayPH, likeText, purokNames } from '../db.js';
+import { pool, q, one, withTx, todayPH, likeText, purokNames, pageOf } from '../db.js';
 import { config } from '../config.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { temporaryPassword } from './auth.js';
@@ -60,7 +60,7 @@ router.get('/admin/users', wrap(async (req, res) => {
             (SELECT COUNT(*) FROM items i WHERE i.owner_id = u.id AND i.status <> 'removed') AS items,
             (SELECT COUNT(*) FROM requests r WHERE r.borrower_id = u.id AND r.status = 'closed') AS loans
        FROM users u WHERE ${where.join(' AND ')}
-      ORDER BY FIELD(u.verification_status,'pending','unverified','approved','rejected'), u.created_at DESC LIMIT 300`, params);
+      ORDER BY FIELD(u.verification_status,'pending','unverified','approved','rejected'), u.created_at DESC, u.id DESC ${pageOf(req.query, 100, 200)}`, params);
   res.json(rows.map((u) => ({ ...u, has_id_photo: !!u.has_id_photo, suspended: !!u.suspended })));
 }));
 
@@ -151,7 +151,7 @@ router.get('/admin/items', wrap(async (req, res) => {
   if (['ok', 'flagged', 'hidden'].includes(req.query.review)) { where.push('i.review_status = ?'); params.push(req.query.review); }
   if (req.query.tier) { where.push('i.tier = ?'); params.push(req.query.tier); }
   if (req.query.q) { where.push('(i.title LIKE ? OR u.name LIKE ?)'); params.push(like(req.query.q), like(req.query.q)); }
-  const rows = await q(`${SELECT_ITEM_SQL} WHERE ${where.join(' AND ')} ORDER BY i.created_at DESC LIMIT 300`, params);
+  const rows = await q(`${SELECT_ITEM_SQL} WHERE ${where.join(' AND ')} ORDER BY i.created_at DESC, i.id DESC ${pageOf(req.query, 100, 200)}`, params);
   res.json(rows.map((r) => ({ ...mapItem(r), owner_full_name: r.owner_name || null, review_flags: r.review_flags ? r.review_flags.split(',') : [] })));
 }));
 
@@ -221,7 +221,8 @@ router.get('/admin/requests', wrap(async (req, res) => {
   if (req.query.q) { where.push('(i.title LIKE ? OR b.name LIKE ?)'); params.push(like(req.query.q), like(req.query.q)); }
   const rows = await q(
     `${SELECT_REQUEST} WHERE ${where.join(' AND ')}
-      ORDER BY (r.status='pending' AND r.handled_by_staff=1) DESC, (r.status='handed_over' AND r.end_date < CURDATE()) DESC, r.id DESC LIMIT 300`, params);
+      ORDER BY (r.status='pending' AND r.handled_by_staff=1) DESC, (r.status='handed_over' AND r.end_date < CURDATE()) DESC, r.id DESC
+      ${req.query.checkins === '1' ? 'LIMIT 500' : pageOf(req.query, 100, 200)}`, params);
   // The portal gets full names and contact numbers so staff can follow up on late items.
   const full = await q('SELECT id, name, phone FROM users WHERE id IN (?)', [rows.length ? [...new Set(rows.map((r) => r.borrower_id))] : [0]]);
   const byId = Object.fromEntries(full.map((u) => [u.id, u]));
@@ -245,7 +246,7 @@ router.get('/admin/reports', wrap(async (req, res) => {
   const where = req.query.status ? 'WHERE rp.status = ?' : '';
   const rows = await q(
     `SELECT rp.*, u.name AS reporter_name FROM reports rp JOIN users u ON u.id = rp.reporter_id
-      ${where} ORDER BY FIELD(rp.status,'open','in_mediation','resolved'), rp.id DESC LIMIT 200`, req.query.status ? [req.query.status] : []);
+      ${where} ORDER BY FIELD(rp.status,'open','in_mediation','resolved'), rp.id DESC ${pageOf(req.query, 100, 200)}`, req.query.status ? [req.query.status] : []);
   const out = [];
   for (const r of rows) {
     let target = null;
@@ -430,8 +431,8 @@ router.post('/admin/staff/:id/enable', requireAdmin, wrap(async (req, res) => {
   res.json({ ok: true });
 }));
 
-router.get('/admin/audit', requireAdmin, wrap(async (_req, res) => {
-  res.json(await q('SELECT a.id, a.action, a.target, a.created_at, u.name AS actor FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id ORDER BY a.id DESC LIMIT 200'));
+router.get('/admin/audit', requireAdmin, wrap(async (req, res) => {
+  res.json(await q(`SELECT a.id, a.action, a.target, a.created_at, u.name AS actor FROM audit_log a LEFT JOIN users u ON u.id = a.actor_id ORDER BY a.id DESC ${pageOf(req.query, 100, 200)}`));
 }));
 
 export default router;

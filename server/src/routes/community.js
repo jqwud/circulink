@@ -1,7 +1,7 @@
 // Resident-facing community features: credits, wanted board, kits, notifications, reports, announcements, impact.
 import { Router } from 'express';
 import { SCREENING } from '../rules.js';
-import { pool, q, one, withTx, todayPH } from '../db.js';
+import { pool, q, one, withTx, todayPH, pageOf } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
 import { assertDates, createRequestTx, notify, TAKEN_SQL, flagItemTx } from '../services.js';
@@ -24,7 +24,7 @@ router.get('/credits', wrap(async (req, res) => {
 router.get('/wanted', wrap(async (req, res) => {
   const rows = await q(
     `SELECT w.*, u.name, u.purok FROM wanted_posts w JOIN users u ON u.id = w.user_id
-      WHERE w.status = 'open' AND (w.needed_by IS NULL OR w.needed_by >= ?) ORDER BY w.created_at DESC LIMIT 100`, [todayPH()]);
+      WHERE w.status = 'open' AND (w.needed_by IS NULL OR w.needed_by >= ?) ORDER BY w.created_at DESC, w.id DESC ${pageOf(req.query, 50, 100)}`, [todayPH()]);
   res.json(rows.map((w) => ({
     id: w.id, title: w.title, details: w.details, needed_by: w.needed_by, status: w.status, created_at: w.created_at,
     user: { id: w.user_id, name: firstName(w.name), purok: w.purok }, mine: w.user_id === req.user.id,
@@ -113,7 +113,7 @@ router.post('/kits/:id/request', requireApproved, wrap(async (req, res) => {
 
 // ---------- notifications ----------
 router.get('/notifications', wrap(async (req, res) => {
-  res.json(await q('SELECT id, type, title, body, params, ref_id, read_at, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 100', [req.user.id]));
+  res.json(await q(`SELECT id, type, title, body, params, ref_id, read_at, created_at FROM notifications WHERE user_id = ? ORDER BY id DESC ${pageOf(req.query, 50, 100)}`, [req.user.id]));
 }));
 router.post('/notifications/read', wrap(async (req, res) => {
   await q('UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND read_at IS NULL', [req.user.id]);

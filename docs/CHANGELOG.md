@@ -2,6 +2,12 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 21: Long lists in pages (2026-10-23)
+
+- Lists take `?limit=` and `?offset=` and stay plain arrays (a page shorter than the limit is the last). Every paged list also sorts by id, so pages never overlap or skip (`pageOf` in `server/src/db.js`).
+- Browse items, wanted posts and notifications: 50 by default, at most 100. Portal residents, listings, transactions, reports and the audit log: 100 by default, at most 200.
+- The app's Browse loads 30 items at a time with "Load more"; the portal's long tables have "Load more" (`usePaged`, `LoadMore`).
+
 ## Batch 20: Rule numbers from the portal (2026-10-23)
 
 - Admins change ten rule numbers on the Rules page (starter credits, costs, lender reward, late penalty, monthly cap, maximum loan days, expiry days, missed check-ins before an alert), each within safe limits, after a confirm step that lists every change. Staff see them read-only.

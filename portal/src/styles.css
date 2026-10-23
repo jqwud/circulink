@@ -171,3 +171,5 @@ dl.kv dt { color: var(--c-muted); } dl.kv dd { margin: 0; font-weight: 700; }
 .alert-urgent .alert-icon { font-size: 28px; line-height: 1; }
 .alert-urgent .alert-go { margin-left: auto; font-weight: 800; white-space: nowrap; }
 .flag-reasons { display: block; color: var(--c-danger); font-weight: 700; }
+
+.load-more { display: flex; justify-content: center; padding: 14px; border-top: 1px solid var(--c-line); }
