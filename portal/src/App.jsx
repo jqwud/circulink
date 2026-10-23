@@ -10,6 +10,7 @@ import Verification from './pages/Verification.jsx';
 import Residents from './pages/Residents.jsx';
 import Listings from './pages/Listings.jsx';
 import Shelf from './pages/Shelf.jsx';
+import Donations from './pages/Donations.jsx';
 import Transactions from './pages/Transactions.jsx';
 import Reports from './pages/Reports.jsx';
 import Announcements from './pages/Announcements.jsx';
@@ -49,6 +50,7 @@ function Shell() {
     { to: '/residents', label: 'Residents' },
     { to: '/listings', label: 'Listings', pill: counts.flagged_listings, urgent: true },
     { to: '/shelf', label: 'Barangay Shelf' },
+    { to: '/donations', label: 'Donations', pill: counts.donations_to_handle },
     { to: '/transactions', label: 'Transactions', pill: (counts.staff_requests_waiting || 0) + (counts.overdue || 0) },
     { to: '/reports', label: 'Reports & disputes', pill: counts.open_reports },
     { to: '/announcements', label: 'Announcements' },
@@ -93,6 +95,7 @@ function Shell() {
           <Route path="/residents" element={<Residents />} />
           <Route path="/listings" element={<Listings />} />
           <Route path="/shelf" element={<Shelf />} />
+          <Route path="/donations" element={<Donations />} />
           <Route path="/transactions" element={<Transactions />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/announcements" element={<Announcements />} />

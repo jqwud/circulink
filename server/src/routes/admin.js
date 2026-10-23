@@ -18,6 +18,7 @@ import crypto from 'node:crypto';
 import { runReminders } from '../jobs.js';
 import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG, URGENT_REASONS, UNKIND_WORDS } from '../rules.js';
 import { staffWords } from '../kindwords.js';
+import { staffChoose, acceptShelf } from '../donations.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
 import { SELECT_REQUEST, mapRequest } from './requests.js';
 import { impactNumbers } from './community.js';
@@ -48,6 +49,7 @@ router.get('/admin/stats', wrap(async (_req, res) => {
     urgent_reports: await n("SELECT COUNT(*) n FROM reports WHERE status <> 'resolved' AND reason IN (?)", [URGENT_REASONS]),
     unkind_refusals_7d: await n("SELECT COUNT(*) n FROM audit_log WHERE action = 'unkind_words_refused' AND created_at >= NOW() - INTERVAL 7 DAY"),
     messaging_paused: await n("SELECT COUNT(*) n FROM users WHERE messaging_paused = 1 AND deleted_at IS NULL"),
+    donations_to_handle: await n("SELECT COUNT(*) n FROM items WHERE listing_type = 'donate' AND status <> 'removed' AND (donation_status = 'to_shelf' OR (claim_mode = 'barangay' AND donation_status = 'open'))"),
     barangay_service_rating: await one('SELECT ROUND(AVG(stars), 1) AS average, COUNT(*) AS count FROM ratings WHERE ratee_id IS NULL')
       .then((r) => ({ average: r.average === null ? null : Number(r.average), count: Number(r.count) })),
     completed_loans: impact.completed_loans,
@@ -78,7 +80,7 @@ router.get('/admin/users/:id', wrap(async (req, res) => {
   if (!u) throw notFound('Resident not found.');
   const history = await q(`${SELECT_REQUEST} WHERE r.borrower_id = ? OR i.owner_id = ? ORDER BY r.id DESC LIMIT 50`, [u.id, u.id]);
   const ledger = await q('SELECT amount, reason, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id DESC LIMIT 30', [u.id]);
-  res.json({ user: { ...publicUser(u), suspended: !!u.suspended, messaging_paused: !!u.messaging_paused, shelf_paused_until: u.shelf_paused_until, created_at: u.created_at }, history: history.map((r) => mapRequest(r, u.id)), ledger });
+  res.json({ user: { ...publicUser(u), suspended: !!u.suspended, messaging_paused: !!u.messaging_paused, shelf_paused_until: u.shelf_paused_until, priority_household: !!u.priority_household, created_at: u.created_at }, history: history.map((r) => mapRequest(r, u.id)), ledger });
 }));
 
 // ID photos are private: only staff, only through this authenticated route.
@@ -123,6 +125,62 @@ router.post('/admin/users/:id/shelf-pause', wrap(async (req, res) => {
   await audit(req.user.id, until ? 'shelf_paused' : 'shelf_pause_lifted', `user #${u.id} ${u.name}`);
   res.json({ id: u.id, shelf_paused_until: until });
 }));
+
+// Pauses on claiming or donating (after no-shows or problem donations), and the priority-household flag
+// (staff only, never shown to residents, no reason stored). All audited.
+for (const [path, column, days, label] of [['claim-pause', 'claim_paused_until', 'claimPauseDays', 'claim'], ['donate-pause', 'donate_paused_until', 'donatePauseDays', 'donate']]) {
+  router.post(`/admin/users/:id/${path}`, wrap(async (req, res) => {
+    const u = await one('SELECT id, name FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
+    if (!u) throw notFound('Resident not found.');
+    const until = req.body?.paused ? addDays(todayPH(), RULES[days]) : null;
+    await q(`UPDATE users SET ${column} = ? WHERE id = ?`, [until, u.id]);
+    await audit(req.user.id, until ? `${label}_paused` : `${label}_pause_lifted`, `user #${u.id} ${u.name}`);
+    res.json({ id: u.id, [column]: until });
+  }));
+}
+
+router.post('/admin/users/:id/priority', wrap(async (req, res) => {
+  const u = await one('SELECT id, name FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
+  if (!u) throw notFound('Resident not found.');
+  const on = !!req.body?.priority;
+  await q('UPDATE users SET priority_household = ? WHERE id = ?', [on ? 1 : 0, u.id]);
+  await audit(req.user.id, on ? 'priority_set' : 'priority_cleared', `user #${u.id}`);
+  res.json({ id: u.id, priority_household: on });
+}));
+
+// ---------- donations ----------
+// The queue: barangay-chosen donations with who asked (priority households first), open claims, and
+// donations waiting to go to the Shelf or that nobody claimed.
+router.get('/admin/donations', wrap(async (_req, res) => {
+  const items = await q(
+    `${SELECT_ITEM_SQL} WHERE i.listing_type = 'donate' AND i.status <> 'removed' AND i.donation_status IN ('open','reserved','to_shelf')
+      ORDER BY i.created_at, i.id`);
+  const asked = items.length ? await q(
+    `SELECT c.item_id, c.id, u.id AS user_id, u.name, u.purok, u.priority_household, c.created_at
+       FROM donation_claims c JOIN users u ON u.id = c.claimer_id
+      WHERE c.status = 'waiting' AND c.item_id IN (?) ORDER BY u.priority_household DESC, c.id`, [items.map((i) => i.id)]) : [];
+  const reserved = items.length ? await q(
+    `SELECT c.id, c.item_id, c.staff_delivery, c.pickup_date, c.reserved_until, c.donor_confirmed_at, c.claimer_confirmed_at, u.name, u.purok
+       FROM donation_claims c JOIN users u ON u.id = c.claimer_id WHERE c.status = 'reserved' AND c.item_id IN (?)`, [items.map((i) => i.id)]) : [];
+  const first = (n) => String(n || '').split(' ')[0];
+  const today = todayPH();
+  res.json({
+    choose: items.filter((i) => i.claim_mode === 'barangay' && i.donation_status === 'open').map((i) => ({
+      item: mapItem(i),
+      ready: addDays(String(i.created_at).slice(0, 10), RULES.barangayChoiceDays) < today,
+      asked: asked.filter((a) => a.item_id === i.id).map((a) => ({ user_id: a.user_id, name: first(a.name), full_name: a.name, purok: a.purok, priority: !!a.priority_household })),
+    })),
+    reserved: reserved.map((c) => ({
+      claim_id: c.id, item: mapItem(items.find((i) => i.id === c.item_id)), to: c.name, purok: c.purok, staff_delivery: !!c.staff_delivery,
+      pickup_date: c.pickup_date, reserved_until: c.reserved_until, donor_confirmed: !!c.donor_confirmed_at, claimer_confirmed: !!c.claimer_confirmed_at,
+    })),
+    to_shelf: items.filter((i) => i.donation_status === 'to_shelf').map(mapItem),
+    unclaimed: items.filter((i) => i.donation_status === 'open' && i.open_until && i.open_until <= today).map(mapItem),
+  });
+}));
+
+router.post('/admin/donations/:id/choose', wrap(async (req, res) => res.json(await staffChoose(Number(req.params.id), Number(req.body?.user_id), !!req.body?.staff_delivery, req.user))));
+router.post('/admin/donations/:id/accept-shelf', wrap(async (req, res) => res.json(await acceptShelf(Number(req.params.id), req.user))));
 
 // ---------- kind words: the built-in list plus words staff add ----------
 router.get('/admin/words', wrap(async (_req, res) => res.json({ built_in: UNKIND_WORDS, added: await staffWords() })));
@@ -210,11 +268,15 @@ router.post('/admin/items/:id/restore', wrap(async (req, res) => {
 
 router.post('/admin/shelf', wrap(async (req, res) => {
   const f = readItemBody(req.body);
+  // The barangay can give items away too (surplus, relief goods): always "Let the barangay choose", at the hall.
+  const giveAway = req.body?.listing_type === 'donate';
   const [r] = await pool.query(
-    'INSERT INTO items (owner_id, is_shelf, category_id, title, description, item_condition, tier, max_loan_days, pickup_point_id, photo_url, repair_reuse) VALUES (NULL,1,?,?,?,?,?,?,?,?,?)',
+    `INSERT INTO items (owner_id, is_shelf, category_id, title, description, item_condition, tier, max_loan_days, pickup_point_id, photo_url, repair_reuse,
+                        listing_type, claim_mode, donation_status, open_until) VALUES (NULL,1,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low',
-      req.body?.max_loan_days ? readMaxDays(req.body.max_loan_days, { is_shelf: 1 }) : null, f.pickup_point_id || 1, f.photo_url || null, f.repair_reuse || 0]);
-  await audit(req.user.id, 'shelf_item_added', `item #${r.insertId} ${f.title}`);
+      req.body?.max_loan_days ? readMaxDays(req.body.max_loan_days, { is_shelf: 1 }) : null, f.pickup_point_id || 1, f.photo_url || null, f.repair_reuse || 0,
+      giveAway ? 'donate' : 'lend', giveAway ? 'barangay' : null, giveAway ? 'open' : null, giveAway ? addDays(todayPH(), RULES.donationOpenDays) : null]);
+  await audit(req.user.id, giveAway ? 'barangay_donation_added' : 'shelf_item_added', `item #${r.insertId} ${f.title}`);
   res.status(201).json(mapItem(await one(`${SELECT_ITEM_SQL} WHERE i.id = ?`, [r.insertId])));
 }));
 

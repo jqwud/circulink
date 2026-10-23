@@ -43,6 +43,16 @@ class ImpactScreen extends StatelessWidget {
                 ctx.t('Purchases avoided only counts borrowers who answered "yes, I would have bought or rented it". We never guess.'),
                 style: const TextStyle(color: HiColors.muted, fontSize: 12),
               ),
+              if (listOf(d['thanks']).isNotEmpty) ...<Widget>[
+                SectionTitle(ctx.t('Thank you, generous neighbors!')),
+                for (final Map<String, dynamic> t in listOf(d['thanks']))
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.card_giftcard, color: HiColors.accent),
+                    title: Text('${str(t['name'])} · ${str(t['purok'], '-')}', style: const TextStyle(fontWeight: FontWeight.w700)),
+                    trailing: Text(ctx.tv(intOf(t['donations']) == 1 ? '{n} gift' : '{n} gifts', <String, Object>{'n': intOf(t['donations'])})),
+                  ),
+              ],
             ],
           );
         },

@@ -53,6 +53,15 @@ Future<void> waitFor(WidgetTester tester, Finder finder) async {
   fail('Waited 20 seconds for $finder. On screen: ${shown.join(' | ')}');
 }
 
+/// Lets the app finish what it started in the background (a refresh after a tap) before the test ends.
+Future<void> settle(WidgetTester tester) async {
+  for (int i = 0; i < 10; i++) {
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+  await tester.pump(const Duration(seconds: 30)); // past any request timeout or message timer
+}
+
 Future<void> tapAndWait(WidgetTester tester, Finder target, Finder then) async {
   await tester.ensureVisible(target);
   await tester.tap(target);
@@ -159,6 +168,28 @@ void main() {
     await tapAndWait(tester, find.text('Cancel request'), find.text('Yes, cancel'));
     await tapAndWait(tester, find.text('Yes, cancel'), find.text('Cancelled'));
     expect((await tester.runAsync(() => call('GET', '/me', token: carlo)))['credits'], before, reason: 'credit returned');
+  }, skip: skip);
+
+  testWidgets('a neighbor gives an item away; another claims it and both confirm', (WidgetTester tester) async {
+    final String ana = await tester.runAsync(() => tokenOf('ana')) as String;
+    final Map<String, dynamic> gift = (await tester.runAsync(() => call('POST', '/items', token: ana, body: <String, dynamic>{
+          'title': 'Study lamp', 'category_id': 1, 'pickup_point_id': 1, 'tier': 'low', 'listing_type': 'donate', 'claim_mode': 'first',
+        }))) as Map<String, dynamic>;
+
+    await openApp(tester);
+    await logIn(tester, 'carlo@hiraman.test', 'hiraman123');
+    await tapAndWait(tester, find.text('Browse'), find.text('Free to take'));
+    await tapAndWait(tester, find.text('Free to take').first, find.text('Study lamp'));
+    await tapAndWait(tester, find.text('Study lamp'), find.text('Claim it (free)'));
+    await tapAndWait(tester, find.text('Claim it (free)'), find.text('It is yours to pick up!'));
+    await tapAndWait(tester, find.widgetWithText(TextButton, 'OK'), find.text('I got it'));
+    await tapAndWait(tester, find.text('I got it'), find.text('Confirmed'));
+
+    final List<dynamic> claims = (await tester.runAsync(() => call('GET', '/donations/mine', token: ana))) as List<dynamic>;
+    final Map<String, dynamic> claim = claims.cast<Map<String, dynamic>>().firstWhere((Map<String, dynamic> c) => (c['item'] as Map<String, dynamic>)['id'] == gift['id']);
+    final Map<String, dynamic> done = (await tester.runAsync(() => call('POST', '/donations/claims/${claim['id']}/given', token: ana))) as Map<String, dynamic>;
+    expect(done['status'], 'given', reason: 'both sides confirmed');
+    await settle(tester);
   }, skip: skip);
 
   testWidgets('a newcomer signs up and is asked to verify their account', (WidgetTester tester) async {

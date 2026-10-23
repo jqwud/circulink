@@ -58,7 +58,10 @@ class ItemCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                OriginBadge(item: item),
+                Wrap(spacing: 6, runSpacing: 4, children: <Widget>[
+                  OriginBadge(item: item),
+                  if (FreeBadge.isDonation(item)) const FreeBadge(),
+                ]),
                 const SizedBox(height: 4),
                 Text(str(item['title']), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                 const SizedBox(height: 2),
@@ -69,8 +72,8 @@ class ItemCard extends StatelessWidget {
                   spacing: 6,
                   runSpacing: 4,
                   children: <Widget>[
-                    StatusChip(tierLabel(context, tier), tone: tierTone(tier)),
-                    StatusChip(costLabel(context, intOf(item['credit_cost'])), tone: Tone.muted),
+                    if (!FreeBadge.isDonation(item)) StatusChip(tierLabel(context, tier), tone: tierTone(tier)),
+                    if (!FreeBadge.isDonation(item)) StatusChip(costLabel(context, intOf(item['credit_cost'])), tone: Tone.muted),
                     if (boolOf(item['is_out'])) StatusChip(context.t('Borrowed'), tone: Tone.info),
                     if (boolOf(item['repair_reuse'])) StatusChip(context.t('Repair and Reuse'), tone: Tone.ok),
                   ],

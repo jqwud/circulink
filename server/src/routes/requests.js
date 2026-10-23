@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import { q, one, todayPH } from '../db.js';
 import { config } from '../config.js';
-import { bad, forbidden, notFound, wrap, HttpError } from '../errors.js';
+import { forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
 import { ownPhoto } from '../uploads.js';
 import { RULES, photoRequired } from '../rules.js';
-import { phraseById, phrasesFor, renderPhrase, checkSlot } from '../phrases.js';
+import { readThread, postToThread } from '../threads.js';
 import {
   createRequest, decideRequest, cancelRequest, handOver, returnItem, saveSurvey, saveRating, checkIn, checkinState, addDays,
-  contactOpen, threadOpen, notify, changeRequestDates, extendRequest, extendMax,
+  contactOpen, threadOpen, changeRequestDates, extendRequest, extendMax,
 } from '../services.js';
 
 const router = Router();
@@ -130,82 +130,17 @@ async function threadFor(req) {
   return r;
 }
 
-// What one message says, in both languages. Residents send phrases; staff (and residents before 2.0) wrote text.
-function messageView(m, viewerId, points) {
-  const p = m.phrase_id ? phraseById(m.phrase_id) : null;
-  const staff = m.role !== 'resident';
-  const en = p ? renderPhrase(p, m.slot_value, 'en', points) : m.body;
-  const fil = p ? renderPhrase(p, m.slot_value, 'fil', points) : m.body;
-  const mine = m.sender_id === viewerId;
-  return {
-    id: m.id, phrase_id: m.phrase_id || null, en, fil, body: en, created_at: m.created_at, mine, staff,
-    from: staff ? 'Barangay staff' : first(m.name), legacy: !p && !staff, replies: p && !mine ? p.replies || [] : [],
-  };
-}
+// The thread of a borrow request (server/src/threads.js).
+const requestThread = (r) => ({
+  column: 'request_id', id: r.id, status: r.status, open: threadOpen(r), notifyType: 'message',
+  borrowerId: r.borrower_id, ownerId: r.owner_id, itemTitle: r.item_title,
+});
 
-const pickupPointNames = async () => new Map((await q('SELECT id, name FROM pickup_points')).map((x) => [x.id, x.name]));
-const sideOf = (r, user) => (user.id === r.borrower_id ? 'B' : user.id === r.owner_id ? 'O' : null);
-
-router.get('/requests/:id/messages', authRequired, wrap(async (req, res) => {
-  const r = await threadFor(req);
-  const rows = await q(
-    `SELECT m.id, m.sender_id, m.phrase_id, m.slot_value, m.body, m.created_at, u.name, u.role
-       FROM request_messages m JOIN users u ON u.id = m.sender_id WHERE m.request_id = ? ORDER BY m.id`, [r.id]);
-  await q("UPDATE notifications SET read_at = NOW() WHERE user_id = ? AND type = 'message' AND ref_id = ? AND read_at IS NULL", [req.user.id, r.id]);
-  const open = threadOpen(r);
-  const side = req.user.role === 'resident' ? sideOf(r, req.user) : null;
-  const points = await pickupPointNames();
-  res.json({
-    open,
-    can_write_text: open && req.user.role !== 'resident',
-    phrases: open && side ? phrasesFor(r.status, side).map((p) => ({ id: p.id, situation: p.s, slot: p.slot || null, en: p.en, fil: p.fil })) : [],
-    messages: rows.map((m) => messageView(m, req.user.id, points)),
-  });
-}));
+router.get('/requests/:id/messages', authRequired, wrap(async (req, res) => res.json(await readThread(requestThread(await threadFor(req)), req.user))));
 
 // Residents send a phrase id and one picked value; staff send free text. See server/src/phrases.js.
 router.post('/requests/:id/messages', authRequired, wrap(async (req, res) => {
-  const r = await threadFor(req);
-  if (!threadOpen(r)) throw bad('This conversation is closed.', 'thread_closed');
-  const staff = req.user.role !== 'resident';
-  let body = null; let phrase = null; let slot = null;
-  if (staff) {
-    body = String(req.body?.body || '').trim();
-    if (!body) throw bad('Write a message first.', 'empty_message');
-    if (body.length > RULES.messageMaxLength) throw bad(`Messages can be up to ${RULES.messageMaxLength} characters.`, 'message_too_long');
-  } else {
-    if (!req.body?.phrase_id) throw bad('Choose one of the messages. For anything else, use "My situation is not listed".', 'phrases_only');
-    phrase = phraseById(req.body.phrase_id);
-    if (!phrase) throw bad('That message does not exist.', 'unknown_phrase');
-    if (!phrasesFor(r.status, sideOf(r, req.user)).includes(phrase)) throw bad('That message does not fit this request right now.', 'phrase_not_now');
-    const me = await one('SELECT messaging_paused FROM users WHERE id = ?', [req.user.id]);
-    if (me.messaging_paused) throw forbidden('Your messages are paused until barangay staff review a concern.', 'messaging_paused');
-    try {
-      slot = checkSlot(phrase, req.body.slot, { today: todayPH(), pointIds: new Set((await pickupPointNames()).keys()) });
-    } catch (e) {
-      throw bad(e.message, e.code || 'bad_slot');
-    }
-    const recent = await one(
-      `SELECT COUNT(*) AS n, SUM(phrase_id = ? AND created_at > NOW() - INTERVAL 10 MINUTE) AS same
-         FROM request_messages WHERE request_id = ? AND sender_id = ? AND created_at > NOW() - INTERVAL 1 DAY`, [phrase.id, r.id, req.user.id]);
-    if (Number(recent.same) > 0) throw new HttpError(429, 'You just sent that. Please wait for their reply.', 'same_phrase_wait');
-    if (Number(recent.n) >= RULES.messagesPerRequestPerDay) throw new HttpError(429, 'That is enough messages for today. Please wait for their reply.', 'too_many_messages');
-  }
-  const ins = await q('INSERT INTO request_messages (request_id, sender_id, phrase_id, slot_value, body) VALUES (?,?,?,?,?)',
-    [r.id, req.user.id, phrase?.id || null, slot, body]);
-  const points = await pickupPointNames();
-  const en = phrase ? renderPhrase(phrase, slot, 'en', points) : body;
-  const fil = phrase ? renderPhrase(phrase, slot, 'fil', points) : body;
-  // Tell the other people once; more messages do not pile up notifications until they open the thread.
-  const from = staff ? 'Barangay staff' : first(req.user.name);
-  for (const userId of [r.borrower_id, r.owner_id].filter((u) => u && u !== req.user.id)) {
-    const waiting = await one("SELECT id FROM notifications WHERE user_id = ? AND type = 'message' AND ref_id = ? AND read_at IS NULL", [userId, r.id]);
-    if (!waiting) {
-      await notify({ query: q }, userId, 'message', `${from} wrote about ${r.item_title}`, en.slice(0, 120), r.id,
-        { name: from, staff, item: r.item_title, preview: en.slice(0, 120), preview_fil: fil.slice(0, 120) });
-    }
-  }
-  res.status(201).json({ id: ins.insertId, phrase_id: phrase?.id || null, en, fil, body: en, mine: true, staff, from });
+  res.status(201).json(await postToThread(requestThread(await threadFor(req)), req.user, req.body));
 }));
 
 router.post('/requests/:id/approve', authRequired, wrap(async (req, res) => res.json(await decideRequest(Number(req.params.id), req.user, 'approve'))));

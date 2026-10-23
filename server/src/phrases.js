@@ -6,7 +6,7 @@
 // staff answer those with free text.
 // slot: what the {slot} in the text is filled with, always chosen with a picker, never typed.
 
-export const SITUATIONS = ['before', 'pickup', 'during', 'return', 'problem', 'thanks'];
+export const SITUATIONS = ['before', 'pickup', 'during', 'return', 'problem', 'thanks', 'donation', 'donation_thanks'];
 
 // Which situations a request's status opens. The thread itself is open as long as threadOpen() says.
 export const SITUATIONS_BY_STATUS = {
@@ -15,6 +15,12 @@ export const SITUATIONS_BY_STATUS = {
   handed_over: ['during', 'return', 'problem'],
   disputed: ['problem'],
   closed: ['thanks', 'return', 'problem'],
+};
+
+// The same for a donation claim (server/src/donations.js).
+export const SITUATIONS_BY_CLAIM_STATUS = {
+  reserved: ['donation'],
+  given: ['donation_thanks'],
 };
 
 export const PHRASES = [
@@ -27,12 +33,12 @@ export const PHRASES = [
   { id: 'P06', s: 'before', who: 'O', slot: 'condition', en: 'It is in {slot} condition, as in the photo.', fil: 'Nasa {slot} na kondisyon po ito, tulad ng nasa larawan.' },
   // before pickup (approved)
   { id: 'A01', s: 'pickup', who: 'Both', slot: 'datetime', en: 'Can we meet on {slot}?', fil: 'Puwede po ba tayong magkita sa {slot}?', replies: ['A02', 'A03'] },
-  { id: 'A02', s: 'pickup', who: 'Both', en: 'Yes, see you then.', fil: 'Sige po, kita tayo.' },
-  { id: 'A03', s: 'pickup', who: 'Both', en: 'That time does not work. Can we pick another time?', fil: 'Hindi po ako puwede sa oras na iyon. Iba na lang pong oras?' },
+  { id: 'A02', s: 'pickup', also: ['donation'], who: 'Both', en: 'Yes, see you then.', fil: 'Sige po, kita tayo.' },
+  { id: 'A03', s: 'pickup', also: ['donation'], who: 'Both', en: 'That time does not work. Can we pick another time?', fil: 'Hindi po ako puwede sa oras na iyon. Iba na lang pong oras?' },
   { id: 'A04', s: 'pickup', who: 'Both', slot: 'point', en: 'Can we meet at {slot} instead?', fil: 'Puwede po bang sa {slot} na lang tayo magkita?', replies: ['A02', 'A03'] },
-  { id: 'A05', s: 'pickup', who: 'Both', en: "I'm on my way.", fil: 'Papunta na po ako.' },
-  { id: 'A06', s: 'pickup', who: 'Both', en: "I'm here at the pickup point.", fil: 'Nandito na po ako sa tagpuan.' },
-  { id: 'A07', s: 'pickup', who: 'Both', slot: 'minutes', en: "I'm running {slot} minutes late. Sorry!", fil: 'Mahuhuli po ako nang {slot} minuto. Pasensya na po!' },
+  { id: 'A05', s: 'pickup', also: ['donation'], who: 'Both', en: "I'm on my way.", fil: 'Papunta na po ako.' },
+  { id: 'A06', s: 'pickup', also: ['donation'], who: 'Both', en: "I'm here at the pickup point.", fil: 'Nandito na po ako sa tagpuan.' },
+  { id: 'A07', s: 'pickup', also: ['donation'], who: 'Both', slot: 'minutes', en: "I'm running {slot} minutes late. Sorry!", fil: 'Mahuhuli po ako nang {slot} minuto. Pasensya na po!' },
   { id: 'A08', s: 'pickup', who: 'B', en: 'Do I need to bring anything?', fil: 'May kailangan po ba akong dalhin?', replies: ['A09'] },
   { id: 'A09', s: 'pickup', who: 'O', en: 'Please bring a bag or box for it.', fil: 'Magdala po kayo ng bag o kahon para dito.' },
   // during the loan
@@ -57,8 +63,16 @@ export const PHRASES = [
   { id: 'D05', s: 'problem', who: 'B', en: 'It was already like this when I got it.', fil: 'Ganito na po ito nang matanggap ko.' },
   { id: 'D06', s: 'problem', who: 'Both', en: "I've sent photos to the barangay.", fil: 'Nagpadala na po ako ng larawan sa barangay.' },
   // thanks and goodbye (after closing, while the thread is open)
-  { id: 'T01', s: 'thanks', who: 'Both', en: 'Thank you, neighbor!', fil: 'Salamat, kapitbahay!' },
+  { id: 'T01', s: 'thanks', also: ['donation_thanks'], who: 'Both', en: 'Thank you, neighbor!', fil: 'Salamat, kapitbahay!' },
   { id: 'T02', s: 'thanks', who: 'O', en: 'You can borrow again anytime.', fil: 'Puwede po kayong humiram ulit kahit kailan.' },
+  // donation claims (B = the person claiming, O = the donor)
+  { id: 'G01', s: 'donation', who: 'B', en: 'Thank you! When can I pick it up?', fil: 'Salamat po! Kailan ko po ito puwedeng kunin?', replies: ['G02', 'G03'] },
+  { id: 'G02', s: 'donation', who: 'O', slot: 'datetime', en: 'You can pick it up on {slot}.', fil: "Puwede n'yo pong kunin sa {slot}.", replies: ['A02', 'A03'] },
+  { id: 'G03', s: 'donation', who: 'O', slot: 'point', en: "It's ready at {slot}.", fil: 'Handa na po ito sa {slot}.' },
+  { id: 'G04', s: 'donation', who: 'B', en: "Sorry, I can't pick it up anymore. Please offer it to someone else.", fil: "Pasensya na po, hindi ko na po makukuha. Ibigay n'yo na lang po sa iba." },
+  { id: 'G05', s: 'donation', who: 'O', en: "Sorry, I can't give it anymore.", fil: 'Pasensya na po, hindi ko na po ito maibibigay.' },
+  { id: 'G06', s: 'donation_thanks', who: 'B', en: 'Received. Thank you for your kindness!', fil: "Natanggap ko na po. Salamat sa kabutihan n'yo!" },
+  { id: 'G07', s: 'donation_thanks', who: 'B', en: 'This will really help our family. Salamat!', fil: 'Malaking tulong po ito sa pamilya namin. Salamat!' },
 ];
 
 const BY_ID = new Map(PHRASES.map((p) => [p.id, p]));
@@ -118,8 +132,12 @@ export function renderPhrase(phrase, value, lang, points = new Map()) {
   return text.replace('{slot}', words);
 }
 
-/** The phrases a person may send on a request now: its status picks the situations, their side picks the rest. */
-export function phrasesFor(status, side) {
-  const situations = SITUATIONS_BY_STATUS[status] || [];
-  return PHRASES.filter((p) => !p.retired && situations.includes(p.s) && (p.who === 'Both' || p.who === side));
+/**
+ * The phrases a person may send now: the status picks the situations, their side picks the rest.
+ * `map` is SITUATIONS_BY_STATUS (borrow requests) or SITUATIONS_BY_CLAIM_STATUS (donation claims).
+ */
+export function phrasesFor(status, side, map = SITUATIONS_BY_STATUS) {
+  const situations = map[status] || [];
+  return PHRASES.filter((p) => !p.retired && (situations.includes(p.s) || (p.also || []).some((x) => situations.includes(x)))
+    && (p.who === 'Both' || p.who === side));
 }

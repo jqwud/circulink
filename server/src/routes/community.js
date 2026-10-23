@@ -141,14 +141,18 @@ router.get('/me/badges', wrap(async (req, res) => {
   const onTime = await n("SELECT COUNT(*) n FROM requests WHERE borrower_id = ? AND status = 'closed' AND on_time = 1", [uid]);
   const repair = await n("SELECT COUNT(*) n FROM items WHERE owner_id = ? AND repair_reuse = 1 AND status <> 'removed'", [uid]);
   const avoided = await n("SELECT COUNT(*) n FROM impact_surveys s JOIN requests r ON r.id = s.request_id WHERE r.borrower_id = ? AND s.would_have_bought = 'yes'", [uid]);
+  const donations = await n("SELECT COUNT(*) n FROM donation_claims c JOIN items i ON i.id = c.item_id WHERE i.owner_id = ? AND c.status = 'given'", [uid]);
   res.json({
-    stats: { lent, borrowed, on_time_returns: onTime, purchases_avoided: avoided },
+    stats: { lent, borrowed, on_time_returns: onTime, purchases_avoided: avoided, donations },
     badges: [
       { key: 'first_lend', earned: lent >= 1 },
       { key: 'good_neighbor', earned: lent >= 3 },
       { key: 'on_time_star', earned: onTime >= 3 },
       { key: 'repair_hero', earned: repair >= 1 },
       { key: 'zero_waste', earned: avoided >= 1 && borrowed >= 3 },
+      { key: 'generous_1', earned: donations >= 1 },   // Mapagbigay: confirmed donations
+      { key: 'generous_5', earned: donations >= 5 },
+      { key: 'generous_15', earned: donations >= 15 },
     ],
   });
 }));
@@ -173,6 +177,16 @@ export async function impactNumbers() {
     maybe_answers: Number(survey.maybe || 0),
   };
 }
-router.get('/impact', wrap(async (_req, res) => res.json(await impactNumbers())));
+// The monthly thank-you board: donors who opted in, by first name and purok only (spec section 3).
+async function thanksBoard() {
+  const rows = await q(
+    `SELECT u.name, u.purok, COUNT(*) AS donations FROM donation_claims c JOIN items i ON i.id = c.item_id JOIN users u ON u.id = i.owner_id
+      WHERE c.status = 'given' AND u.thanks_opt_in = 1 AND u.deleted_at IS NULL
+        AND c.closed_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+      GROUP BY u.id ORDER BY donations DESC, u.id LIMIT 30`);
+  return rows.map((r) => ({ name: firstName(r.name), purok: r.purok, donations: Number(r.donations) }));
+}
+
+router.get('/impact', wrap(async (_req, res) => res.json({ ...(await impactNumbers()), thanks: await thanksBoard() })));
 
 export default router;

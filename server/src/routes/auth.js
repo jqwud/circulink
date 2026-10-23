@@ -136,7 +136,7 @@ router.post('/me/password', authRequired, wrap(async (req, res) => {
 export { temporaryPassword };
 
 router.patch('/me', authRequired, wrap(async (req, res) => {
-  const { name, phone, purok, language } = req.body || {};
+  const { name, phone, purok, language, thanks_opt_in: thanks } = req.body || {};
   if (name !== undefined && String(name).trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
   // A field that is sent is saved; an empty phone clears it. Fields that are not sent stay as they are.
   const fields = {};
@@ -144,6 +144,7 @@ router.patch('/me', authRequired, wrap(async (req, res) => {
   if (phone !== undefined) fields.phone = checkPhone(phone);
   if (purok !== undefined && purok !== '') fields.purok = await checkPurok(purok);
   if (['en', 'fil'].includes(language)) fields.language = language;
+  if (thanks !== undefined) fields.thanks_opt_in = thanks ? 1 : 0;
   const keys = Object.keys(fields);
   if (keys.length) await q(`UPDATE users SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => fields[k]), req.user.id]);
   res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
@@ -196,6 +197,9 @@ router.get('/me/data', authRequired, wrap(async (req, res) => {
     ratings_received: await q('SELECT request_id, stars, comment, created_at FROM ratings WHERE ratee_id = ? ORDER BY id', [id]),
     reports_filed: await q('SELECT target_type, reason, details, status, outcome, created_at FROM reports WHERE reporter_id = ? ORDER BY id', [id]),
     wanted_posts: await q('SELECT title, details, needed_by, status, created_at FROM wanted_posts WHERE user_id = ? ORDER BY id', [id]),
+    donation_claims: await q(
+      'SELECT c.id, i.title AS item, c.status, c.pickup_date, c.created_at, c.closed_at FROM donation_claims c JOIN items i ON i.id = c.item_id WHERE c.claimer_id = ? ORDER BY c.id', [id]),
+    thanks_board: !!u.thanks_opt_in,
     survey_answers: await q(
       'SELECT s.request_id, s.would_have_bought FROM impact_surveys s JOIN requests r ON r.id = s.request_id WHERE r.borrower_id = ?', [id]),
     notifications: await q('SELECT type, title, body, created_at, read_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 200', [id]),

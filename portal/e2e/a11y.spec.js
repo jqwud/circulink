@@ -4,7 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { portalLogin } from './helpers.js';
 
-const PAGES = ['/', '/verification', '/residents', '/listings', '/shelf', '/transactions', '/reports', '/announcements', '/impact', '/rules', '/staff'];
+const PAGES = ['/', '/verification', '/residents', '/listings', '/shelf', '/donations', '/transactions', '/reports', '/announcements', '/impact', '/rules', '/staff'];
 
 test('the login page has no accessibility problems', async ({ page }) => {
   await page.goto('/');

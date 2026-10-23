@@ -170,6 +170,13 @@ class AppState extends ChangeNotifier {
     await _startSession(res);
   }
 
+  /// Saves profile fields (PATCH /me) and keeps the answer as the current user.
+  Future<void> updateProfile(Map<String, dynamic> fields) async {
+    user = mapOf(await api.patch('/me', fields));
+    await _prefs?.setString('user', jsonEncode(user));
+    notifyListeners();
+  }
+
   Future<void> refreshMe() async {
     final Map<String, dynamic> r = mapOf(await api.get('/me'));
     // The server sends a fresh token once a day while the app is used, so active people stay logged in.

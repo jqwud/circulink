@@ -21,6 +21,19 @@ export const RULES = {
   shelfLateToPause: 2,          // late returns of Barangay items in 90 days that pause Barangay borrowing ...
   shelfPauseDays: 30,           // ... for this many days (staff can lift it)
   extendMaxDays: 7,             // a loan can be extended once, by up to this many days
+  // Donations ("free to take")
+  claimHoldHours: 48,           // a claim holds the item this long (or until 2 days after the agreed pickup day)
+  claimsOpenMax: 2,             // claims one person can hold at once
+  claimsPerMonth: 4,            // claims one person can make in 30 days
+  noShowsToPause: 2,            // missed pickups in 60 days that pause claiming ...
+  claimPauseDays: 14,           // ... for this many days
+  donationOpenDays: 14,         // after this many days unclaimed, the donor is asked what to do ...
+  donationAnswerDays: 7,        // ... and with no answer this many days later, it is taken down
+  barangayChoiceDays: 3,        // residents can say "I'd like this" for this many days; then staff choose
+  regiftWaitDays: 30,           // after receiving a donation, no donating in the same category for this long
+  donationProblemsToPause: 2,   // problem donations in 90 days that pause donating ...
+  donatePauseDays: 30,          // ... for this many days
+  donorCancelsWithoutStaff: 1,  // a donor can cancel this many claims in 30 days; more need staff
 };
 
 // How staff settle a dispute (an item returned damaged or lost), and what each outcome does to credits.
@@ -105,7 +118,18 @@ export function itemMaxDays(item) {
   return item.is_shelf && item.max_loan_days ? Math.min(item.max_loan_days, RULES.maxLoanDays) : RULES.maxLoanDays;
 }
 
+// Things that cannot be given away even when they are allowed to be lent: food and baby products expire or
+// carry safety risks (medicines are already banned everywhere).
+export const NOT_DONATABLE = ['baby formula', 'infant formula', 'formula milk', 'gatas ng sanggol', 'helmet', 'car seat',
+  'canned goods', 'de lata', 'leftover food', 'tirang pagkain', 'ulam', 'vitamin'];
+
+export function findNotDonatable(...texts) {
+  const hay = texts.filter(Boolean).join(' ').toLowerCase();
+  return NOT_DONATABLE.find((w) => new RegExp(`\\b${w}(s|es)?\\b`, 'i').test(hay)) || null;
+}
+
 export function creditCost(item) {
+  if (item.listing_type === 'donate') return 0;
   if (item.is_shelf) return RULES.shelfCost;
   return item.tier === 'high' ? RULES.costHigh : RULES.costLowMedium;
 }

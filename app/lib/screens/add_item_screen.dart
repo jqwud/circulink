@@ -24,6 +24,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   String _condition = 'good';
   String _tier = 'low';
   bool _repair = false;
+  bool _give = false; // "Give it away" (a donation) instead of lending
+  String _claimMode = 'first';
   String? _photo;
   bool _busy = false;
   String? _error;
@@ -96,6 +98,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'tier': _tier,
         'repair_reuse': _repair,
         'photo_url': _photo,
+        if (_give) 'listing_type': 'donate',
+        if (_give) 'claim_mode': _claimMode,
       };
       final dynamic saved = _editing ? await app.api.patch('/items/${widget.item!['id']}', body) : await app.api.post('/items', body);
       final bool held = mapOf(saved)['review_status'] == 'flagged';
@@ -109,13 +113,39 @@ class _AddItemScreenState extends State<AddItemScreen> {
       } else if (_editing) {
         showMessage(context, context.tx('Changes saved.'));
       } else {
-        pawsaDialog(context, pose: 'cheer', title: context.tx('Thank you, neighbor!'), message: context.tx('Your item is now shared. You earn a credit after each good, on-time return.'));
+        pawsaDialog(context, pose: 'cheer', title: context.tx('Thank you, neighbor!'),
+            message: _give
+                ? context.tx('Your gift is listed as free to take. You will be told when someone claims it.')
+                : context.tx('Your item is now shared. You earn a credit after each good, on-time return.'));
       }
     } catch (e) {
       if (mounted) setState(() => _error = context.app.errorText(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// A big selectable card (at least 72 dp tall) with an icon, a name and one line of explanation.
+  Widget _choice(BuildContext context, bool on, IconData icon, String title, String line, VoidCallback onTap, {bool wide = false}) {
+    return Semantics(
+      selected: on,
+      button: true,
+      child: HiCard(
+        color: on ? HiColors.primarySoft : Colors.white,
+        borderColor: on ? HiColors.accent : HiColors.line,
+        onTap: onTap,
+        child: Row(children: <Widget>[
+          Icon(icon, color: on ? HiColors.accent : HiColors.muted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+              Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+              Text(line, style: const TextStyle(color: HiColors.muted, fontSize: 13)),
+            ]),
+          ),
+        ]),
+      ),
+    );
   }
 
   @override
@@ -128,6 +158,17 @@ class _AddItemScreenState extends State<AddItemScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
+          if (!_editing) ...<Widget>[
+            Row(children: <Widget>[
+              Expanded(child: _choice(context, !_give, Icons.handshake_outlined, context.t('Lend it'), context.t('It comes back to you.'), () => setState(() => _give = false))),
+              const SizedBox(width: 8),
+              Expanded(child: _choice(context, _give, Icons.volunteer_activism, context.t('Give it away'), context.t('Free, for good.'), () => setState(() {
+                    _give = true;
+                    if (_tier == 'high') _tier = 'low';
+                  }))),
+            ]),
+            const SizedBox(height: 14),
+          ],
           Semantics(
             button: true,
             label: photoUrl.isEmpty ? context.t('Add a photo') : context.t('Change photo'),
@@ -181,8 +222,19 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ],
             onChanged: (String? v) => setState(() => _condition = v ?? _condition),
           ),
-          SectionTitle(context.t('How should borrowing work?')),
-          ...<String>['low', 'medium', 'high'].map((String t) {
+          if (_give) ...<Widget>[
+            SectionTitle(context.t('Who gets it?')),
+            _choice(context, _claimMode == 'first', Icons.bolt, context.t('First to claim'),
+                context.t('The first neighbor to claim it has 48 hours to pick it up.'), () => setState(() => _claimMode = 'first'), wide: true),
+            const SizedBox(height: 8),
+            _choice(context, _claimMode == 'barangay', Icons.account_balance, context.t('Let the barangay choose'),
+                context.t('Neighbors ask for it for 3 days, then the barangay chooses, families in need first.'), () => setState(() => _claimMode = 'barangay'), wide: true),
+            const SizedBox(height: 8),
+            Text(context.t('Valuable items are given to the barangay at the hall. Food, baby products and safety gear cannot be given away.'),
+                style: const TextStyle(color: HiColors.muted, fontSize: 12)),
+          ],
+          if (!_give) SectionTitle(context.t('How should borrowing work?')),
+          if (!_give) ...<String>['low', 'medium', 'high'].map((String t) {
             final bool on = _tier == t;
             final String desc = t == 'low'
                 ? context.t('Anyone verified can borrow right away. Best for cheap, simple things.')
@@ -224,7 +276,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ),
           ],
           const SizedBox(height: 16),
-          PrimaryButton(label: _editing ? context.t('Save changes') : context.t('Share item'), busy: _busy, onPressed: _save),
+          PrimaryButton(label: _editing ? context.t('Save changes') : (_give ? context.t('Give it away') : context.t('Share item')), busy: _busy, onPressed: _save),
           const SizedBox(height: 20),
         ],
       ),

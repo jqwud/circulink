@@ -3,7 +3,7 @@ import { api, upload } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, useLoad, useToast } from '../components.jsx';
 
-const EMPTY = { title: '', description: '', category_id: '', condition: 'good', tier: 'low', max_loan_days: '', pickup_point_id: 1, photo_url: '', repair_reuse: false };
+const EMPTY = { title: '', description: '', category_id: '', condition: 'good', tier: 'low', max_loan_days: '', pickup_point_id: 1, photo_url: '', repair_reuse: false, give_away: false };
 
 export default function Shelf() {
   const { t, lang } = useI18n();
@@ -27,8 +27,8 @@ export default function Shelf() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api('/admin/shelf', { method: 'POST', body: { ...form, category_id: Number(form.category_id), pickup_point_id: Number(form.pickup_point_id), max_loan_days: form.max_loan_days ? Number(form.max_loan_days) : null } });
-      toast(t('Shelf item added.')); setForm(null); reload();
+      await api('/admin/shelf', { method: 'POST', body: { ...form, category_id: Number(form.category_id), pickup_point_id: Number(form.pickup_point_id), max_loan_days: form.max_loan_days ? Number(form.max_loan_days) : null, listing_type: form.give_away ? 'donate' : 'lend' } });
+      toast(form.give_away ? t('Listed as free to take. Choose who receives it on the Donations page.') : t('Shelf item added.')); setForm(null); reload();
     } catch (err) { toast(err.message, 'bad'); } finally { setBusy(false); }
   }
   // A shorter loan limit for one Barangay item ('' = the normal limit).
@@ -64,7 +64,7 @@ export default function Shelf() {
             <tbody>
               {items.map((i) => (
                 <tr key={i.id}>
-                  <td><b>{i.title}</b><small>{i.description}</small></td>
+                  <td><b>{i.title}</b>{i.listing_type === 'donate' && <> <Badge value="info" label={t('Free to take')} /></>}<small>{i.description}</small></td>
                   <td>{lang === 'fil' ? i.category.name_fil : i.category.name_en}</td>
                   <td><Badge value={i.tier} /></td>
                   <td><label className="sr-only" htmlFor={`max-${i.id}`}>{t('Longest loan')}: {i.title}</label>
@@ -110,6 +110,7 @@ export default function Shelf() {
                   {meta.data?.pickup_points.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select></div>
             </div>
+            <label className="row"><input type="checkbox" checked={form.give_away} onChange={(e) => set('give_away', e.target.checked)} /> {t('Give it away (free to take; the barangay chooses who receives it)')}</label>
             <div className="field"><label htmlFor="ph">{t('Photo')} ({t('Optional')})</label><input id="ph" type="file" accept="image/jpeg,image/png,image/webp" onChange={onPhoto} />
               {form.photo_url && <small className="muted">✓ {form.photo_url.split('/').pop()}</small>}</div>
             <div className="modal-actions">

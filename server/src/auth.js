@@ -64,6 +64,9 @@ export const publicUser = (u, extra = {}) => ({
   deletion_requested: !!u.deletion_requested_at,
   lender_terms_accepted: !!u.lender_terms_accepted_at,
   shelf_paused_until: u.shelf_paused_until || null,
+  claim_paused_until: u.claim_paused_until || null,
+  donate_paused_until: u.donate_paused_until || null,
+  thanks_opt_in: !!u.thanks_opt_in, // priority_household is staff-only and never sent to residents
   must_change_password: !!u.must_change_password,
   ...extra,
 });

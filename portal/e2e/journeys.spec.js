@@ -70,3 +70,26 @@ test('a harassment concern raises the urgent alert, and staff answer it', async 
   const note = (await api('GET', '/notifications', fidel)).json.find((n) => n.type === 'report_resolved');
   expect(note).toBeTruthy();
 });
+
+test('staff choose who receives a gift, and the priority household is listed first', async ({ page }) => {
+  const [ana, ben, dina, staffTok] = await Promise.all([loginApi('ana'), loginApi('ben'), loginApi('dina'), loginApi('staff')]);
+  const gift = await api('POST', '/items', ana, { title: 'Electric fan (gift)', category_id: 4, pickup_point_id: 1, tier: 'low', listing_type: 'donate', claim_mode: 'barangay' });
+  expect(gift.status).toBe(201);
+  await api('POST', `/items/${gift.json.id}/claim`, ben);
+  await api('POST', `/items/${gift.json.id}/claim`, dina);
+  const dinaId = (await api('GET', '/admin/users?q=dina', staffTok)).json[0].id;
+  await api('POST', `/admin/users/${dinaId}/priority`, staffTok, { priority: true });
+
+  await portalLogin(page, 'staff');
+  await page.getByRole('link', { name: /Donations/ }).click();
+  const row = page.getByRole('row', { name: /Electric fan \(gift\)/ });
+  await expect(row.getByText('Priority household')).toBeVisible();
+  await row.getByRole('button', { name: 'Choose' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByLabel('Resident', { exact: true })).toHaveValue(String(dinaId));
+  await dialog.getByLabel(/The barangay delivers it/).check();
+  await dialog.getByRole('button', { name: 'Choose' }).click();
+  await expect(page.getByText('Chosen. Everyone involved was told.')).toBeVisible();
+  const mine = (await api('GET', '/donations/mine', dina)).json;
+  expect(mine.find((c) => c.item.id === gift.json.id).status).toBe('reserved');
+});

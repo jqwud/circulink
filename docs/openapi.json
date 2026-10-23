@@ -24,6 +24,10 @@
       "description": "Borrow requests and loans"
     },
     {
+      "name": "donations",
+      "description": "Donate / free to take: claims and handovers"
+    },
+    {
       "name": "community",
       "description": "Wanted board, kits, notifications, reports, announcements, impact"
     },
@@ -268,7 +272,7 @@
         "tags": [
           "account"
         ],
-        "summary": "Change name, phone, purok or language (an empty phone clears it)",
+        "summary": "Change name, phone, purok, language or thank-you board consent (an empty phone clears it)",
         "description": "Any logged-in account. Error codes: bad_name, bad_phone, bad_purok.",
         "responses": {
           "200": {
@@ -298,7 +302,8 @@
                   "name": {},
                   "phone": {},
                   "purok": {},
-                  "language": {}
+                  "language": {},
+                  "thanks_opt_in": {}
                 }
               }
             }
@@ -688,7 +693,7 @@
         "tags": [
           "items"
         ],
-        "summary": "Browse available listings (paged); origin = barangay or kapitbahay",
+        "summary": "Browse available listings (paged); origin = barangay or kapitbahay; type = lend or donate",
         "description": "Any logged-in account.",
         "parameters": [
           {
@@ -725,6 +730,14 @@
           },
           {
             "name": "origin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
             "in": "query",
             "required": false,
             "schema": {
@@ -781,7 +794,7 @@
           "items"
         ],
         "summary": "Share an item (may be held back by the automatic checks)",
-        "description": "A logged-in resident. Error codes: bad_title, bad_category, bad_pickup, bad_condition, bad_tier, prohibited_item, unkind_words, terms_required, bad_photo, not_verified.",
+        "description": "A logged-in resident. Error codes: bad_title, bad_category, bad_pickup, bad_condition, bad_tier, prohibited_item, unkind_words, terms_required, bad_claim_mode, donate_at_hall, not_donatable, donate_paused, regift_wait, bad_photo, not_verified.",
         "responses": {
           "201": {
             "description": "Success",
@@ -815,7 +828,9 @@
                   "tier": {},
                   "photo_url": {},
                   "repair_reuse": {},
-                  "accept_terms": {}
+                  "accept_terms": {},
+                  "listing_type": {},
+                  "claim_mode": {}
                 },
                 "required": [
                   "title",
@@ -994,7 +1009,7 @@
           "requests"
         ],
         "summary": "Ask to borrow an item; credits are held",
-        "description": "A logged-in resident. Error codes: bad_dates, past_date, too_long, shelf_paused, item_unavailable, own_item, duplicate_request, dates_booked, insufficient_credits, not_verified.",
+        "description": "A logged-in resident. Error codes: bad_dates, past_date, too_long, shelf_paused, donation_item, item_unavailable, own_item, duplicate_request, dates_booked, insufficient_credits, not_verified.",
         "responses": {
           "201": {
             "description": "Success",
@@ -1725,6 +1740,481 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}/claim": {
+      "post": {
+        "operationId": "postItemsIdClaim",
+        "tags": [
+          "donations"
+        ],
+        "summary": "Claim a free item (first to claim) or ask for it (the barangay chooses)",
+        "description": "A logged-in resident. Error codes: item_unavailable, own_item, already_claimed, already_asked, too_many_claims, claim_limit_month, claim_paused, interest_closed, not_verified.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/{id}/donation": {
+      "post": {
+        "operationId": "postItemsIdDonation",
+        "tags": [
+          "donations"
+        ],
+        "summary": "What the donor does with an unclaimed donation: extend, to_shelf or withdraw",
+        "description": "A logged-in resident. Error codes: bad_action, bad_state, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "action": {}
+                },
+                "required": [
+                  "action"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/mine": {
+      "get": {
+        "operationId": "getDonationsMine",
+        "tags": [
+          "donations"
+        ],
+        "summary": "My claims and the claims on my donations",
+        "description": "A logged-in resident.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}": {
+      "get": {
+        "operationId": "getDonationsClaimsId",
+        "tags": [
+          "donations"
+        ],
+        "summary": "One claim (claimer, donor or staff)",
+        "description": "Any logged-in account. Error codes: cannot_manage, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}/given": {
+      "post": {
+        "operationId": "postDonationsClaimsIdGiven",
+        "tags": [
+          "donations"
+        ],
+        "summary": "The donor (or staff) confirms the handover",
+        "description": "Any logged-in account. Error codes: bad_state, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}/received": {
+      "post": {
+        "operationId": "postDonationsClaimsIdReceived",
+        "tags": [
+          "donations"
+        ],
+        "summary": "The receiver (or staff, for a delivery) confirms the handover",
+        "description": "Any logged-in account. Error codes: bad_state, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}/release": {
+      "post": {
+        "operationId": "postDonationsClaimsIdRelease",
+        "tags": [
+          "donations"
+        ],
+        "summary": "The receiver lets the item go",
+        "description": "Any logged-in account. Error codes: bad_state, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}/cancel": {
+      "post": {
+        "operationId": "postDonationsClaimsIdCancel",
+        "tags": [
+          "donations"
+        ],
+        "summary": "The donor cancels a claim (once in 30 days without staff)",
+        "description": "Any logged-in account. Error codes: bad_state, cancel_needs_staff, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}/no-show": {
+      "post": {
+        "operationId": "postDonationsClaimsIdNoShow",
+        "tags": [
+          "donations"
+        ],
+        "summary": "The donor reports a missed pickup",
+        "description": "Any logged-in account. Error codes: bad_state, pickup_not_passed, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}/problem": {
+      "post": {
+        "operationId": "postDonationsClaimsIdProblem",
+        "tags": [
+          "donations"
+        ],
+        "summary": "The receiver reports the item is not as described",
+        "description": "Any logged-in account. Error codes: bad_state, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/donations/claims/{id}/messages": {
+      "get": {
+        "operationId": "getDonationsClaimsIdMessages",
+        "tags": [
+          "donations"
+        ],
+        "summary": "The thread of a claim, with the quick replies this person may send now",
+        "description": "Any logged-in account. Error codes: cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postDonationsClaimsIdMessages",
+        "tags": [
+          "donations"
+        ],
+        "summary": "Send a quick reply (residents) or free text (staff) on a claim",
+        "description": "Any logged-in account. Error codes: phrases_only, unknown_phrase, phrase_not_now, bad_slot, messaging_paused, same_phrase_wait, too_many_messages, thread_closed, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "phrase_id": {},
+                  "slot": {},
+                  "body": {}
                 }
               }
             }
@@ -2560,6 +3050,289 @@
         }
       }
     },
+    "/admin/users/{id}/claim-pause": {
+      "post": {
+        "operationId": "postAdminUsersIdClaimPause",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Pause or lift claiming donations; audited",
+        "description": "LGU staff or admin. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paused": {}
+                },
+                "required": [
+                  "paused"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/donate-pause": {
+      "post": {
+        "operationId": "postAdminUsersIdDonatePause",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Pause or lift donating; audited",
+        "description": "LGU staff or admin. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paused": {}
+                },
+                "required": [
+                  "paused"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/priority": {
+      "post": {
+        "operationId": "postAdminUsersIdPriority",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Mark or clear a priority household (staff only; no reason stored); audited",
+        "description": "LGU staff or admin. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "priority": {}
+                },
+                "required": [
+                  "priority"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/donations": {
+      "get": {
+        "operationId": "getAdminDonations",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Donation queue: barangay choices, open claims, to the Shelf, unclaimed",
+        "description": "LGU staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/donations/{id}/choose": {
+      "post": {
+        "operationId": "postAdminDonationsIdChoose",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Give a barangay-chosen donation to one resident (optional delivery); audited",
+        "description": "LGU staff or admin. Error codes: bad_state, bad_user, own_item, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user_id": {},
+                  "staff_delivery": {}
+                },
+                "required": [
+                  "user_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/donations/{id}/accept-shelf": {
+      "post": {
+        "operationId": "postAdminDonationsIdAcceptShelf",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Accept a donation at the hall as a Barangay Shelf item; audited",
+        "description": "LGU staff or admin. Error codes: bad_state, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/users/{id}/messaging": {
       "post": {
         "operationId": "postAdminUsersIdMessaging",
@@ -3143,7 +3916,8 @@
                   "tier": {},
                   "max_loan_days": {},
                   "pickup_point_id": {},
-                  "photo_url": {}
+                  "photo_url": {},
+                  "listing_type": {}
                 },
                 "required": [
                   "title",

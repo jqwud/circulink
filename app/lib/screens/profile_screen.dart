@@ -30,6 +30,9 @@ class ProfileScreen extends StatelessWidget {
     'on_time_star': <String>['On-time Star', 'Return 3 items on time.'],
     'repair_hero': <String>['Repair Hero', 'Share an item you fixed or reused.'],
     'zero_waste': <String>['Zero-waste Champ', 'Borrow 3 times and skip a purchase.'],
+    'generous_1': <String>['Mapagbigay', 'Give your first item away.'],
+    'generous_5': <String>['Mapagbigay 5', 'Give 5 items away.'],
+    'generous_15': <String>['Mapagbigay 15', 'Give 15 items away.'],
   };
 
   IconData _badgeIcon(String key) {
@@ -42,6 +45,10 @@ class ProfileScreen extends StatelessWidget {
         return Icons.alarm_on;
       case 'repair_hero':
         return Icons.build_circle;
+      case 'generous_1':
+      case 'generous_5':
+      case 'generous_15':
+        return Icons.card_giftcard;
       default:
         return Icons.eco;
     }
@@ -108,6 +115,19 @@ class ProfileScreen extends StatelessWidget {
         _tile(context, Icons.person_remove_outlined,
             boolOf(app.user?['deletion_requested']) ? context.t('Deletion requested. Tap to keep your account') : context.t('Delete my account'),
             () => askToDeleteAccount(context)),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(context.t('Thank-you board'), style: const TextStyle(fontWeight: FontWeight.w800)),
+          subtitle: Text(context.t('Show my first name and purok on the monthly thank-you board when I give items away.')),
+          value: boolOf(app.user?['thanks_opt_in']),
+          onChanged: (bool v) async {
+            try {
+              await context.app.updateProfile(<String, dynamic>{'thanks_opt_in': v});
+            } catch (e) {
+              if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
+            }
+          },
+        ),
         SectionTitle(context.t('Language')),
         const Align(alignment: Alignment.centerLeft, child: LanguageToggle()),
         const SizedBox(height: 18),

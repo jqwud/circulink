@@ -12,7 +12,15 @@ import '../widgets/common.dart';
 class MessagesScreen extends StatefulWidget {
   final int requestId;
   final String title;
-  const MessagesScreen({super.key, required this.requestId, required this.title});
+
+  /// A donation claim's thread instead of a borrow request's (then [requestId] is not used).
+  final int? claimId;
+
+  /// What "My situation is not listed" reports: the request, or (for a claim) the item.
+  final int? concernItemId;
+  const MessagesScreen({super.key, required this.requestId, required this.title, this.claimId, this.concernItemId});
+
+  String get threadPath => claimId != null ? '/donations/claims/$claimId/messages' : '/requests/$requestId/messages';
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
@@ -26,6 +34,8 @@ const Map<String, String> _situationNames = <String, String>{
   'return': 'Return',
   'problem': 'Problem or damage',
   'thanks': 'Thanks',
+  'donation': 'Free item pickup',
+  'donation_thanks': 'Thanks',
 };
 
 class _MessagesScreenState extends State<MessagesScreen> {
@@ -43,7 +53,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     if (_sending) return;
     setState(() => _sending = true);
     try {
-      await context.app.api.post('/requests/${widget.requestId}/messages', body);
+      await context.app.api.post(widget.threadPath, body);
       _text.clear();
       if (mounted) setState(() => _reloadTick++);
     } catch (e) {
@@ -141,7 +151,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
 
   Future<void> _reportConcern() async {
     final bool? sent = await showHiSheet<bool>(context, title: context.tx('My situation is not listed'), builder: (BuildContext sheet) {
-      return _ConcernForm(requestId: widget.requestId);
+      return _ConcernForm(targetType: widget.claimId != null ? 'item' : 'request', targetId: widget.claimId != null ? (widget.concernItemId ?? 0) : widget.requestId);
     });
     if (sent == true && mounted) showMessage(context, context.tx('Sent to barangay staff. They will answer within 1 working day.'));
   }
@@ -152,7 +162,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
       appBar: hiAppBar(context.t('Messages')),
       body: AsyncView<Map<String, dynamic>>(
         refreshKey: _reloadTick,
-        loader: () async => mapOf(await context.app.api.get('/requests/${widget.requestId}/messages')),
+        loader: () async => mapOf(await context.app.api.get(widget.threadPath)),
         builder: (BuildContext ctx, Map<String, dynamic> data, Future<void> Function() reload) {
           final List<Map<String, dynamic>> messages = listOf(data['messages']);
           final List<Map<String, dynamic>> phrases = listOf(data['phrases']);
@@ -271,8 +281,9 @@ class _PhraseButton extends StatelessWidget {
 
 /// "My situation is not listed": a topic, an optional note, and a reminder that only staff read it.
 class _ConcernForm extends StatefulWidget {
-  final int requestId;
-  const _ConcernForm({required this.requestId});
+  final String targetType;
+  final int targetId;
+  const _ConcernForm({required this.targetType, required this.targetId});
 
   @override
   State<_ConcernForm> createState() => _ConcernFormState();
@@ -304,8 +315,8 @@ class _ConcernFormState extends State<_ConcernForm> {
     });
     try {
       await context.app.api.post('/reports', <String, dynamic>{
-        'target_type': 'request',
-        'target_id': widget.requestId,
+        'target_type': widget.targetType,
+        'target_id': widget.targetId,
         'reason': _topic,
         if (_note.text.trim().isNotEmpty) 'details': _note.text.trim(),
       });

@@ -7,6 +7,8 @@ import '../core/notification_text.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'request_detail.dart';
+import 'claim_screen.dart';
+import 'item_detail.dart';
 
 /// M15: everything the app told me. Tapping a loan notice opens that request.
 class NotificationsScreen extends StatefulWidget {
@@ -19,7 +21,23 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _markedRead = false;
 
-  static const Set<String> _noRequest = <String>{'wanted_offer', 'verification_new', 'verified', 'verification_rejected', 'announcement'};
+  static const Set<String> _noRequest = <String>{
+    'wanted_offer', 'verification_new', 'verified', 'verification_rejected', 'announcement', 'item_removed', 'donation_withdrawn',
+  };
+
+  /// Notices about a donation claim open the claim; notices about a listing open the listing (their ref is
+  /// the item, not a request); everything else opens the borrow request.
+  static const Set<String> _claimTypes = <String>{
+    'claim_new', 'claim_released', 'claim_cancelled', 'claim_no_show', 'claim_paused', 'claim_expired', 'claim_message',
+    'donation_given', 'donation_chosen', 'donation_chosen_donor', 'donation_not_chosen', 'donate_paused',
+  };
+  static const Set<String> _itemTypes = <String>{'item_hidden', 'item_shown', 'item_flagged', 'donation_unclaimed', 'donation_to_shelf'};
+
+  Widget _target(String type, int ref) {
+    if (_claimTypes.contains(type)) return ClaimScreen(claimId: ref);
+    if (_itemTypes.contains(type)) return ItemDetailScreen(itemId: ref);
+    return RequestDetailScreen(requestId: ref);
+  }
 
   IconData _icon(String type) {
     switch (type) {
@@ -50,7 +68,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'dispute_settled':
         return Icons.gavel;
       case 'message':
+      case 'claim_message':
         return Icons.chat_bubble_outline;
+      case 'claim_new':
+      case 'donation_given':
+      case 'donation_chosen':
+      case 'donation_chosen_donor':
+      case 'donation_unclaimed':
+      case 'donation_to_shelf':
+        return Icons.volunteer_activism;
       case 'item_hidden':
       case 'request_cancelled_by_staff':
         return Icons.visibility_off_outlined;
@@ -103,7 +129,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 color: unread ? HiColors.primarySoft : Colors.white,
                 borderColor: unread ? HiColors.primarySoft : HiColors.line,
                 onTap: opens
-                    ? () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => RequestDetailScreen(requestId: intOf(n['ref_id']))))
+                    ? () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => _target(type, intOf(n['ref_id']))))
                     : null,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,

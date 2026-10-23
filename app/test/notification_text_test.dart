@@ -42,6 +42,8 @@ void main() {
       'checkin_problem', 'borrower_returned', 'credit_earned', 'credit_capped', 'late_return', 'return_confirmed', 'dispute',
       'dispute_settled', 'verified', 'verification_rejected', 'item_removed', 'report_resolved', 'wanted_offer', 'message',
       'request_cancelled_by_staff', 'item_hidden', 'item_shown', 'item_flagged', 'request_extended', 'shelf_paused',
+      'claim_new', 'claim_released', 'claim_cancelled', 'claim_no_show', 'claim_paused', 'donate_paused', 'claim_expired', 'donation_given',
+      'donation_chosen', 'donation_chosen_donor', 'donation_not_chosen', 'donation_unclaimed', 'donation_withdrawn', 'donation_to_shelf', 'claim_message',
     ];
     for (final String type in types) {
       for (final (String Function(String), String) lang in <(String Function(String), String)>[(fil, 'fil'), (en, 'en')]) {

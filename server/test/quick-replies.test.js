@@ -30,8 +30,8 @@ before(async () => {
 after(async () => { await s.close(); await pool.end(); });
 
 describe('the phrase catalog', () => {
-  test('has the 35 loan phrases, unique ids, both languages, and replies that exist', () => {
-    assert.equal(PHRASES.length, 35);
+  test('has the 42 phrases (35 for loans, 7 for donations), unique ids, both languages, and replies that exist', () => {
+    assert.equal(PHRASES.length, 42);
     assert.equal(new Set(PHRASES.map((p) => p.id)).size, PHRASES.length);
     for (const p of PHRASES) {
       assert.ok(p.en && p.fil, p.id);

@@ -2,6 +2,23 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 29: Donate / free to take (2026-10-24)
+
+Hiraman 2.0, spec section 3. Donations never move credits.
+
+- **Give it away:** "Share an item" now starts with **Lend it** or **Give it away**. A gift is either **First to claim** (the first verified neighbor gets 48 hours to pick it up) or **Let the barangay choose** (neighbors ask for 3 days, then staff choose, priority households first). Valuable items go to the hall; food, baby products and safety gear cannot be given. Free items show a yellow **Libre / Free to take** badge, and Browse has a **Free to take** filter.
+- **Handover:** both sides tap (**I gave it**, **I got it**) and the item is marked given. Each claim has its own quick-reply thread; the donor's "You can pick it up on…" sets the pickup day. The receiver can let it go or report a problem, and the donor can report a no-show or cancel (once a month without staff).
+- **Fair use:**
+    - 2 open claims at a time, 4 in 30 days.
+    - 2 no-shows in 60 days pause claiming for 14 days; 2 problem donations in 90 days pause donating for 30 days. Staff can lift both.
+    - No donating in a category within 30 days of receiving something in it.
+    - A reservation that runs out ends quietly.
+- **Unclaimed:** after 14 days the donor chooses: keep it 14 more days, give it to the Barangay Shelf (staff accept it at the hall and it becomes a Shelf item), or take it down. With no answer 7 days later it is taken down.
+- **Staff (portal Donations page):** choose who receives a barangay-chosen gift (priority households first, or any resident), optionally with barangay delivery, and follow open handovers. **Priority household** is a staff-only flag on the Residents page; residents never see it and no reason is stored. Staff can also give Barangay items away from the Shelf page.
+- **Recognition:** Mapagbigay badges (1, 5 and 15 gifts) and a monthly thank-you board on the Impact page (first name and purok, only for donors who opt in on the Me tab).
+- **Fixed:** tapping a "listing hidden / shown / checked" notice opened a borrow request with the listing's number; it now opens the listing.
+- Privacy notice updated (gifts, claims, the thank-you board). Migration 014 (backup taken first). Tests: 20 new server tests (`donations.test.js`), an app end-to-end gift journey, a portal journey for choosing a receiver, and the Donations page in the accessibility scan.
+
 ## Batch 28: Barangay or neighbor, at a glance (2026-10-24)
 
 Hiraman 2.0, spec section 5.

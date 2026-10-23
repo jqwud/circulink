@@ -5,7 +5,7 @@ import path from 'node:path';
 import { pool, q, one, withTx, todayPH, phTimestamp } from './db.js';
 import { config } from './config.js';
 import { RULES } from './rules.js';
-import { OUT_LOANS_SQL, addCredits, audit, checkinState, loadRequest, notify } from './services.js';
+import { OUT_LOANS_SQL, addCredits, addDays, audit, checkinState, loadRequest, notify } from './services.js';
 import { removePrivateFile } from './uploads.js';
 import { safeErrorLine, safeMessage } from './errors.js';
 
@@ -161,6 +161,51 @@ export async function deleteOldMessages(now = new Date()) {
   return { deleted: r.affectedRows };
 }
 
+// ---------- donations ----------
+// Reservations nobody completed end quietly (no penalty: the donor can report a missed pickup instead).
+// A donation unclaimed by its open_until day: the donor is asked to keep it longer, give it to the Shelf or
+// take it down; with no answer donationAnswerDays later, it is taken down.
+export async function runDonations(now = new Date()) {
+  const today = todayPH(now);
+  const out = { expired: 0, asked: 0, withdrawn: 0 };
+  const due = await q("SELECT id FROM donation_claims WHERE status = 'reserved' AND reserved_until < ?", [phTimestamp(now)]);
+  for (const { id } of due) {
+    await withTx(async (conn) => {
+      const [[c]] = await conn.query(
+        `SELECT c.*, i.title, i.owner_id FROM donation_claims c JOIN items i ON i.id = c.item_id WHERE c.id = ? FOR UPDATE`, [id]);
+      if (c.status !== 'reserved' || phTimestamp(new Date(c.reserved_until)) >= phTimestamp(now)) return;
+      await conn.query("UPDATE donation_claims SET status = 'released', closed_at = NOW() WHERE id = ?", [c.id]);
+      await conn.query("UPDATE items SET donation_status = 'open' WHERE id = ? AND donation_status = 'reserved'", [c.item_id]);
+      for (const uid of [c.claimer_id, c.owner_id].filter(Boolean)) {
+        await notify(conn, uid, 'claim_expired', `Reservation ended: ${c.title}`, 'The pickup was not confirmed in time, so it is offered to others again.', c.id, { item: c.title });
+      }
+      out.expired++;
+    });
+  }
+  const open = await q(
+    `SELECT i.id, i.title, i.owner_id, i.open_until,
+            EXISTS (SELECT 1 FROM notifications n WHERE n.type = 'donation_unclaimed' AND n.ref_id = i.id
+                     AND JSON_UNQUOTE(JSON_EXTRACT(n.params, '$.until')) = DATE_FORMAT(i.open_until, '%Y-%m-%d')) AS asked
+       FROM items i
+      WHERE i.listing_type = 'donate' AND i.donation_status = 'open' AND i.status = 'available' AND i.owner_id IS NOT NULL AND i.open_until <= ?`, [today]);
+  for (const i of open) {
+    if (!i.asked) {
+      await notify({ query: q }, i.owner_id, 'donation_unclaimed', `Nobody has claimed ${i.title} yet`,
+        `Keep it listed ${RULES.donationOpenDays} more days, give it to the Barangay Shelf, or take it down. With no answer, it is taken down in ${RULES.donationAnswerDays} days.`,
+        i.id, { item: i.title, until: i.open_until, days: RULES.donationOpenDays });
+      out.asked++;
+    } else if (addDays(i.open_until, RULES.donationAnswerDays) <= today) {
+      await withTx(async (conn) => {
+        await conn.query("UPDATE items SET donation_status = 'withdrawn', status = 'removed', removed_by = 'owner' WHERE id = ? AND donation_status = 'open'", [i.id]);
+        await conn.query("UPDATE donation_claims SET status = 'released', closed_at = NOW() WHERE item_id = ? AND status = 'waiting'", [i.id]);
+        await notify(conn, i.owner_id, 'donation_withdrawn', `Taken down: ${i.title}`, 'Nobody claimed it and there was no answer. You can list it again any time.', i.id, { item: i.title });
+      });
+      out.withdrawn++;
+    }
+  }
+  return out;
+}
+
 // ---------- the runner ----------
 export const JOBS = [
   { name: 'reminders', everyMs: 60 * MINUTE, run: runReminders },
@@ -169,6 +214,7 @@ export const JOBS = [
   { name: 'delete_old_id_photos', everyMs: 60 * MINUTE, run: deleteOldIdPhotos },
   { name: 'cleanup_uploads', everyMs: DAY, run: cleanupUploads },
   { name: 'delete_old_messages', everyMs: DAY, run: deleteOldMessages },
+  { name: 'donations', everyMs: 60 * MINUTE, run: runDonations },
 ];
 
 // Runs every job whose interval has passed since its last run, and records the result in job_runs.

@@ -3,8 +3,9 @@ import { config } from '../config.js';
 import { pool, q, one, withTx, todayPH, likeText, purokNames, pageOf } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { RULES, SCREENING, creditCost, findProhibited, handledByStaff, screenListing, itemMaxDays } from '../rules.js';
-import { flagItemTx } from '../services.js';
+import { RULES, SCREENING, creditCost, findProhibited, findNotDonatable, handledByStaff, screenListing, itemMaxDays } from '../rules.js';
+import { claimDonation, donationAction } from '../donations.js';
+import { flagItemTx, addDays } from '../services.js';
 import { requireKind } from '../kindwords.js';
 import { ownPhoto } from '../uploads.js';
 
@@ -34,6 +35,10 @@ export function mapItem(r) {
     is_shelf: !!r.is_shelf,
     origin: r.is_shelf ? 'barangay' : 'kapitbahay', // who it belongs to: the barangay, or a neighbor (kapitbahay)
     max_loan_days: itemMaxDays(r),
+    listing_type: r.listing_type || 'lend',
+    claim_mode: r.claim_mode || null,
+    donation_status: r.donation_status || null,
+    open_until: r.open_until || null,
     repair_reuse: !!r.repair_reuse,
     status: r.status,
     removed_by: r.removed_by || null,
@@ -66,9 +71,11 @@ router.get('/meta', authRequired, wrap(async (_req, res) => {
 router.get('/puroks', wrap(async (_req, res) => res.json(await purokNames())));
 
 router.get('/items', authRequired, wrap(async (req, res) => {
-  const { q: text, category_id, tier, shelf, owner, origin } = req.query;
-  const where = ["i.status = 'available'", "i.review_status = 'ok'"];
+  const { q: text, category_id, tier, shelf, owner, origin, type } = req.query;
+  // Donations show only while nobody has claimed them.
+  const where = ["i.status = 'available'", "i.review_status = 'ok'", "(i.listing_type = 'lend' OR i.donation_status = 'open')"];
   const params = [];
+  if (['lend', 'donate'].includes(type)) { where.push('i.listing_type = ?'); params.push(type); }
   if (text) { where.push('(i.title LIKE ? OR i.description LIKE ?)'); params.push(likeText(text), likeText(text)); }
   if (category_id) { where.push('i.category_id = ?'); params.push(Number(category_id)); }
   if (['low', 'medium', 'high'].includes(tier)) { where.push('i.tier = ?'); params.push(tier); }
@@ -78,6 +85,9 @@ router.get('/items', authRequired, wrap(async (req, res) => {
   const rows = await q(`${SELECT_ITEM} WHERE ${where.join(' AND ')} ORDER BY i.is_shelf DESC, i.created_at DESC, i.id DESC ${pageOf(req.query, config.pages.residentDefault, config.pages.residentMax)}`, params);
   res.json(rows.map(mapItem));
 }));
+
+router.post('/items/:id/claim', authRequired, wrap(async (req, res) => res.status(201).json(await claimDonation(Number(req.params.id), req.user))));
+router.post('/items/:id/donation', authRequired, wrap(async (req, res) => res.json(await donationAction(Number(req.params.id), req.user, req.body?.action))));
 
 router.get('/items/:id', authRequired, wrap(async (req, res) => {
   const row = await one(`${SELECT_ITEM} WHERE i.id = ? AND i.status <> 'removed'`, [req.params.id]);
@@ -104,9 +114,23 @@ router.get('/my/items', authRequired, wrap(async (req, res) => {
         WHERE i.owner_id = ? AND r.status IN ('pending','approved','handed_over')) x
       WHERE x.nth = 1`, [req.user.id]);
   const byItem = new Map(loans.map(({ item_id: itemId, nth: _nth, ...loan }) => [itemId, loan]));
+  // Donations: the open claim (if any) and how many residents asked, also in one query.
+  const claims = await q(
+    `SELECT c.item_id, c.id, c.status, SUM(c.status = 'waiting') OVER (PARTITION BY c.item_id) AS asked
+       FROM donation_claims c JOIN items i ON i.id = c.item_id
+      WHERE i.owner_id = ? AND c.status IN ('waiting','reserved')`, [req.user.id]);
+  const claimOf = new Map();
+  for (const c of claims) {
+    const prev = claimOf.get(c.item_id);
+    if (!prev || c.status === 'reserved') claimOf.set(c.item_id, { id: c.status === 'reserved' ? c.id : null, status: c.status, asked: Number(c.asked) });
+  }
   res.json(rows.map((r) => {
     const loan = byItem.get(r.id);
-    return { ...mapItem(r), current_request: loan ? { ...loan, borrower: String(loan.borrower).split(' ')[0] } : null };
+    return {
+      ...mapItem(r),
+      current_request: loan ? { ...loan, borrower: String(loan.borrower).split(' ')[0] } : null,
+      current_claim: claimOf.get(r.id) || null,
+    };
   }));
 }));
 
@@ -138,19 +162,41 @@ function readItemBody(body, { partial = false } = {}) {
   return out;
 }
 
+// Giving an item away: how it is claimed, and the rules that keep donations safe and fair (spec section 3).
+async function readDonation(user, f, body) {
+  if (!['first', 'barangay'].includes(body.claim_mode)) throw bad('Choose first to claim, or let the barangay choose.', 'bad_claim_mode');
+  if ((f.tier || 'low') === 'high') throw bad('Valuable items are given to the barangay: please bring it to the barangay hall.', 'donate_at_hall');
+  const word = findNotDonatable(f.title, f.description);
+  if (word) throw bad(`"${word}" cannot be given away on Hiraman (food, baby products and safety gear expire or can be unsafe).`, 'not_donatable');
+  const me = await one('SELECT donate_paused_until FROM users WHERE id = ?', [user.id]);
+  if (me.donate_paused_until && me.donate_paused_until >= todayPH()) {
+    throw forbidden(`After donations with problems, you can give items again from ${addDays(me.donate_paused_until, 1)}.`, 'donate_paused');
+  }
+  // Someone who just received a donation does not pass on the same kind of thing at once (no gift loops).
+  const recent = await one(
+    `SELECT c.id FROM donation_claims c JOIN items i ON i.id = c.item_id
+      WHERE c.claimer_id = ? AND c.status = 'given' AND i.category_id = ? AND c.closed_at >= NOW() - INTERVAL ? DAY LIMIT 1`,
+    [user.id, f.category_id, RULES.regiftWaitDays]);
+  if (recent) throw bad(`You received a donation in this category recently. You can give one in it after ${RULES.regiftWaitDays} days.`, 'regift_wait');
+  return { claim_mode: body.claim_mode };
+}
+
 router.post('/items', authRequired, requireApproved, wrap(async (req, res) => {
   if (req.user.role !== 'resident') throw forbidden('Staff add Barangay Shelf items from the portal.', 'residents_only');
   const f = readItemBody(req.body);
   if (!f.pickup_point_id) throw bad('Choose a pickup point.', 'bad_pickup');
   await requireKind(req.user, 'listing', f.title, f.description);
+  const donation = req.body?.listing_type === 'donate' ? await readDonation(req.user, f, req.body) : null;
   // Once, before the first listing: neighbors share at their own risk; the barangay mediates but does not pay.
   if (!req.user.lender_terms_accepted_at) {
     if (req.body?.accept_terms !== true) throw bad('Please read and accept the lending terms first.', 'terms_required');
     await q('UPDATE users SET lender_terms_accepted_at = NOW() WHERE id = ?', [req.user.id]);
   }
   const [r] = await pool.query(
-    'INSERT INTO items (owner_id, category_id, title, description, item_condition, tier, pickup_point_id, photo_url, repair_reuse) VALUES (?,?,?,?,?,?,?,?,?)',
-    [req.user.id, f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low', f.pickup_point_id, f.photo_url || null, f.repair_reuse || 0]);
+    `INSERT INTO items (owner_id, category_id, title, description, item_condition, tier, pickup_point_id, photo_url, repair_reuse,
+                        listing_type, claim_mode, donation_status, open_until) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [req.user.id, f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low', f.pickup_point_id, f.photo_url || null, f.repair_reuse || 0,
+      donation ? 'donate' : 'lend', donation?.claim_mode || null, donation ? 'open' : null, donation ? addDays(todayPH(), RULES.donationOpenDays) : null]);
   // Automatic checks: the listing itself, and a brand-new account sharing many items at once.
   const flags = screenListing({ title: f.title, description: f.description, tier: f.tier || 'low' });
   const young = await one(

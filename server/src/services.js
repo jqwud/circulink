@@ -121,6 +121,7 @@ export async function createRequestTx(conn, { borrower, itemId, start, end, kitI
   const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
   if (!item || item.status !== 'available' || item.review_status !== 'ok') throw bad('This item is not available right now.', 'item_unavailable');
   if (item.owner_id === borrower.id) throw bad('You cannot borrow your own item.', 'own_item');
+  if (item.listing_type === 'donate') throw bad('This item is free to take: claim it instead of borrowing.', 'donation_item');
   const maxDays = itemMaxDays(item);
   if (daysBetween(start, end) + 1 > maxDays) throw bad(`You can borrow this item for up to ${maxDays} days.`, 'too_long');
   if (item.is_shelf) {

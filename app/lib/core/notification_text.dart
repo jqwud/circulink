@@ -102,6 +102,38 @@ import 'format.dart';
       return (title: fill('Your report was resolved'), body: str(p['outcome']));
     case 'wanted_offer':
       return (title: fill('{name} can help: {wanted}'), body: fill('Check My Items or message them at the barangay pickup point.'));
+    case 'claim_new':
+      return (title: fill('{name} claimed {item}'), body: fill('Agree on a pickup time in the messages.'));
+    case 'claim_released':
+      return (title: fill('{item} is free again'), body: fill('The person who claimed it cannot pick it up. It is offered to others again.'));
+    case 'claim_cancelled':
+      return (title: fill('The donor cannot give {item}'), body: fill('Sorry. Look for other free items, or post on the Wanted board.'));
+    case 'claim_no_show':
+      return (title: fill('Missed pickup: {item}'), body: fill('The donor says you did not come, so it is offered to others.'));
+    case 'claim_paused':
+      return (title: fill('Claiming paused'), body: fill('After missed pickups, you can claim donations again after {until_date}.'));
+    case 'donate_paused':
+      return (title: fill('Donating paused'), body: fill('After donations with problems, you can give items again after {until_date}.'));
+    case 'claim_expired':
+      return (title: fill('Reservation ended: {item}'), body: fill('The pickup was not confirmed in time, so it is offered to others again.'));
+    case 'donation_given':
+      return (title: fill('Given: {item}'), body: fill('Thank you for sharing with your neighbors.'));
+    case 'donation_chosen':
+      return (title: fill('The barangay chose you for {item}'), body: fill(p['delivery'] == true ? 'Barangay staff will bring it to you.' : 'Agree on a pickup time in the messages.'));
+    case 'donation_chosen_donor':
+      return (title: fill('The barangay chose a household for {item}'), body: fill(p['delivery'] == true ? 'Please bring it to the barangay hall.' : 'They will agree on a pickup time with you.'));
+    case 'donation_not_chosen':
+      return (title: fill('{item} went to another household'), body: fill('Thank you for asking. Watch Free to take for more.'));
+    case 'donation_unclaimed':
+      return (title: fill('Nobody has claimed {item} yet'), body: fill('Keep it listed longer, give it to the Barangay Shelf, or take it down.'));
+    case 'donation_withdrawn':
+      return (title: fill('Taken down: {item}'), body: fill('Nobody claimed it and there was no answer. You can list it again any time.'));
+    case 'donation_to_shelf':
+      return (title: fill('{item} is now on the Barangay Shelf'), body: fill('Thank you! Neighbors can borrow it from the barangay hall.'));
+    case 'claim_message':
+      if (p['staff'] == true) p['name'] = tr('Barangay staff');
+      final String filC = str(p['preview_fil']);
+      return (title: fill('{name} wrote about {item}'), body: lang == 'fil' && filC.isNotEmpty ? filC : str(p['preview']));
     case 'request_extended':
       return (title: fill('More time for {item}'), body: fill('Please return it by {end_date}.'));
     case 'shelf_paused':

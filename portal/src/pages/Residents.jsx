@@ -6,7 +6,8 @@ import { useI18n } from '../i18n.jsx';
 import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, LoadMore, usePaged, useLoad, useToast, useDateFormat } from '../components.jsx';
 
 // After 2 late returns of Barangay items, a resident borrows only neighbors' items until this day.
-const pausedShelf = (u) => !!u.shelf_paused_until && u.shelf_paused_until >= new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+const pausedUntil = (d) => !!d && d >= new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+const pausedShelf = (u) => pausedUntil(u.shelf_paused_until);
 
 export default function Residents() {
   const { t } = useI18n();
@@ -43,6 +44,19 @@ export default function Residents() {
     try {
       await api(`/admin/users/${u.id}/messaging`, { method: 'POST', body: { paused: false } });
       toast(t('Messages allowed again.')); reload(); detail.reload();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
+  // Priority households come first for barangay-chosen gifts. Staff only; residents never see it.
+  async function setPriority(u, on) {
+    try {
+      await api(`/admin/users/${u.id}/priority`, { method: 'POST', body: { priority: on } });
+      toast(on ? t('Marked as a priority household.') : t('No longer a priority household.')); detail.reload();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
+  async function liftPause(u, kind) {
+    try {
+      await api(`/admin/users/${u.id}/${kind}`, { method: 'POST', body: { paused: false } });
+      toast(t('Pause lifted.')); reload(); detail.reload();
     } catch (e) { toast(e.message, 'bad'); }
   }
   async function liftShelfPause(u) {
@@ -98,7 +112,7 @@ export default function Residents() {
                 <dt>Email</dt><dd>{detail.data.user.email}</dd>
                 <dt>{t('Phone')}</dt><dd>{detail.data.user.phone || '–'}</dd>
                 <dt>{t('Purok')}</dt><dd>{detail.data.user.purok || '–'}</dd>
-                <dt>{t('Status')}</dt><dd><Badge value={detail.data.user.verification_status} />{detail.data.user.suspended && <> <Badge value="suspended" /></>}{detail.data.user.messaging_paused && <> <Badge value="suspended" label={t('Messages paused')} /></>}{pausedShelf(detail.data.user) && <> <Badge value="warn" label={t('Barangay items paused until {d}').replace('{d}', detail.data.user.shelf_paused_until)} /></>}</dd>
+                <dt>{t('Status')}</dt><dd><Badge value={detail.data.user.verification_status} />{detail.data.user.suspended && <> <Badge value="suspended" /></>}{detail.data.user.messaging_paused && <> <Badge value="suspended" label={t('Messages paused')} /></>}{pausedShelf(detail.data.user) && <> <Badge value="warn" label={t('Barangay items paused until {d}').replace('{d}', detail.data.user.shelf_paused_until)} /></>}{detail.data.user.priority_household && <> <Badge value="info" label={t('Priority household')} /></>}{pausedUntil(detail.data.user.claim_paused_until) && <> <Badge value="warn" label={t('Claiming paused')} /></>}{pausedUntil(detail.data.user.donate_paused_until) && <> <Badge value="warn" label={t('Donating paused')} /></>}</dd>
                 <dt>{t('Credits')}</dt><dd>{detail.data.user.credits}</dd>
                 <dt>{t('Registered')}</dt><dd>{fmt(detail.data.user.created_at)}</dd>
               </dl>
@@ -125,6 +139,11 @@ export default function Residents() {
                     {detail.data.user.deletion_requested ? t('Delete account (requested)') : t('Delete account')}
                   </button>
                 )}
+                <button className="btn" onClick={() => setPriority(detail.data.user, !detail.data.user.priority_household)}>
+                  {detail.data.user.priority_household ? t('Remove priority household') : t('Mark as priority household')}
+                </button>
+                {pausedUntil(detail.data.user.claim_paused_until) && <button className="btn" onClick={() => liftPause(detail.data.user, 'claim-pause')}>{t('Allow claiming')}</button>}
+                {pausedUntil(detail.data.user.donate_paused_until) && <button className="btn" onClick={() => liftPause(detail.data.user, 'donate-pause')}>{t('Allow donating')}</button>}
                 {pausedShelf(detail.data.user) && (
                   <button className="btn" onClick={() => liftShelfPause(detail.data.user)}>{t('Allow Barangay items')}</button>
                 )}
