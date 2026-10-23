@@ -19,6 +19,11 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | P1 ID photos | Deleted 7 days after approval or rejection; a new upload deletes the old file at once. |
 | P2 Privacy | Notice and consent at sign-up and ID upload, delete-account request, "My data" screen. The barangay fills in its Data Protection Officer details. |
 | Libraries | Allowed when needed: `url_launcher` (call/text buttons), `flutter_secure_storage` (encrypted token). Dev only: ESLint, Prettier, later Playwright and axe. |
+| Loan control (2026-10-23) | Owners keep approving, handing over and confirming returns for their low and medium items; staff can step in on any request from the portal (approve, cancel, close, fix). |
+| Server setup (2026-10-23) | Real (release) builds show residents no server address or technical status; the address is built in. Test builds keep the tools for USB and hotspot testing. |
+| Rule numbers (2026-10-23) | Admins edit them on the portal's Rules page within safe limits; every change is in the audit log; the app reads them from the server. |
+| Admin tools (2026-10-23) | Staff can edit or hide any listing, cancel or close any request (with correct refunds), and review listings the system flags automatically as unusual or possibly harmful. Not now: manual credit adjustment, pausing app features. |
+| Resident view (2026-10-23) | Residents see only what they need. The component gallery leaves the app (developers open `lib/main_gallery.dart`); badges become an even grid. |
 
 ## Batches
 
@@ -42,6 +47,18 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Done |
 | 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Done |
 | 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Done |
+| **Next (agreed 2026-10-23)** | | | | |
+| 16 | Phone test of batches 5 to 15, and anything it turns up | | S | Partly done (CI green; phone test by the user went well) |
+| 17 | Resident view: even badge grid, gallery out of the app, no server tools or technical status in release builds | Resident view | S | Planned |
+| 18 | Staff control of requests and listings: approve, cancel or close any request with correct refunds; edit or hide any listing | Admin tools | M | Planned |
+| 19 | Automatic flags: unusual or possibly harmful listings go to a staff review queue | Admin tools | M | Planned |
+| 20 | Rule numbers editable by admins in the portal, within limits, audited | Rule numbers | M | Planned |
+| 21 | Long lists in pages | B9 | M | Planned |
+| 22 | Code tidy-up without behavior change | A6, A7, A3 | M | Planned |
+| 23 | One rule for Philippine time everywhere | B14 | S–M | Planned |
+| 24 | API description (OpenAPI) | B12 | M | Planned |
+| 25 | End-to-end, accessibility and load tests | QA | L | Planned |
+| 26 | Release-ready app: signing key (kept by the team), no cloud backup of app data, versions, checklist | S1 | S | Planned |
 | **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1) | | | Later |
 | Summary | One-page summary for the instructor (`docs/INSTRUCTOR_SUMMARY.md`) | | S | Done |
 | **Skip** | Push notifications, hosting/HTTPS now, iOS build, ORM or framework switch, separate worker service, certificate pinning, root detection | | | Skipped |
