@@ -38,6 +38,39 @@ export function findProhibited(...texts) {
   return PROHIBITED.find((w) => new RegExp(`\\b${w}(s|es)?\\b`, 'i').test(hay)) || null;
 }
 
+// ---------- automatic flags ----------
+// Listings that look unusual or possibly harmful are held back (hidden from neighbors) until staff check them.
+// Plainly banned words are refused outright by findProhibited; these checks catch what slips past it.
+export const SCREENING = {
+  // Valuable or hazardous things that belong in the high tier (handled at the barangay hall).
+  valueWords: ['laptop', 'computer', 'projector', 'camera', 'drone', 'tablet', 'ipad', 'iphone', 'cellphone', 'smartphone',
+    'television', 'tv', 'generator', 'motorcycle', 'scooter', 'aircon', 'refrigerator', 'chainsaw', 'welding', 'amplifier',
+    'karaoke', 'sound system', 'jewelry', 'gold'],
+  newAccountHours: 24,     // an account younger than this ...
+  newAccountListings: 3,   // ... sharing this many items is held back from this item on
+  reportsToFlag: 2,        // different neighbors reporting the same item
+};
+
+const LEET = { '@': 'a', 4: 'a', 0: 'o', 1: 'i', '!': 'i', 3: 'e', 5: 's', $: 's', 7: 't' };
+
+// Undoes common ways of hiding a word: letters spaced or dotted apart ("g u n", "g.u.n"),
+// numbers and symbols for letters ("g@mot", "p1stol") and stretched letters ("guuun").
+export function normalizeDisguise(text) {
+  return String(text || '').toLowerCase()
+    .replace(/\b(?:[a-z0-9@$!](?:[\s.\-_*]+|$)){3,}/g, (m) => ` ${m.replace(/[\s.\-_*]+/g, '')} `)
+    .replace(/[@4013!5$7]/g, (c) => LEET[c])
+    .replace(/(.)\1{2,}/g, '$1');
+}
+
+// What the listing itself looks like. (Account age and reports are checked where they happen.)
+export function screenListing({ title, description, tier }) {
+  const flags = [];
+  const raw = `${title || ''} ${description || ''}`;
+  if (!findProhibited(title, description) && findProhibited(normalizeDisguise(raw))) flags.push('disguised_word');
+  if (tier !== 'high' && SCREENING.valueWords.some((w) => new RegExp(`\\b${w}s?\\b`, 'i').test(raw))) flags.push('value_tier');
+  return flags;
+}
+
 export function creditCost(item) {
   if (item.is_shelf) return RULES.shelfCost;
   return item.tier === 'high' ? RULES.costHigh : RULES.costLowMedium;

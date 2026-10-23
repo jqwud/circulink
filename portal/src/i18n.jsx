@@ -150,6 +150,11 @@ const FIL = {
   'Cancel request': 'Kanselahin ang hiling', 'Keep it': 'Huwag na',
   'The borrower gets the held credits back. Both neighbors see your reason.': 'Maibabalik sa humiram ang nakalaang credits. Makikita ng dalawang kapitbahay ang dahilan mo.',
   'Listings flagged as possibly harmful': 'Mga listing na posibleng mapanganib',
+  '{n} listing(s) may harm the community': '{n} listing ang posibleng makasama sa komunidad',
+  'They are hidden from neighbors until you check them. Review them first.': 'Nakatago ang mga ito sa mga kapitbahay hanggang masuri mo. Unahin itong suriin.',
+  'Review now': 'Suriin ngayon', 'flagged': 'naka-flag',
+  'flag_disguised_word': 'mukhang bawal na gamit na itinago ang pagkakasulat', 'flag_value_tier': 'mamahaling gamit na hindi high tier',
+  'flag_new_account_burst': 'maraming listing mula sa bagong account', 'flag_reported': 'inireport ng ilang kapitbahay',
   'Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.':
     'Permanenteng aalisin ang pangalan, contact, litrato ng ID at mga mensahe nila. Mananatili ang mga tala ng hiraman nang walang pangalan nila. Hindi na ito maibabalik.',
 };
@@ -166,6 +171,8 @@ const EN = {
   'refund_cancelled': 'returned: cancelled', 'refund_expired': 'returned: request expired', 'refund_item_removed': 'returned: item removed',
   'lend_reward': 'reward for lending', 'late_penalty': 'late return penalty',
   'item_damaged': 'Item damaged', 'item_lost': 'Item lost', 'item_condition': 'Item condition', 'checkin_problem': 'Problem reported at check-in',
+  'flag_disguised_word': 'looks like a banned item written in disguise', 'flag_value_tier': 'valuable item listed below the high tier',
+  'flag_new_account_burst': 'many listings from a brand-new account', 'flag_reported': 'reported by several neighbors',
   'settle_fine': 'It was fine after all', 'settle_accident': 'An accident, nobody to blame', 'settle_borrower_fault': 'Damaged by the borrower', 'settle_lost': 'The item was lost',
 };
 

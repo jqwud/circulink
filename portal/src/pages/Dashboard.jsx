@@ -24,6 +24,16 @@ export default function Dashboard() {
 
   return (
     <>
+      {s.flagged_listings > 0 && (
+        <Link to="/listings?review=flagged" className="alert-urgent" role="alert">
+          <span className="alert-icon" aria-hidden="true">⚠</span>
+          <span>
+            <b>{t('{n} listing(s) may harm the community').replace('{n}', s.flagged_listings)}</b>
+            <small>{t('They are hidden from neighbors until you check them. Review them first.')}</small>
+          </span>
+          <span className="alert-go">{t('Review now')} →</span>
+        </Link>
+      )}
       <div className="card hello">
         <Pawsa pose={attention.length ? 'happy' : 'sleepy'} size={96} />
         <div>

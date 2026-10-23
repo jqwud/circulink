@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { pool, q, one, todayPH, likeText, purokNames } from '../db.js';
+import { pool, q, one, withTx, todayPH, likeText, purokNames } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { RULES, creditCost, findProhibited, handledByStaff } from '../rules.js';
+import { RULES, SCREENING, creditCost, findProhibited, handledByStaff, screenListing } from '../rules.js';
+import { flagItemTx } from '../services.js';
 import { ownPhoto } from '../uploads.js';
 
 const router = Router();
@@ -133,6 +134,14 @@ router.post('/items', authRequired, requireApproved, wrap(async (req, res) => {
   const [r] = await pool.query(
     'INSERT INTO items (owner_id, category_id, title, description, item_condition, tier, pickup_point_id, photo_url, repair_reuse) VALUES (?,?,?,?,?,?,?,?,?)',
     [req.user.id, f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low', f.pickup_point_id, f.photo_url || null, f.repair_reuse || 0]);
+  // Automatic checks: the listing itself, and a brand-new account sharing many items at once.
+  const flags = screenListing({ title: f.title, description: f.description, tier: f.tier || 'low' });
+  const young = await one(
+    `SELECT (u.created_at >= NOW() - INTERVAL ? HOUR) AS young,
+            (SELECT COUNT(*) FROM items i WHERE i.owner_id = u.id AND i.created_at >= NOW() - INTERVAL ? HOUR) AS shared
+       FROM users u WHERE u.id = ?`, [SCREENING.newAccountHours, SCREENING.newAccountHours, req.user.id]);
+  if (young.young && young.shared >= SCREENING.newAccountListings) flags.push('new_account_burst');
+  if (flags.length) await withTx((conn) => flagItemTx(conn, r.insertId, flags));
   res.status(201).json(mapItem(await one(`${SELECT_ITEM} WHERE i.id = ?`, [r.insertId])));
 }));
 
@@ -148,6 +157,15 @@ router.patch('/items/:id', authRequired, wrap(async (req, res) => {
   }
   const keys = Object.keys(f);
   if (keys.length) await q(`UPDATE items SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => f[k]), item.id]);
+  // An edit is checked for what it changes (staff may already have cleared the rest): the new text, and the
+  // whole listing again when the tier goes down.
+  if (f.title !== undefined || f.description !== undefined || f.tier !== undefined) {
+    const flags = screenListing({ title: f.title, description: f.description, tier: f.tier ?? item.tier });
+    if (f.tier !== undefined && f.tier !== item.tier) {
+      flags.push(...screenListing({ title: f.title ?? item.title, description: f.description ?? item.description, tier: f.tier }).filter((x) => x === 'value_tier'));
+    }
+    if (flags.length) await withTx((conn) => flagItemTx(conn, item.id, flags));
+  }
   res.json(mapItem(await one(`${SELECT_ITEM} WHERE i.id = ?`, [item.id])));
 }));
 

@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 19: Automatic flags (2026-10-23)
+
+- New and edited listings are checked automatically. A listing is **held back (hidden from neighbors) until staff check it** when it has a banned word written in disguise ("g u n", "g@mot", "p1stol"), a valuable or hazardous thing listed below the high tier (laptop, generator, projector, chainsaw...), it is the third item from an account less than a day old, or two different neighbors reported it. Plainly banned words are still refused outright.
+- The owner is told kindly that the barangay is checking it (not which check). Waiting requests on it are refunded.
+- Staff get a red alert at the top of the dashboard, a red count beside Listings, and the reasons on each flagged listing, with "Looks fine, show it", Edit and Remove. Every flag is in the audit log.
+- An edit is checked for what it changes, so a listing staff already cleared is not flagged again by an unrelated edit.
+- The demo data now looks like an established community (accounts three months old, items weeks old).
+- The check numbers live in `SCREENING` in `server/src/rules.js`.
+
 ## Batch 18: Staff can step in (2026-10-23)
 
 - **Requests:** on Transactions, staff can approve, reject, hand over or confirm the return of any request (owners still do it for their own), and cancel any waiting or booked request with a reason both neighbors see; held credits are refunded (`POST /admin/requests/:id/cancel`).

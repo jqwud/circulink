@@ -539,6 +539,8 @@ const Map<String, String> kFil = <String, String>{
   "The barangay is checking: {item}": "Sinusuri ng barangay: {item}",
   "Neighbors will see it once it has been checked. This keeps everyone safe.": "Makikita ito ng mga kapitbahay kapag nasuri na. Para ito sa kaligtasan ng lahat.",
   "The barangay is checking this item. Your credits were returned.": "Sinusuri ng barangay ang gamit na ito. Ibinalik ang credits mo.",
+  "The barangay will check it first": "Susuriin muna ito ng barangay",
+  "Neighbors will see your item once barangay staff have looked at it. This keeps everyone safe.": "Makikita ng mga kapitbahay ang gamit mo kapag nasuri na ng barangay staff. Para ito sa kaligtasan ng lahat.",
 };
 
 /// Messages from the server, by error code, in Filipino.

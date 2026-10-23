@@ -89,6 +89,11 @@ for (const [cat, title, desc, cond, tier] of shelf) {
   await q('INSERT INTO items (owner_id, is_shelf, category_id, title, description, item_condition, tier, pickup_point_id) VALUES (NULL,1,?,?,?,?,?,1)', [cat, title, desc, cond, tier]);
 }
 
+// An established community: accounts joined three months ago and items were shared weeks ago, so the
+// demo neighbors do not look like brand-new accounts to the automatic checks. The order stays the same.
+await q('UPDATE users SET created_at = created_at - INTERVAL 90 DAY');
+await q('UPDATE items SET created_at = created_at - INTERVAL 30 DAY');
+
 // Requests
 const req = async (item, borrower, start, end, status, cost, extra = {}) => {
   const [r] = await pool.query(

@@ -22,6 +22,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | Loan control (2026-10-23) | Owners keep approving, handing over and confirming returns for their low and medium items; staff can step in on any request from the portal (approve, cancel, close, fix). |
 | Server setup (2026-10-23) | Real (release) builds show residents no server address or technical status; the address is built in. Test builds keep the tools for USB and hotspot testing. |
 | Rule numbers (2026-10-23) | Admins edit them on the portal's Rules page within safe limits; every change is in the audit log; the app reads them from the server. |
+| Flagged listings (2026-10-23) | A flagged listing stays hidden from neighbors until staff check it (for everyone's safety); staff get a high-priority alert. |
 | Admin tools (2026-10-23) | Staff can edit or hide any listing, cancel or close any request (with correct refunds), and review listings the system flags automatically as unusual or possibly harmful. Not now: manual credit adjustment, pausing app features. |
 | Resident view (2026-10-23) | Residents see only what they need. The component gallery leaves the app (developers open `lib/main_gallery.dart`); badges become an even grid. |
 
@@ -51,7 +52,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 16 | Phone test of batches 5 to 15, and anything it turns up | | S | Partly done (CI green; phone test by the user went well) |
 | 17 | Resident view: even badge grid, gallery out of the app, no server tools or technical status in release builds | Resident view | S | Done |
 | 18 | Staff control of requests and listings: approve, cancel or close any request with correct refunds; edit or hide any listing | Admin tools | M | Done |
-| 19 | Automatic flags: unusual or possibly harmful listings go to a staff review queue | Admin tools | M | Planned |
+| 19 | Automatic flags: unusual or possibly harmful listings go to a staff review queue | Admin tools | M | Done |
 | 20 | Rule numbers editable by admins in the portal, within limits, audited | Rule numbers | M | Planned |
 | 21 | Long lists in pages | B9 | M | Planned |
 | 22 | Code tidy-up without behavior change | A6, A7, A3 | M | Planned |

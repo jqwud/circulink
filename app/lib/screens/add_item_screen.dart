@@ -87,15 +87,16 @@ class _AddItemScreenState extends State<AddItemScreen> {
         'repair_reuse': _repair,
         'photo_url': _photo,
       };
-      if (_editing) {
-        await app.api.patch('/items/${widget.item!['id']}', body);
-      } else {
-        await app.api.post('/items', body);
-      }
+      final dynamic saved = _editing ? await app.api.patch('/items/${widget.item!['id']}', body) : await app.api.post('/items', body);
+      final bool held = mapOf(saved)['review_status'] == 'flagged';
       await app.bump();
       if (!mounted) return;
       Navigator.pop(context);
-      if (_editing) {
+      if (held) {
+        // The automatic checks held it back: say so kindly, without saying which check.
+        pawsaDialog(context, pose: 'point', title: context.tx('The barangay will check it first'),
+            message: context.tx('Neighbors will see your item once barangay staff have looked at it. This keeps everyone safe.'));
+      } else if (_editing) {
         showMessage(context, context.tx('Changes saved.'));
       } else {
         pawsaDialog(context, pose: 'cheer', title: context.tx('Thank you, neighbor!'), message: context.tx('Your item is now shared. You earn a credit after each good, on-time return.'));

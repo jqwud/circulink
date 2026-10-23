@@ -47,7 +47,7 @@ function Shell() {
     { to: '/', label: 'Dashboard', end: true },
     { to: '/verification', label: 'Verification', pill: counts.pending_verifications },
     { to: '/residents', label: 'Residents' },
-    { to: '/listings', label: 'Listings' },
+    { to: '/listings', label: 'Listings', pill: counts.flagged_listings, urgent: true },
     { to: '/shelf', label: 'Barangay Shelf' },
     { to: '/transactions', label: 'Transactions', pill: (counts.staff_requests_waiting || 0) + (counts.overdue || 0) },
     { to: '/reports', label: 'Reports & disputes', pill: counts.open_reports },
@@ -68,7 +68,7 @@ function Shell() {
           {links.map((l) => (
             <NavLink key={l.to} to={l.to} end={l.end}>
               <span>{t(l.label)}</span>
-              {l.pill ? <span className="pill">{l.pill}</span> : null}
+              {l.pill ? <span className={`pill ${l.urgent ? 'urgent' : ''}`} aria-label={l.urgent ? `${l.pill} ${t('flagged')}` : undefined}>{l.pill}</span> : null}
             </NavLink>
           ))}
         </nav>

@@ -376,6 +376,25 @@ export function staffCancelRequest(requestId, actor, reason) {
   });
 }
 
+// The automatic checks hold a listing back: hidden from neighbors until staff decide. The owner is told it
+// is being checked (not which check, so the filter cannot be gamed); staff see the reasons, at the top.
+export async function flagItemTx(conn, itemId, flags) {
+  const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
+  if (!item || item.status === 'removed' || item.review_status === 'hidden' || !flags.length) return false;
+  const all = [...new Set([...(item.review_flags ? item.review_flags.split(',') : []), ...flags])];
+  const wasOk = item.review_status === 'ok';
+  await conn.query("UPDATE items SET review_status = 'flagged', review_flags = ?, review_note = NULL WHERE id = ?", [all.join(','), item.id]);
+  if (wasOk) {
+    await closeOpenRequestsTx(conn, item, { why: 'The barangay is checking this item. Your credits were returned.', reason: 'hidden' });
+    if (item.owner_id) {
+      await notify(conn, item.owner_id, 'item_flagged', `The barangay is checking: ${item.title}`,
+        'Neighbors will see it once it has been checked. This keeps everyone safe.', item.id, { item: item.title });
+    }
+    await audit(null, 'item_flagged', `item #${item.id} ${item.title}: ${all.join(', ')}`, conn);
+  }
+  return true;
+}
+
 // Staff hide a listing (neighbors stop seeing it; its open requests are refunded) or show it again.
 export function hideItem(itemId, actor, reason) {
   const why = String(reason || '').trim().slice(0, 255);
@@ -397,7 +416,7 @@ export function showItem(itemId, actor) {
   return withTx(async (conn) => {
     const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
     if (!item || item.status === 'removed') throw notFound('Item not found.');
-    await conn.query("UPDATE items SET review_status = 'ok', review_note = NULL, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?", [actor.id, item.id]);
+    await conn.query("UPDATE items SET review_status = 'ok', review_note = NULL, review_flags = NULL, reviewed_by = ?, reviewed_at = NOW() WHERE id = ?", [actor.id, item.id]);
     if (item.owner_id && item.review_status !== 'ok') {
       await notify(conn, item.owner_id, 'item_shown', `Visible again: ${item.title}`, 'Neighbors can see and borrow it again.', item.id, { item: item.title });
     }

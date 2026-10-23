@@ -1,9 +1,10 @@
 // Resident-facing community features: credits, wanted board, kits, notifications, reports, announcements, impact.
 import { Router } from 'express';
+import { SCREENING } from '../rules.js';
 import { pool, q, one, withTx, todayPH } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { assertDates, createRequestTx, notify, TAKEN_SQL } from '../services.js';
+import { assertDates, createRequestTx, notify, TAKEN_SQL, flagItemTx } from '../services.js';
 import { RULES } from '../rules.js';
 
 const router = Router();
@@ -126,6 +127,13 @@ router.post('/reports', wrap(async (req, res) => {
   if (!reason) throw bad('Choose a reason.', 'bad_reason');
   const [r] = await pool.query('INSERT INTO reports (reporter_id, target_type, target_id, reason, details) VALUES (?,?,?,?,?)',
     [req.user.id, target_type, Number(target_id), String(reason).slice(0, 80), details ? String(details).slice(0, 500) : null]);
+  // An item reported by several different neighbors since staff last checked it is held back for review.
+  if (target_type === 'item') {
+    const seen = await one(
+      `SELECT COUNT(DISTINCT rp.reporter_id) AS n FROM reports rp JOIN items i ON i.id = rp.target_id
+        WHERE rp.target_type = 'item' AND rp.target_id = ? AND (i.reviewed_at IS NULL OR rp.created_at > i.reviewed_at)`, [Number(target_id)]);
+    if (seen.n >= SCREENING.reportsToFlag) await withTx((conn) => flagItemTx(conn, Number(target_id), ['reported']));
+  }
   res.status(201).json({ id: r.insertId });
 }));
 
