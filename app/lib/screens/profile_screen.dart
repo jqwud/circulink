@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/constants.dart';
 import '../core/format.dart';
 import '../core/api.dart';
 import '../core/i18n.dart';
@@ -118,6 +119,8 @@ class ProfileScreen extends StatelessWidget {
             if (ok && context.mounted) await context.app.logout();
           },
         ),
+        const SizedBox(height: 14),
+        Text('Hiraman ${context.t('Version')} ${kAppVersion.replaceFirst('+', ' (')})', textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 12)),
         const SizedBox(height: 20),
       ],
     );

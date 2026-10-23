@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 26: Release-ready app (2026-10-23)
+
+- **Release key, kept by the team:** release builds are signed with the key named in `app/android/key.properties` (git-ignored, like `*.jks`). Nothing secret is in the repository; the team makes the key once (`docs/RELEASE.md`, step 2). Without it, builds still work, signed with the debug key, for testing only.
+- **`node tools/build-release.mjs --server https://...`** builds the app residents install, and refuses when the server address is missing or malformed, the release key is not set up, or the shown version does not match `pubspec.yaml`. It warns about plain HTTP.
+- **No backup of app data** to the cloud or to a new phone (`allowBackup="false"`, plus data extraction rules for Android 12 and newer). The login session and personal details stay on the phone; after a phone change, residents log in again.
+- **Versions you can see:** the Me tab shows "Hiraman Version 1.0.0 (1)", and `/api/health` reports the server's version. Tests keep the app's shown version equal to `pubspec.yaml` and the server's equal to `package.json`.
+- **`docs/RELEASE.md`:** the release checklist: decisions to make once (app ID, key keeper, server address, HTTPS), the key, versions, checks, building and trying on a real phone, updating the server safely, and how to roll back.
+- **Proof:** a release build was made and signed with a throwaway key through `key.properties` (confirmed with `apksigner`), then key and build were deleted. The final manifest has backups off and version 1.0.0 (1).
+
 ## Batch 25: Bigger tests (2026-10-23)
 
 - **Portal in a real browser** (`portal/e2e/`, Playwright): staff verify a new resident (who then has 3 credits), settle a damaged return as an accident (the owner gets a credit back), and clear a flagged listing from the red dashboard alert. `npm run test:e2e`.

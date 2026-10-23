@@ -16,6 +16,9 @@ import requestRoutes from './routes/requests.js';
 import communityRoutes from './routes/community.js';
 import adminRoutes from './routes/admin.js';
 
+// The API's version (package.json), shown by /api/health so staff can tell which release is running.
+const VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
+
 // May a web page on `origin` call the API? No origin: the phone app or a page of this server.
 // `setting` is CORS_ORIGIN: a comma-separated list, * for any, or empty for localhost only.
 export function corsAllowed(origin, setting = config.corsOrigin) {
@@ -79,9 +82,9 @@ export function createApp(options = {}) {
   app.get('/api/health', async (_req, res) => {
     try {
       await Promise.race([checkDb(), new Promise((_, fail) => setTimeout(() => fail(new Error('timeout')), 3000))]);
-      res.json({ ok: true, app: 'Hiraman API', db: 'ok' });
+      res.json({ ok: true, app: 'Hiraman API', version: VERSION, db: 'ok' });
     } catch {
-      res.status(503).json({ ok: false, app: 'Hiraman API', db: 'down' });
+      res.status(503).json({ ok: false, app: 'Hiraman API', version: VERSION, db: 'down' });
     }
   });
 

@@ -1,6 +1,7 @@
 // API basics: health, unknown routes, photo fields, and a safe CSV export.
 import './helpers/env.js';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { after, before, describe, test } from 'node:test';
 import { pool, one } from '../src/db.js';
 import { resetTestDatabase, seedTestDatabase } from './helpers/db.js';
@@ -20,6 +21,11 @@ describe('health check', () => {
     const r = await s.api('GET', '/health');
     assert.equal(r.status, 200);
     assert.equal(r.json.ok, true); assert.equal(r.json.db, 'ok');
+  });
+  test('says which version of the API is running (from package.json)', async () => {
+    const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+    const r = await s.api('GET', '/health');
+    assert.equal(r.json.version, pkg.version);
   });
   test('says 503 when the database cannot be reached', async () => {
     const broken = startServer({ checkDb: async () => { throw new Error('connection refused'); } });

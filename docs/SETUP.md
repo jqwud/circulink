@@ -105,7 +105,7 @@ cd app
 flutter build apk --release
 ```
 
-The file is `build/app/outputs/flutter-apk/app-release.apk`. Release builds are currently signed with the debug key, which is fine for testing but not for publishing.
+The file is `build/app/outputs/flutter-apk/app-release.apk`. Without the team's release key this build is signed with the debug key: fine for testing, not for residents. For a build residents install, follow `docs/RELEASE.md` (`node tools/build-release.mjs --server https://...`).
 
 ## If something goes wrong
 

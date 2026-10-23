@@ -11,3 +11,7 @@ const Duration kSplashMinimum = Duration(milliseconds: 1400);
 
 /// Browse loads this many items at a time ("Load more" fetches the next page).
 const int kBrowsePageSize = 30;
+
+/// This build's version, as in pubspec.yaml (name+build number). Shown on the Me tab so a resident can tell
+/// staff which version they have. test/version_test.dart fails if the two ever differ.
+const String kAppVersion = '1.0.0+1';

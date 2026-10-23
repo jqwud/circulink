@@ -1,6 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- No backup of app data to the cloud or to a new phone: it holds the login session (secure storage)
+         and personal details, and a restored session would not open anyway. Residents just log in again. -->
     <application
+        android:allowBackup="false"
+        android:fullBackupContent="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:usesCleartextTraffic="true"
         android:label="Hiraman"
         android:name="${applicationName}"
