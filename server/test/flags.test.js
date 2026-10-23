@@ -89,7 +89,7 @@ describe('patterns across listings and reports', () => {
     await s.api('POST', '/me/id-consent', t);
     await s.upload('/me/id-photo', t, PNG, 'image/png', 'id.png');
     await s.api('POST', `/admin/users/${reg.json.user.id}/approve`, staff);
-    assert.equal((await share(t, 'Extension cord')).json.review_status, 'ok');
+    assert.equal((await share(t, 'Extension cord', { accept_terms: true })).json.review_status, 'ok', 'the first listing accepts the lending terms');
     assert.equal((await share(t, 'Measuring tape')).json.review_status, 'ok');
     const third = await share(t, 'Hammer');
     assert.equal(third.json.review_status, 'flagged');

@@ -18,6 +18,9 @@ export const RULES = {
   reportsPerDay: 3,             // reports and concerns one person can file in a day
   harassmentConcernsToPause: 2, // harassment concerns about one person in 30 days that pause their messages
   oldTextKeptDays: 365,         // residents' free text from before quick replies, kept this long after the loan ends
+  shelfLateToPause: 2,          // late returns of Barangay items in 90 days that pause Barangay borrowing ...
+  shelfPauseDays: 30,           // ... for this many days (staff can lift it)
+  extendMaxDays: 7,             // a loan can be extended once, by up to this many days
 };
 
 // How staff settle a dispute (an item returned damaged or lost), and what each outcome does to credits.
@@ -95,6 +98,11 @@ export function screenListing({ title, description, tier }) {
   if (!findProhibited(title, description) && findProhibited(normalizeDisguise(raw))) flags.push('disguised_word');
   if (tier !== 'high' && SCREENING.valueWords.some((w) => new RegExp(`\\b${w}s?\\b`, 'i').test(raw))) flags.push('value_tier');
   return flags;
+}
+
+// The longest loan for an item: staff may set a shorter limit on a Barangay item; never longer than maxLoanDays.
+export function itemMaxDays(item) {
+  return item.is_shelf && item.max_loan_days ? Math.min(item.max_loan_days, RULES.maxLoanDays) : RULES.maxLoanDays;
 }
 
 export function creditCost(item) {

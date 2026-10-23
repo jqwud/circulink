@@ -174,6 +174,13 @@ const FIL = {
   'Answer now': 'Sagutin ngayon', 'Kind words': 'Mabubuting salita', 'Word added.': 'Naidagdag ang salita.', 'Word removed.': 'Natanggal ang salita.',
   'Listings, Wanted posts, ratings and concern notes with these words are refused with "Please use kind words". Residents message each other only with quick replies.': 'Tinatanggihan ang mga listing, Wanted post, rating at tala ng alalahanin na may ganitong salita. Sa mga nakahandang sagot lang nag-uusap ang mga residente.',
   'Added by the barangay': 'Idinagdag ng barangay', 'None yet.': 'Wala pa.', 'Word to refuse': 'Salitang tatanggihan', 'Built-in list': 'Kasamang listahan',
+  'Normal ({n} days)': 'Karaniwan ({n} araw)',
+  '{n} days': '{n} araw',
+  'Longest loan': 'Pinakamatagal na hiram',
+  'Residents rate the barangay service {avg} of 5 ({n} ratings).': 'Ang rating ng mga residente sa serbisyo ng barangay: {avg} sa 5 ({n} rating).',
+  'Barangay borrowing allowed again.': 'Puwede na ulit humiram ng gamit ng Barangay.',
+  'Barangay items paused until {d}': 'Naka-pause ang gamit ng Barangay hanggang {d}',
+  'Allow Barangay items': 'Payagan ang gamit ng Barangay',
 };
 
 // English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),

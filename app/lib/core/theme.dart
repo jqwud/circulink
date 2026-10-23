@@ -34,6 +34,10 @@ class HiColors {
   static const Color dangerSoft = Color(0xFFFEE4E2);
   static const Color info = Color(0xFF1B4F9C);
   static const Color infoSoft = Color(0xFFE3EFFF);
+
+  /// Kapitbahay (a neighbor's item): purple, so it never looks like the barangay's blue or the brand green.
+  static const Color neighbor = Color(0xFF6B3FA0);
+  static const Color neighborSoft = Color(0xFFF1EAFB);
   static const Color line = Color(0xFFE8E2C8);
   static const Color lineStrong = Color(0xFFD3CDB0);
 }

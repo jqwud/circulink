@@ -62,6 +62,8 @@ export const publicUser = (u, extra = {}) => ({
   privacy_ok: u.privacy_version === PRIVACY_VERSION,
   id_consent: !!u.id_consent_at,
   deletion_requested: !!u.deletion_requested_at,
+  lender_terms_accepted: !!u.lender_terms_accepted_at,
+  shelf_paused_until: u.shelf_paused_until || null,
   must_change_password: !!u.must_change_password,
   ...extra,
 });

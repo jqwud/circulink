@@ -688,7 +688,7 @@
         "tags": [
           "items"
         ],
-        "summary": "Browse available listings (paged)",
+        "summary": "Browse available listings (paged); origin = barangay or kapitbahay",
         "description": "Any logged-in account.",
         "parameters": [
           {
@@ -717,6 +717,14 @@
           },
           {
             "name": "shelf",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "origin",
             "in": "query",
             "required": false,
             "schema": {
@@ -773,7 +781,7 @@
           "items"
         ],
         "summary": "Share an item (may be held back by the automatic checks)",
-        "description": "A logged-in resident. Error codes: bad_title, bad_category, bad_pickup, bad_condition, bad_tier, prohibited_item, unkind_words, bad_photo, not_verified.",
+        "description": "A logged-in resident. Error codes: bad_title, bad_category, bad_pickup, bad_condition, bad_tier, prohibited_item, unkind_words, terms_required, bad_photo, not_verified.",
         "responses": {
           "201": {
             "description": "Success",
@@ -806,7 +814,8 @@
                   "condition": {},
                   "tier": {},
                   "photo_url": {},
-                  "repair_reuse": {}
+                  "repair_reuse": {},
+                  "accept_terms": {}
                 },
                 "required": [
                   "title",
@@ -985,7 +994,7 @@
           "requests"
         ],
         "summary": "Ask to borrow an item; credits are held",
-        "description": "A logged-in resident. Error codes: bad_dates, past_date, too_long, item_unavailable, own_item, duplicate_request, dates_booked, insufficient_credits, not_verified.",
+        "description": "A logged-in resident. Error codes: bad_dates, past_date, too_long, shelf_paused, item_unavailable, own_item, duplicate_request, dates_booked, insufficient_credits, not_verified.",
         "responses": {
           "201": {
             "description": "Success",
@@ -1273,6 +1282,60 @@
                 "properties": {
                   "reason": {}
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{id}/extend": {
+      "post": {
+        "operationId": "postRequestsIdExtend",
+        "tags": [
+          "requests"
+        ],
+        "summary": "Extend a loan once, by 1 to 7 days (owner, or staff for barangay-handled items)",
+        "description": "Any logged-in account. Error codes: bad_days, bad_state, already_extended, too_long, dates_booked, cannot_manage.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "days": {}
+                },
+                "required": [
+                  "days"
+                ]
               }
             }
           }
@@ -2443,6 +2506,60 @@
         }
       }
     },
+    "/admin/users/{id}/shelf-pause": {
+      "post": {
+        "operationId": "postAdminUsersIdShelfPause",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Pause or lift Barangay borrowing for a resident; audited",
+        "description": "LGU staff or admin. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paused": {}
+                },
+                "required": [
+                  "paused"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/users/{id}/messaging": {
       "post": {
         "operationId": "postAdminUsersIdMessaging",
@@ -2993,7 +3110,7 @@
           "admin"
         ],
         "summary": "Add a Barangay Shelf item",
-        "description": "LGU staff or admin.",
+        "description": "LGU staff or admin. Error codes: bad_max_days.",
         "responses": {
           "201": {
             "description": "Success",
@@ -3024,6 +3141,7 @@
                   "description": {},
                   "condition": {},
                   "tier": {},
+                  "max_loan_days": {},
                   "pickup_point_id": {},
                   "photo_url": {}
                 },
@@ -3044,7 +3162,7 @@
           "admin"
         ],
         "summary": "Edit any listing (tier locked during an active request)",
-        "description": "LGU staff or admin. Error codes: item_busy, not_found.",
+        "description": "LGU staff or admin. Error codes: item_busy, barangay_only, bad_max_days, not_found.",
         "parameters": [
           {
             "name": "id",
@@ -3085,6 +3203,7 @@
                   "category_id": {},
                   "condition": {},
                   "tier": {},
+                  "max_loan_days": {},
                   "pickup_point_id": {},
                   "photo_url": {},
                   "status": {}

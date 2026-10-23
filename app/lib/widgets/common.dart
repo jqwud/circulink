@@ -10,6 +10,7 @@ export 'ui/hi_sheet.dart';
 export 'ui/hi_tabs.dart';
 export 'ui/info_banner.dart';
 export 'ui/item_card.dart';
+export 'ui/origin_badge.dart';
 export 'ui/labels.dart';
 export 'ui/request_card.dart';
 export 'ui/rows.dart';

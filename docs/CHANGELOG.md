@@ -2,6 +2,21 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 28: Barangay or neighbor, at a glance (2026-10-24)
+
+Hiraman 2.0, spec section 5.
+
+- **Origin label on every item:** a blue **Barangay item** badge (hall icon) or a purple **Neighbor's item** / *Gamit ng Kapitbahay* badge (house icon), on cards, item pages and requests. Screen readers say it first. The detail page says in words who it belongs to and the longest loan.
+- **Browse filters:** All, **Barangay**, **Neighbors**, remembered on the phone. The API takes `origin=barangay|kapitbahay`.
+- **Barangay item rules:**
+    - Staff can set a shorter loan limit per Barangay item (Shelf page, "Longest loan").
+    - Two late returns of Barangay items within 90 days pause Barangay borrowing for 30 days. Neighbors' items stay open, and staff can lift the pause.
+    - Borrowers rate the barangay's service for Barangay loans; staff see the average on the Shelf page.
+- **Extend the loan:** the owner (staff for items the barangay handles) can extend a loan once, by 1 to 7 days, within the item's limit and never into the next booking. The borrower is told the new date.
+- **Lending terms, once:** before a resident's first listing the app explains that neighbors share at their own risk and the barangay mediates but does not pay; **I understand** is recorded. Residents who already list items count as accepted.
+- Also fixed: the Filipino words of batch 27's message screen had gone into the wrong dictionary and showed in English; they are now translated.
+- Migration 013 (backup taken first). Tests: 14 new server tests (`origin.test.js`), app tests for the badge and the new notices.
+
 ## Batch 27: Quick replies instead of free chat (2026-10-23)
 
 First batch of Hiraman 2.0 (design spec in Claude Docs, "Hiraman 2.0 Design Spec", section 6).

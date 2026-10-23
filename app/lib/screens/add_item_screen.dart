@@ -71,13 +71,23 @@ class _AddItemScreenState extends State<AddItemScreen> {
       setState(() => _error = context.tx('Choose a pickup point.'));
       return;
     }
+    final AppState app = context.app;
+    // Once, before the first listing: neighbors share at their own risk; the barangay helps but does not pay.
+    bool acceptTerms = false;
+    if (!_editing && app.user?['lender_terms_accepted'] != true) {
+      acceptTerms = await confirmDialog(context,
+          title: context.tx('Before you share'),
+          message: context.tx('Neighbors share at their own risk. If something is damaged or lost, the barangay helps you settle it and records what happened, but it does not pay for items. Borrowers must return items in the condition they got them.'),
+          confirmLabel: context.tx('I understand'));
+      if (!acceptTerms || !mounted) return;
+    }
     setState(() {
       _busy = true;
       _error = null;
     });
-    final AppState app = context.app;
     try {
       final Map<String, dynamic> body = <String, dynamic>{
+        if (acceptTerms) 'accept_terms': true,
         'title': _title.text.trim(),
         'description': _desc.text.trim(),
         'category_id': _categoryId,

@@ -16,6 +16,7 @@ import 'format.dart';
     p.forEach((String k, dynamic v) => out = out.replaceAll('{$k}', str(v)));
     out = out.replaceAll('{dates}', fmtRange(str(p['start']), str(p['end']), lang));
     out = out.replaceAll('{end_date}', fmtDate(str(p['end']), lang));
+    out = out.replaceAll('{until_date}', fmtDate(str(p['until']), lang));
     return out;
   }
 
@@ -101,6 +102,10 @@ import 'format.dart';
       return (title: fill('Your report was resolved'), body: str(p['outcome']));
     case 'wanted_offer':
       return (title: fill('{name} can help: {wanted}'), body: fill('Check My Items or message them at the barangay pickup point.'));
+    case 'request_extended':
+      return (title: fill('More time for {item}'), body: fill('Please return it by {end_date}.'));
+    case 'shelf_paused':
+      return (title: fill('Barangay items paused'), body: fill('After late returns, you can borrow Barangay items again after {until_date}.'));
     case 'message':
       if (p['staff'] == true) p['name'] = tr('Barangay staff');
       final String fil = str(p['preview_fil']);

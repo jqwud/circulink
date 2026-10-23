@@ -9,7 +9,7 @@ import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { temporaryPassword } from './auth.js';
 import { authRequired, requireStaff, requireAdmin, publicUser } from '../auth.js';
 import {
-  OUT_LOANS_SQL, approveResident, audit, checkinState, deleteAccountTx, hideItem, notify, rejectResident, removeItemTx, settleDisputeTx,
+  OUT_LOANS_SQL, addDays, approveResident, audit, checkinState, deleteAccountTx, hideItem, notify, rejectResident, removeItemTx, settleDisputeTx,
   showItem, staffCancelRequest,
 } from '../services.js';
 import { removePrivateFile } from '../uploads.js';
@@ -48,6 +48,8 @@ router.get('/admin/stats', wrap(async (_req, res) => {
     urgent_reports: await n("SELECT COUNT(*) n FROM reports WHERE status <> 'resolved' AND reason IN (?)", [URGENT_REASONS]),
     unkind_refusals_7d: await n("SELECT COUNT(*) n FROM audit_log WHERE action = 'unkind_words_refused' AND created_at >= NOW() - INTERVAL 7 DAY"),
     messaging_paused: await n("SELECT COUNT(*) n FROM users WHERE messaging_paused = 1 AND deleted_at IS NULL"),
+    barangay_service_rating: await one('SELECT ROUND(AVG(stars), 1) AS average, COUNT(*) AS count FROM ratings WHERE ratee_id IS NULL')
+      .then((r) => ({ average: r.average === null ? null : Number(r.average), count: Number(r.count) })),
     completed_loans: impact.completed_loans,
     return_rate: impact.return_rate,
     purchases_avoided: impact.purchases_avoided,
@@ -62,7 +64,7 @@ router.get('/admin/users', wrap(async (req, res) => {
   if (req.query.deletion === '1') where.push('u.deletion_requested_at IS NOT NULL');
   if (req.query.q) { where.push('(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)'); params.push(like(req.query.q), like(req.query.q), like(req.query.q)); }
   const rows = await q(
-    `SELECT u.id, u.name, u.email, u.phone, u.purok, u.verification_status, u.reject_reason, u.credits, u.suspended, u.messaging_paused, u.created_at, u.deletion_requested_at,
+    `SELECT u.id, u.name, u.email, u.phone, u.purok, u.verification_status, u.reject_reason, u.credits, u.suspended, u.messaging_paused, u.shelf_paused_until, u.created_at, u.deletion_requested_at,
             (u.id_photo_path IS NOT NULL) AS has_id_photo,
             (SELECT COUNT(*) FROM items i WHERE i.owner_id = u.id AND i.status <> 'removed') AS items,
             (SELECT COUNT(*) FROM requests r WHERE r.borrower_id = u.id AND r.status = 'closed') AS loans
@@ -76,7 +78,7 @@ router.get('/admin/users/:id', wrap(async (req, res) => {
   if (!u) throw notFound('Resident not found.');
   const history = await q(`${SELECT_REQUEST} WHERE r.borrower_id = ? OR i.owner_id = ? ORDER BY r.id DESC LIMIT 50`, [u.id, u.id]);
   const ledger = await q('SELECT amount, reason, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id DESC LIMIT 30', [u.id]);
-  res.json({ user: { ...publicUser(u), suspended: !!u.suspended, messaging_paused: !!u.messaging_paused, created_at: u.created_at }, history: history.map((r) => mapRequest(r, u.id)), ledger });
+  res.json({ user: { ...publicUser(u), suspended: !!u.suspended, messaging_paused: !!u.messaging_paused, shelf_paused_until: u.shelf_paused_until, created_at: u.created_at }, history: history.map((r) => mapRequest(r, u.id)), ledger });
 }));
 
 // ID photos are private: only staff, only through this authenticated route.
@@ -110,6 +112,16 @@ router.post('/admin/users/:id/messaging', wrap(async (req, res) => {
   await q('UPDATE users SET messaging_paused = ? WHERE id = ?', [paused ? 1 : 0, u.id]);
   await audit(req.user.id, paused ? 'messaging_paused' : 'messaging_allowed', `user #${u.id} ${u.name}`);
   res.json({ id: u.id, messaging_paused: paused });
+}));
+
+// Barangay borrowing paused after late Barangay returns; staff lift it (or set it) and it is audited.
+router.post('/admin/users/:id/shelf-pause', wrap(async (req, res) => {
+  const u = await one('SELECT id, name FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
+  if (!u) throw notFound('Resident not found.');
+  const until = req.body?.paused ? addDays(todayPH(), RULES.shelfPauseDays) : null;
+  await q('UPDATE users SET shelf_paused_until = ? WHERE id = ?', [until, u.id]);
+  await audit(req.user.id, until ? 'shelf_paused' : 'shelf_pause_lifted', `user #${u.id} ${u.name}`);
+  res.json({ id: u.id, shelf_paused_until: until });
 }));
 
 // ---------- kind words: the built-in list plus words staff add ----------
@@ -199,16 +211,27 @@ router.post('/admin/items/:id/restore', wrap(async (req, res) => {
 router.post('/admin/shelf', wrap(async (req, res) => {
   const f = readItemBody(req.body);
   const [r] = await pool.query(
-    'INSERT INTO items (owner_id, is_shelf, category_id, title, description, item_condition, tier, pickup_point_id, photo_url, repair_reuse) VALUES (NULL,1,?,?,?,?,?,?,?,?)',
-    [f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low', f.pickup_point_id || 1, f.photo_url || null, f.repair_reuse || 0]);
+    'INSERT INTO items (owner_id, is_shelf, category_id, title, description, item_condition, tier, max_loan_days, pickup_point_id, photo_url, repair_reuse) VALUES (NULL,1,?,?,?,?,?,?,?,?,?)',
+    [f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low',
+      req.body?.max_loan_days ? readMaxDays(req.body.max_loan_days, { is_shelf: 1 }) : null, f.pickup_point_id || 1, f.photo_url || null, f.repair_reuse || 0]);
   await audit(req.user.id, 'shelf_item_added', `item #${r.insertId} ${f.title}`);
   res.status(201).json(mapItem(await one(`${SELECT_ITEM_SQL} WHERE i.id = ?`, [r.insertId])));
 }));
+
+// A shorter loan limit for a Barangay item (null = the normal limit). Neighbors' items keep the normal limit.
+function readMaxDays(value, item) {
+  if (!item.is_shelf) throw bad('Only Barangay items can have their own loan limit.', 'barangay_only');
+  if (value === null || value === '') return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > RULES.maxLoanDays) throw bad(`Choose 1 to ${RULES.maxLoanDays} days.`, 'bad_max_days');
+  return n;
+}
 
 router.patch('/admin/items/:id', wrap(async (req, res) => {
   const item = await one('SELECT * FROM items WHERE id = ?', [req.params.id]);
   if (!item) throw notFound('Item not found.');
   const f = readItemBody(req.body, { partial: true });
+  if (req.body?.max_loan_days !== undefined) f.max_loan_days = readMaxDays(req.body.max_loan_days, item);
   // Same rule as for owners: the tier decides the cost and who approves, so it stays put during a loan.
   if (f.tier && f.tier !== item.tier && await one("SELECT id FROM requests WHERE item_id = ? AND status IN ('pending','approved','handed_over','disputed') LIMIT 1", [item.id])) {
     throw bad('This item has an active request. Change its tier after the loan ends.', 'item_busy');

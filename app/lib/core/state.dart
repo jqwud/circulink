@@ -27,6 +27,9 @@ class AppState extends ChangeNotifier {
 
   /// The barangay hall's phone (HALL_PHONE on the server), or empty when not set.
   String hallPhone = '';
+
+  /// The Browse origin filter ('', 'barangay' or 'kapitbahay'), remembered on this phone.
+  String browseOrigin = '';
   List<String> puroks = <String>[];
   Map<String, dynamic> rules = <String, dynamic>{};
 
@@ -104,6 +107,7 @@ class AppState extends ChangeNotifier {
     api.baseUrl = _prefs!.getString('server') ?? api.baseUrl;
     lang = _prefs!.getString('lang') ?? 'fil';
     seenOnboarding = _prefs!.getBool('seen_onboarding') ?? false;
+    browseOrigin = _prefs!.getString('browse_origin') ?? '';
     api.token = await _readToken();
     api.onUnauthorized = _expired;
 
@@ -197,6 +201,12 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       // Offline for a moment: lists will show their own retry button.
     }
+  }
+
+  Future<void> setBrowseOrigin(String origin) async {
+    browseOrigin = origin;
+    notifyListeners();
+    await _prefs?.setString('browse_origin', origin);
   }
 
   Future<void> setLang(String l) async {

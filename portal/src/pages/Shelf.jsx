@@ -3,13 +3,16 @@ import { api, upload } from '../api.js';
 import { useI18n } from '../i18n.jsx';
 import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, useLoad, useToast } from '../components.jsx';
 
-const EMPTY = { title: '', description: '', category_id: '', condition: 'good', tier: 'low', pickup_point_id: 1, photo_url: '', repair_reuse: false };
+const EMPTY = { title: '', description: '', category_id: '', condition: 'good', tier: 'low', max_loan_days: '', pickup_point_id: 1, photo_url: '', repair_reuse: false };
 
 export default function Shelf() {
   const { t, lang } = useI18n();
   const toast = useToast();
   const { data, loading, error, reload } = useLoad(() => api('/admin/items?shelf=1'), []);
   const meta = useLoad(() => api('/meta'), []);
+  const stats = useLoad(() => api('/admin/stats'), []);
+  const normalDays = meta.data?.rules?.maxLoanDays || 14;
+  const service = stats.data?.barangay_service_rating;
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
@@ -24,10 +27,21 @@ export default function Shelf() {
     e.preventDefault();
     setBusy(true);
     try {
-      await api('/admin/shelf', { method: 'POST', body: { ...form, category_id: Number(form.category_id), pickup_point_id: Number(form.pickup_point_id) } });
+      await api('/admin/shelf', { method: 'POST', body: { ...form, category_id: Number(form.category_id), pickup_point_id: Number(form.pickup_point_id), max_loan_days: form.max_loan_days ? Number(form.max_loan_days) : null } });
       toast(t('Shelf item added.')); setForm(null); reload();
     } catch (err) { toast(err.message, 'bad'); } finally { setBusy(false); }
   }
+  // A shorter loan limit for one Barangay item ('' = the normal limit).
+  async function setMaxDays(i, value) {
+    try { await api(`/admin/items/${i.id}`, { method: 'PATCH', body: { max_loan_days: value ? Number(value) : null } }); toast(t('Saved.')); reload(); }
+    catch (err) { toast(err.message, 'bad'); }
+  }
+  const daysChoice = (id, value, onChange) => (
+    <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">{t('Normal ({n} days)').replace('{n}', normalDays)}</option>
+      {Array.from({ length: normalDays - 1 }, (_, k) => k + 1).map((n) => <option key={n} value={n}>{t('{n} days').replace('{n}', n)}</option>)}
+    </select>
+  );
   async function setStatus(i, status) {
     try { await api(`/admin/items/${i.id}`, { method: 'PATCH', body: { status } }); toast(t('Saved.')); reload(); }
     catch (err) { toast(err.message, 'bad'); }
@@ -38,18 +52,23 @@ export default function Shelf() {
       <PageHeader title={t('Barangay Shelf')} subtitle={t('Community-owned items kept at the barangay hall. Borrowing them is free, and staff hand them over and take them back.')}>
         <button className="btn primary" onClick={() => setForm({ ...EMPTY })}>+ {t('Add shelf item')}</button>
       </PageHeader>
+      {service && service.count > 0 && (
+        <p className="muted">{t('Residents rate the barangay service {avg} of 5 ({n} ratings).').replace('{avg}', service.average).replace('{n}', service.count)}</p>
+      )}
       {loading && !data && <Loading />}
       {error && <ErrorBox error={error} onRetry={reload} />}
       {data && (items.length === 0 ? <div className="card"><Empty>{t('Nothing here yet.')}</Empty></div> : (
         <div className="card flush table-wrap">
           <table>
-            <thead><tr><th>{t('Item')}</th><th>{t('Category')}</th><th>{t('Tier')}</th><th>{t('Status')}</th><th><span className="sr-only">{t('Actions')}</span></th></tr></thead>
+            <thead><tr><th>{t('Item')}</th><th>{t('Category')}</th><th>{t('Tier')}</th><th>{t('Longest loan')}</th><th>{t('Status')}</th><th><span className="sr-only">{t('Actions')}</span></th></tr></thead>
             <tbody>
               {items.map((i) => (
                 <tr key={i.id}>
                   <td><b>{i.title}</b><small>{i.description}</small></td>
                   <td>{lang === 'fil' ? i.category.name_fil : i.category.name_en}</td>
                   <td><Badge value={i.tier} /></td>
+                  <td><label className="sr-only" htmlFor={`max-${i.id}`}>{t('Longest loan')}: {i.title}</label>
+                    {daysChoice(`max-${i.id}`, i.max_loan_days < normalDays ? String(i.max_loan_days) : '', (v) => setMaxDays(i, v))}</td>
                   <td><Badge value={i.status} />{i.is_out && <> <Badge value="handed_over" label={t('On loan')} /></>}</td>
                   <td>{i.status === 'available'
                     ? <button className="btn small" onClick={() => setStatus(i, 'paused')}>{t('Pause')}</button>
@@ -84,6 +103,8 @@ export default function Shelf() {
                   <option value="medium">{t('Medium: staff approve')}</option>
                   <option value="high">{t('High: hall handover only')}</option>
                 </select></div>
+              <div className="grow field"><label htmlFor="mx">{t('Longest loan')}</label>
+                {daysChoice('mx', form.max_loan_days, (v) => set('max_loan_days', v))}</div>
               <div className="grow field"><label htmlFor="p">{t('Pickup point')}</label>
                 <select id="p" value={form.pickup_point_id} onChange={(e) => set('pickup_point_id', e.target.value)}>
                   {meta.data?.pickup_points.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}

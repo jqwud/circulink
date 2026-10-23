@@ -25,7 +25,6 @@ class _BrowseScreenState extends State<BrowseScreen> {
   Timer? _debounce;
   String _text = '';
   int? _categoryId;
-  bool _shelfOnly = false;
 
   // Items come 30 at a time; "Load more" fetches the next page.
   static const int _page = kBrowsePageSize;
@@ -51,7 +50,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
     final Map<String, String> query = <String, String>{'owner': 'others', 'limit': '$_page', 'offset': '$offset'};
     if (_text.isNotEmpty) query['q'] = _text;
     if (_categoryId != null) query['category_id'] = '$_categoryId';
-    if (_shelfOnly) query['shelf'] = '1';
+    if (context.app.browseOrigin.isNotEmpty) query['origin'] = context.app.browseOrigin;
     return query;
   }
 
@@ -120,20 +119,17 @@ class _BrowseScreenState extends State<BrowseScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: <Widget>[
-                _chip(context.t('All'), _categoryId == null && !_shelfOnly, () => setState(() {
-                      _categoryId = null;
-                      _shelfOnly = false;
-                    })),
-                _chip(context.t('Barangay Shelf'), _shelfOnly, () => setState(() {
-                      _shelfOnly = !_shelfOnly;
-                      _categoryId = null;
-                    })),
+                _chip(context.t('All'), _categoryId == null && app.browseOrigin.isEmpty, () {
+                  setState(() => _categoryId = null);
+                  app.setBrowseOrigin('');
+                }),
+                _chip(context.t('Barangay'), app.browseOrigin == 'barangay', () => app.setBrowseOrigin(app.browseOrigin == 'barangay' ? '' : 'barangay')),
+                _chip(context.t('Neighbors'), app.browseOrigin == 'kapitbahay', () => app.setBrowseOrigin(app.browseOrigin == 'kapitbahay' ? '' : 'kapitbahay')),
                 ...app.categories.map((Map<String, dynamic> c) {
                   final int id = intOf(c['id']);
                   final String name = context.lang == 'fil' ? str(c['name_fil']) : str(c['name_en']);
                   return _chip(name, _categoryId == id, () => setState(() {
                         _categoryId = _categoryId == id ? null : id;
-                        _shelfOnly = false;
                       }));
                 }),
               ],
@@ -141,7 +137,7 @@ class _BrowseScreenState extends State<BrowseScreen> {
           ),
           Expanded(
             child: AsyncView<List<Map<String, dynamic>>>(
-              refreshKey: '${app.version}|$_text|$_categoryId|$_shelfOnly',
+              refreshKey: '${app.version}|$_text|$_categoryId|${app.browseOrigin}',
               loader: _load,
               builder: (BuildContext ctx, List<Map<String, dynamic>> items, Future<void> Function() reload) {
                 if (items.isEmpty) {

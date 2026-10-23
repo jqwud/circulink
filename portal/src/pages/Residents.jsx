@@ -5,6 +5,9 @@ import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
 import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, ResetPasswordButton, LoadMore, usePaged, useLoad, useToast, useDateFormat } from '../components.jsx';
 
+// After 2 late returns of Barangay items, a resident borrows only neighbors' items until this day.
+const pausedShelf = (u) => !!u.shelf_paused_until && u.shelf_paused_until >= new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+
 export default function Residents() {
   const { t } = useI18n();
   const toast = useToast();
@@ -40,6 +43,12 @@ export default function Residents() {
     try {
       await api(`/admin/users/${u.id}/messaging`, { method: 'POST', body: { paused: false } });
       toast(t('Messages allowed again.')); reload(); detail.reload();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
+  async function liftShelfPause(u) {
+    try {
+      await api(`/admin/users/${u.id}/shelf-pause`, { method: 'POST', body: { paused: false } });
+      toast(t('Barangay borrowing allowed again.')); reload(); detail.reload();
     } catch (e) { toast(e.message, 'bad'); }
   }
   // Suspending locks a resident out, so it asks first. Reinstating is safe and happens at once.
@@ -89,7 +98,7 @@ export default function Residents() {
                 <dt>Email</dt><dd>{detail.data.user.email}</dd>
                 <dt>{t('Phone')}</dt><dd>{detail.data.user.phone || '–'}</dd>
                 <dt>{t('Purok')}</dt><dd>{detail.data.user.purok || '–'}</dd>
-                <dt>{t('Status')}</dt><dd><Badge value={detail.data.user.verification_status} />{detail.data.user.suspended && <> <Badge value="suspended" /></>}{detail.data.user.messaging_paused && <> <Badge value="suspended" label={t('Messages paused')} /></>}</dd>
+                <dt>{t('Status')}</dt><dd><Badge value={detail.data.user.verification_status} />{detail.data.user.suspended && <> <Badge value="suspended" /></>}{detail.data.user.messaging_paused && <> <Badge value="suspended" label={t('Messages paused')} /></>}{pausedShelf(detail.data.user) && <> <Badge value="warn" label={t('Barangay items paused until {d}').replace('{d}', detail.data.user.shelf_paused_until)} /></>}</dd>
                 <dt>{t('Credits')}</dt><dd>{detail.data.user.credits}</dd>
                 <dt>{t('Registered')}</dt><dd>{fmt(detail.data.user.created_at)}</dd>
               </dl>
@@ -115,6 +124,9 @@ export default function Residents() {
                   <button className="btn danger" onClick={() => setDeleting(detail.data.user)}>
                     {detail.data.user.deletion_requested ? t('Delete account (requested)') : t('Delete account')}
                   </button>
+                )}
+                {pausedShelf(detail.data.user) && (
+                  <button className="btn" onClick={() => liftShelfPause(detail.data.user)}>{t('Allow Barangay items')}</button>
                 )}
                 {detail.data.user.messaging_paused && (
                   <button className="btn" onClick={() => allowMessages(detail.data.user)}>{t('Allow messages')}</button>

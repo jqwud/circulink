@@ -1,7 +1,7 @@
 // Business logic that both the resident API and the LGU portal API share.
 import { q, one, withTx, todayPH } from './db.js';
 import { bad, forbidden, notFound } from './errors.js';
-import { RULES, DISPUTE_OUTCOMES, creditCost, handledByStaff, autoApproves, photoRequired } from './rules.js';
+import { RULES, DISPUTE_OUTCOMES, creditCost, handledByStaff, autoApproves, photoRequired, itemMaxDays } from './rules.js';
 import { requireKind } from './kindwords.js';
 
 // ---------- small helpers ----------
@@ -30,7 +30,7 @@ export async function addCredits(conn, userId, amount, reason, requestId = null)
 }
 
 const isoDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || '')) && !Number.isNaN(Date.parse(s));
-const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
+export const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 export const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
 // ---------- contact between neighbors ----------
@@ -94,7 +94,7 @@ export async function findClash(conn, itemId, start, end, exceptRequestId = 0) {
 
 export async function loadRequest(conn, id, lock = true) {
   const [rows] = await conn.query(
-    `SELECT r.*, i.title AS item_title, i.owner_id, i.is_shelf, i.tier, i.status AS item_status
+    `SELECT r.*, i.title AS item_title, i.owner_id, i.is_shelf, i.tier, i.max_loan_days, i.status AS item_status
        FROM requests r JOIN items i ON i.id = r.item_id WHERE r.id = ? ${lock ? 'FOR UPDATE' : ''}`, [id]);
   if (!rows[0]) throw notFound('Request not found.');
   return rows[0];
@@ -121,6 +121,14 @@ export async function createRequestTx(conn, { borrower, itemId, start, end, kitI
   const [[item]] = await conn.query('SELECT * FROM items WHERE id = ? FOR UPDATE', [itemId]);
   if (!item || item.status !== 'available' || item.review_status !== 'ok') throw bad('This item is not available right now.', 'item_unavailable');
   if (item.owner_id === borrower.id) throw bad('You cannot borrow your own item.', 'own_item');
+  const maxDays = itemMaxDays(item);
+  if (daysBetween(start, end) + 1 > maxDays) throw bad(`You can borrow this item for up to ${maxDays} days.`, 'too_long');
+  if (item.is_shelf) {
+    const [[me0]] = await conn.query('SELECT shelf_paused_until FROM users WHERE id = ?', [borrower.id]);
+    if (me0.shelf_paused_until && me0.shelf_paused_until >= todayPH()) {
+      throw forbidden(`After late returns, you can borrow Barangay items again from ${addDays(me0.shelf_paused_until, 1)}. Neighbors' items are still open to you.`, 'shelf_paused');
+    }
+  }
 
   // The same person asking again for overlapping dates (a double tap, or a kit sent twice).
   const [[dup]] = await conn.query(
@@ -211,6 +219,7 @@ export function changeRequestDates(requestId, actor, start, end) {
     if (r.borrower_id !== actor.id) throw forbidden('Only the borrower can change the dates.', 'cannot_manage');
     if (r.status !== 'pending') throw bad('Dates can be changed only while the request is waiting.', 'bad_state');
     assertDates(start, end);
+    if (daysBetween(start, end) + 1 > itemMaxDays(r)) throw bad(`You can borrow this item for up to ${itemMaxDays(r)} days.`, 'too_long');
     const [[dup]] = await conn.query(
       `SELECT id FROM requests WHERE item_id = ? AND borrower_id = ? AND id <> ? AND status IN ('pending','approved')
          AND start_date <= ? AND end_date >= ? LIMIT 1`, [r.item_id, r.borrower_id, r.id, end, start]);
@@ -264,6 +273,46 @@ async function normalReturnCredits(conn, r, onTime) {
   return out;
 }
 
+// Two late returns of Barangay items within 90 days pause Barangay borrowing (neighbors' items stay open).
+async function shelfLatePauseTx(conn, r) {
+  const [[c]] = await conn.query(
+    `SELECT COUNT(*) AS n FROM requests x JOIN items i ON i.id = x.item_id
+      WHERE x.borrower_id = ? AND i.is_shelf = 1 AND x.on_time = 0 AND x.returned_at >= NOW() - INTERVAL 90 DAY`, [r.borrower_id]);
+  if (c.n < RULES.shelfLateToPause) return;
+  const until = addDays(todayPH(), RULES.shelfPauseDays);
+  await conn.query('UPDATE users SET shelf_paused_until = ? WHERE id = ?', [until, r.borrower_id]);
+  await notify(conn, r.borrower_id, 'shelf_paused', 'Barangay items paused', `After ${c.n} late returns of Barangay items, you can borrow them again after ${until}.`, r.id,
+    { n: c.n, until });
+}
+
+// ---------- extend a loan ----------
+// Once per loan, by the owner (or staff for items the barangay handles), up to extendMaxDays more days,
+// within the item's longest loan and never into the next booking.
+export function extendRequest(requestId, actor, days) {
+  days = Number(days);
+  if (!Number.isInteger(days) || days < 1 || days > RULES.extendMaxDays) throw bad(`Choose 1 to ${RULES.extendMaxDays} days.`, 'bad_days');
+  return withTx(async (conn) => {
+    const r = await loadRequest(conn, requestId);
+    assertCanManage(r, actor);
+    if (!['approved', 'handed_over'].includes(r.status)) throw bad('Only an approved loan or one that is out can be extended.', 'bad_state');
+    if (r.extended_at) throw bad('This loan was already extended once.', 'already_extended');
+    const end = addDays(r.end_date, days);
+    const maxDays = itemMaxDays(r);
+    if (daysBetween(r.start_date, end) + 1 > maxDays) throw bad(`This item can be borrowed for up to ${maxDays} days in total.`, 'too_long');
+    if (await findClash(conn, r.item_id, addDays(r.end_date, 1), end, r.id)) throw bad('Someone booked it right after, so it cannot be extended that long.', 'dates_booked');
+    await conn.query('UPDATE requests SET end_date = ?, extended_at = NOW(), extended_days = ? WHERE id = ?', [end, days, r.id]);
+    await notify(conn, r.borrower_id, 'request_extended', `More time for ${r.item_title}`, `Please return it by ${end}.`, r.id, { item: r.item_title, end, n: days });
+    if (actor.role !== 'resident') await audit(actor.id, 'request_extended', `request #${r.id} +${days} days`, conn);
+    return { id: r.id, end_date: end, extended_days: days };
+  });
+}
+
+// How many days a loan can still be extended by (0 when it cannot).
+export function extendMax(r) {
+  if (!['approved', 'handed_over'].includes(r.status) || r.extended_at) return 0;
+  return Math.max(0, Math.min(RULES.extendMaxDays, itemMaxDays(r) - (daysBetween(r.start_date, r.end_date) + 1)));
+}
+
 // Credits move only on a confirmed return (here) or when staff settle a dispute (settleDisputeTx).
 export function returnItem(requestId, actor, { condition = 'good', note = null, photo = null } = {}) {
   if (!['good', 'damaged', 'lost'].includes(condition)) throw bad('Choose the item condition.', 'bad_condition');
@@ -296,6 +345,7 @@ export function returnItem(requestId, actor, { condition = 'good', note = null, 
       await notify(conn, r.borrower_id, 'dispute', `Return of ${r.item_title} needs review`, 'The barangay will contact you to settle this.', r.id, { item: r.item_title });
       result.status = 'disputed';
     }
+    if (!onTime && r.is_shelf) await shelfLatePauseTx(conn, r);
     if (actor.role !== 'resident') await audit(actor.id, `return_${condition}`, `request #${r.id}`, conn);
     return result;
   });
@@ -574,14 +624,15 @@ export async function saveSurvey(requestId, user, answer) {
 export async function saveRating(requestId, user, stars, comment = null) {
   stars = Number(stars);
   if (!(stars >= 1 && stars <= 5)) throw bad('Choose 1 to 5 stars.', 'bad_stars');
-  const r = await one('SELECT r.*, i.owner_id FROM requests r JOIN items i ON i.id = r.item_id WHERE r.id = ?', [requestId]);
+  const r = await one('SELECT r.*, i.owner_id, i.is_shelf FROM requests r JOIN items i ON i.id = r.item_id WHERE r.id = ?', [requestId]);
   if (!r) throw notFound('Request not found.');
   if (!['closed', 'disputed'].includes(r.status)) throw bad('You can rate after the item is returned.', 'bad_state');
   let rateeId;
   if (user.id === r.borrower_id) rateeId = r.owner_id;
   else if (user.id === r.owner_id) rateeId = r.borrower_id;
   else throw forbidden('You were not part of this loan.', 'cannot_manage');
-  if (!rateeId) throw bad('Shelf items are not rated.', 'shelf_item');
+  // A Barangay item has no resident owner: its borrower rates the barangay's service (ratee NULL, staff see it).
+  if (!rateeId && !(r.is_shelf && user.id === r.borrower_id)) throw bad('Shelf items are not rated.', 'shelf_item');
   await requireKind(user, `rating on request #${requestId}`, comment);
   await q(
     'INSERT INTO ratings (request_id, rater_id, ratee_id, stars, comment) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE stars = VALUES(stars), comment = VALUES(comment)',

@@ -82,7 +82,7 @@ let chairId;
 await step('listing: prohibited items are refused, "gunting" (scissors) is allowed', async () => {
   const bad = await api('POST', '/items', newTok, { title: 'Pistol', category_id: 2, pickup_point_id: 1 });
   assert.equal(bad.status, 400); assert.equal(bad.json.code, 'prohibited_item');
-  const ok = await api('POST', '/items', newTok, { title: 'Gunting at tape', category_id: 3, pickup_point_id: 1, condition: 'good', tier: 'low' });
+  const ok = await api('POST', '/items', newTok, { title: 'Gunting at tape', category_id: 3, pickup_point_id: 1, condition: 'good', tier: 'low', accept_terms: true });
   assert.equal(ok.status, 201); chairId = ok.json.id;
   assert.equal(ok.json.owner.name, 'Test');       // first name only
   assert.equal(ok.json.owner.phone, undefined);

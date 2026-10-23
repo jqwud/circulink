@@ -57,7 +57,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     if (!mounted) return;
     final DateTimeRange? range = await pickBorrowDates(
       context,
-      maxDays: context.app.rule('maxLoanDays', 14),
+      maxDays: intOf(item['max_loan_days'], context.app.rule('maxLoanDays', 14)),
       booked: listOf(item['booked_ranges']),
       initial: parseYmd(str(r['start_date'])) != null && parseYmd(str(r['end_date'])) != null
           ? DateTimeRange(start: parseYmd(str(r['start_date']))!, end: parseYmd(str(r['end_date']))!)
@@ -66,6 +66,23 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     if (range == null || !mounted) return;
     await _run(() => context.app.api.patch('/requests/${widget.requestId}/dates', <String, dynamic>{'start_date': ymd(range.start), 'end_date': ymd(range.end)}));
     if (mounted) showMessage(context, context.tx('Dates changed. The owner was told.'));
+  }
+
+  /// More days for a loan, once: the owner picks 1 to [max] days (the server also checks the next booking).
+  Future<void> _extend(int max) async {
+    final int? days = await showHiSheet<int>(context, title: context.tx('Extend the loan'), builder: (BuildContext sheet) {
+      return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: <Widget>[
+        Text(sheet.t('A loan can be extended once.'), style: const TextStyle(color: HiColors.muted)),
+        const SizedBox(height: HiSpace.ms),
+        for (int n = 1; n <= max; n++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: HiSpace.sm),
+            child: SoftButton(label: sheet.tv(n == 1 ? '{n} more day' : '{n} more days', <String, Object>{'n': n}), onPressed: () => Navigator.pop(sheet, n)),
+          ),
+      ]);
+    });
+    if (days == null || !mounted) return;
+    await _run(() => _post('extend', <String, dynamic>{'days': days}), done: context.tx('Extended. The borrower was told the new return date.'), doneTitle: context.tx('Extended'));
   }
 
   Future<void> _cancel() async {
@@ -175,7 +192,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
     final bool asOwner = role == 'owner';
     final bool asBorrower = role == 'borrower';
     final int cost = intOf(r['credit_cost']);
-    final String otherName = asOwner ? str(borrower['name']) : (owner.isEmpty ? context.t('Barangay Shelf') : str(owner['name']));
+    final String otherName = asOwner ? str(borrower['name']) : (owner.isEmpty ? context.t('Barangay') : str(owner['name']));
 
     final List<Widget> actions = <Widget>[];
     if (asOwner && !staff) {
@@ -187,6 +204,10 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
         actions.add(PrimaryButton(label: context.t('Confirm handover'), icon: Icons.handshake, busy: _busy, onPressed: () => _handover(r)));
       } else if (status == 'handed_over') {
         actions.add(PrimaryButton(label: context.t('Confirm return'), icon: Icons.assignment_return, busy: _busy, onPressed: () => _return(r)));
+      }
+      if (intOf(r['extend_max']) > 0) {
+        actions.add(const SizedBox(height: 8));
+        actions.add(SoftButton(label: context.t('Extend the loan'), icon: Icons.more_time, onPressed: _busy ? null : () => _extend(intOf(r['extend_max']))));
       }
     }
     if (asBorrower && status == 'pending') {
@@ -203,8 +224,10 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
         actions.add(const SizedBox(height: 8));
       }
     }
-    if ((status == 'closed' || status == 'disputed') && (asBorrower || asOwner) && (asBorrower ? owner.isNotEmpty : true)) {
-      actions.add(SoftButton(label: '${context.t('Rate')} $otherName', icon: Icons.star_outline, onPressed: _busy ? null : () => _rate(otherName)));
+    if ((status == 'closed' || status == 'disputed') && (asBorrower || asOwner)) {
+      // A Barangay item has no resident owner: its borrower rates the barangay's service instead.
+      final String whom = asBorrower && owner.isEmpty ? context.t('the barangay service') : otherName;
+      actions.add(SoftButton(label: '${context.t('Rate')} $whom', icon: Icons.star_outline, onPressed: _busy ? null : () => _rate(whom)));
     }
 
     return ListView(
@@ -223,6 +246,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
               ),
               const SizedBox(height: 12),
               Wrap(spacing: 6, runSpacing: 6, children: <Widget>[
+                OriginBadge(item: item),
                 StatusChip(statusLabel(context, status), tone: statusTone(status)),
                 if (boolOf(r['overdue'])) StatusChip(context.t('Overdue'), tone: Tone.bad),
                 StatusChip(costLabel(context, cost), tone: Tone.muted),

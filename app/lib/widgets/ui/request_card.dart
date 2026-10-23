@@ -23,7 +23,7 @@ class RequestCard extends StatelessWidget {
     final bool asOwner = request['my_role'] == 'owner';
     final String who = asOwner
         ? '${context.t('Borrower')}: ${str(borrower['name'])}'
-        : '${context.t('Lender')}: ${owner.isEmpty ? context.t('Barangay Shelf') : str(owner['name'])}';
+        : '${context.t('Lender')}: ${owner.isEmpty ? context.t('Barangay') : str(owner['name'])}';
     return HiCard(
       onTap: onTap,
       child: Column(

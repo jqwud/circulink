@@ -5,6 +5,7 @@ import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import 'hi_card.dart';
 import 'labels.dart';
+import 'origin_badge.dart';
 import 'status_chip.dart';
 import 'tone.dart';
 
@@ -44,7 +45,7 @@ class ItemCard extends StatelessWidget {
     final Map<String, dynamic> owner = mapOf(item['owner']);
     final Map<String, dynamic> pickup = mapOf(item['pickup_point']);
     final String tier = str(item['tier'], 'low');
-    final String who = shelf ? context.t('Barangay Shelf') : '${str(owner['name'])} · ${str(owner['purok'], '-')}';
+    final String who = shelf ? context.t('At the barangay hall') : '${str(owner['name'])} · ${str(owner['purok'], '-')}';
     return HiCard(
       onTap: onTap,
       padding: const EdgeInsets.all(12),
@@ -57,6 +58,8 @@ class ItemCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
+                OriginBadge(item: item),
+                const SizedBox(height: 4),
                 Text(str(item['title']), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text(who, style: const TextStyle(color: HiColors.muted, fontSize: 13)),

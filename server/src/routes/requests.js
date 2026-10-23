@@ -8,13 +8,13 @@ import { RULES, photoRequired } from '../rules.js';
 import { phraseById, phrasesFor, renderPhrase, checkSlot } from '../phrases.js';
 import {
   createRequest, decideRequest, cancelRequest, handOver, returnItem, saveSurvey, saveRating, checkIn, checkinState, addDays,
-  contactOpen, threadOpen, notify, changeRequestDates,
+  contactOpen, threadOpen, notify, changeRequestDates, extendRequest, extendMax,
 } from '../services.js';
 
 const router = Router();
 
 export const SELECT_REQUEST = `
-  SELECT r.*, i.title AS item_title, i.photo_url AS item_photo, i.tier AS item_tier, i.is_shelf, i.owner_id,
+  SELECT r.*, i.title AS item_title, i.photo_url AS item_photo, i.tier AS item_tier, i.is_shelf, i.max_loan_days, i.owner_id,
          c.slug AS category_slug,
          b.name AS borrower_name, b.purok AS borrower_purok, b.phone AS borrower_phone_number,
          o.name AS owner_name, o.phone AS owner_phone_number,
@@ -44,12 +44,14 @@ function expiresOn(r) {
 export function mapRequest(r, viewerId = null) {
   return {
     id: r.id,
-    item: { id: r.item_id, title: r.item_title, photo_url: r.item_photo, tier: r.item_tier, is_shelf: !!r.is_shelf, category_slug: r.category_slug },
+    item: { id: r.item_id, title: r.item_title, photo_url: r.item_photo, tier: r.item_tier, is_shelf: !!r.is_shelf, origin: r.is_shelf ? 'barangay' : 'kapitbahay', category_slug: r.category_slug },
     borrower: { id: r.borrower_id, name: first(r.borrower_name), purok: r.borrower_purok },
     owner: r.owner_id ? { id: r.owner_id, name: first(r.owner_name) } : null,
     pickup_point: r.pickup_name,
     start_date: r.start_date,
     end_date: r.end_date,
+    extended_days: r.extended_days || 0,
+    extend_max: extendMax(r),
     status: r.status,
     credit_cost: r.credit_cost,
     credits_held: !!r.credits_held && ['pending', 'approved', 'handed_over'].includes(r.status),
@@ -208,6 +210,7 @@ router.post('/requests/:id/messages', authRequired, wrap(async (req, res) => {
 
 router.post('/requests/:id/approve', authRequired, wrap(async (req, res) => res.json(await decideRequest(Number(req.params.id), req.user, 'approve'))));
 router.post('/requests/:id/reject', authRequired, wrap(async (req, res) => res.json(await decideRequest(Number(req.params.id), req.user, 'reject', req.body?.reason || null))));
+router.post('/requests/:id/extend', authRequired, wrap(async (req, res) => res.json(await extendRequest(Number(req.params.id), req.user, req.body?.days))));
 router.post('/requests/:id/cancel', authRequired, wrap(async (req, res) => res.json(await cancelRequest(Number(req.params.id), req.user))));
 router.post('/requests/:id/handover', authRequired, wrap(async (req, res) => res.json(await handOver(Number(req.params.id), req.user, ownPhoto(req.body?.photo)))));
 router.post('/requests/:id/return', authRequired, wrap(async (req, res) => {

@@ -3,7 +3,7 @@ import { config } from '../config.js';
 import { pool, q, one, withTx, todayPH, likeText, purokNames, pageOf } from '../db.js';
 import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { RULES, SCREENING, creditCost, findProhibited, handledByStaff, screenListing } from '../rules.js';
+import { RULES, SCREENING, creditCost, findProhibited, handledByStaff, screenListing, itemMaxDays } from '../rules.js';
 import { flagItemTx } from '../services.js';
 import { requireKind } from '../kindwords.js';
 import { ownPhoto } from '../uploads.js';
@@ -32,6 +32,8 @@ export function mapItem(r) {
     tier: r.tier,
     photo_url: r.photo_url,
     is_shelf: !!r.is_shelf,
+    origin: r.is_shelf ? 'barangay' : 'kapitbahay', // who it belongs to: the barangay, or a neighbor (kapitbahay)
+    max_loan_days: itemMaxDays(r),
     repair_reuse: !!r.repair_reuse,
     status: r.status,
     removed_by: r.removed_by || null,
@@ -64,13 +66,14 @@ router.get('/meta', authRequired, wrap(async (_req, res) => {
 router.get('/puroks', wrap(async (_req, res) => res.json(await purokNames())));
 
 router.get('/items', authRequired, wrap(async (req, res) => {
-  const { q: text, category_id, tier, shelf, owner } = req.query;
+  const { q: text, category_id, tier, shelf, owner, origin } = req.query;
   const where = ["i.status = 'available'", "i.review_status = 'ok'"];
   const params = [];
   if (text) { where.push('(i.title LIKE ? OR i.description LIKE ?)'); params.push(likeText(text), likeText(text)); }
   if (category_id) { where.push('i.category_id = ?'); params.push(Number(category_id)); }
   if (['low', 'medium', 'high'].includes(tier)) { where.push('i.tier = ?'); params.push(tier); }
-  if (shelf === '1') where.push('i.is_shelf = 1');
+  if (shelf === '1' || origin === 'barangay') where.push('i.is_shelf = 1');
+  if (shelf === '0' || origin === 'kapitbahay') where.push('i.is_shelf = 0');
   if (owner === 'others') { where.push('(i.owner_id IS NULL OR i.owner_id <> ?)'); params.push(req.user.id); }
   const rows = await q(`${SELECT_ITEM} WHERE ${where.join(' AND ')} ORDER BY i.is_shelf DESC, i.created_at DESC, i.id DESC ${pageOf(req.query, config.pages.residentDefault, config.pages.residentMax)}`, params);
   res.json(rows.map(mapItem));
@@ -140,6 +143,11 @@ router.post('/items', authRequired, requireApproved, wrap(async (req, res) => {
   const f = readItemBody(req.body);
   if (!f.pickup_point_id) throw bad('Choose a pickup point.', 'bad_pickup');
   await requireKind(req.user, 'listing', f.title, f.description);
+  // Once, before the first listing: neighbors share at their own risk; the barangay mediates but does not pay.
+  if (!req.user.lender_terms_accepted_at) {
+    if (req.body?.accept_terms !== true) throw bad('Please read and accept the lending terms first.', 'terms_required');
+    await q('UPDATE users SET lender_terms_accepted_at = NOW() WHERE id = ?', [req.user.id]);
+  }
   const [r] = await pool.query(
     'INSERT INTO items (owner_id, category_id, title, description, item_condition, tier, pickup_point_id, photo_url, repair_reuse) VALUES (?,?,?,?,?,?,?,?,?)',
     [req.user.id, f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low', f.pickup_point_id, f.photo_url || null, f.repair_reuse || 0]);

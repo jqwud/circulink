@@ -128,6 +128,9 @@ await q('INSERT INTO announcements (author_id, audience, title, message) VALUES 
 await q('INSERT INTO reports (reporter_id, target_type, target_id, reason, details) VALUES (?,?,?,?,?)', [ben, 'item', ids[3], 'item_condition', 'The cooler lid has a small crack that was not in the photo.']);
 await q('INSERT INTO notifications (user_id, type, title, body) VALUES (?,?,?,?)', [ben, 'announcement', 'Welcome to Hiraman!', 'Borrow what you need, lend what you do not.']);
 
+// The demo residents have used Hiraman before, so they already accepted the lending terms.
+await q("UPDATE users SET lender_terms_accepted_at = NOW() WHERE role = 'resident' AND verification_status = 'approved'");
+
 console.log('Seed done. Demo logins (password "hiraman123"):');
 console.log('  LGU admin : admin@hiraman.test');
 console.log('  LGU staff : staff@hiraman.test');

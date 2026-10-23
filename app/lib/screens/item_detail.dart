@@ -81,6 +81,8 @@ class _ItemBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
+              Align(alignment: Alignment.centerLeft, child: OriginBadge(item: item)),
+              const SizedBox(height: 8),
               Text(str(item['title']), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: HiColors.ink)),
               const SizedBox(height: 8),
               Wrap(
@@ -103,7 +105,13 @@ class _ItemBody extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    _line(Icons.person_outline, shelf ? context.t('Barangay Shelf') : '${str(owner['name'])} · ${str(owner['purok'], '-')}${rating != null ? '  ★ $rating' : ''}'),
+                    _line(
+                      shelf ? Icons.account_balance : Icons.person_outline,
+                      shelf
+                          ? context.t('This item belongs to the Barangay. Pick it up and return it at the barangay hall. Staff check it with you.')
+                          : '${context.tv('This item belongs to {name}, a verified neighbor in {purok}.', <String, Object>{'name': str(owner['name']), 'purok': str(owner['purok'], '-')})}${rating != null ? '  ★ $rating' : ''}',
+                    ),
+                    _line(Icons.timer_outlined, context.tv('Borrow for up to {n} days.', <String, Object>{'n': intOf(item['max_loan_days'], context.app.rule('maxLoanDays', 14))})),
                     if (pickup.isNotEmpty) _line(Icons.place_outlined, '${str(pickup['name'])}${str(pickup['hours']).isEmpty ? '' : ' · ${str(pickup['hours'])}'}'),
                     if (pickup.isNotEmpty && str(pickup['note']).isNotEmpty) _line(Icons.info_outline, str(pickup['note'])),
                     _line(
@@ -209,7 +217,7 @@ class _RequestSheetState extends State<_RequestSheet> {
   String? _error;
 
   Future<void> _pickDates() async {
-    final int maxDays = context.app.rule('maxLoanDays', 14);
+    final int maxDays = intOf(widget.item['max_loan_days'], context.app.rule('maxLoanDays', 14));
     final DateTimeRange? r = await pickBorrowDates(
       context,
       maxDays: maxDays,
@@ -230,7 +238,7 @@ class _RequestSheetState extends State<_RequestSheet> {
       setState(() => _error = context.tx('Choose a start and end date.'));
       return;
     }
-    final int maxDays = context.app.rule('maxLoanDays', 14);
+    final int maxDays = intOf(widget.item['max_loan_days'], context.app.rule('maxLoanDays', 14));
     if (daysInclusive(_start!, _end!) > maxDays) {
       setState(() => _error = context.txv('You can borrow for up to {n} days.', <String, Object>{'n': maxDays}));
       return;

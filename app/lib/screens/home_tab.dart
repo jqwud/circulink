@@ -150,7 +150,7 @@ class HomeTab extends StatelessWidget {
                   )),
             ],
             SectionTitle(
-              ctx.t('Barangay Shelf'),
+              ctx.t('Barangay items'),
               trailing: TextButton(onPressed: () => onGoTo(1), child: Text(ctx.t('See all'))),
             ),
             if (shelf.isEmpty)
