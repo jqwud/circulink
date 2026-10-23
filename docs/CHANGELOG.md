@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 14: Screens and accessibility (2026-10-23)
+
+- Lists load with grey placeholder cards instead of a spinner.
+- Screen readers: Pawsa pictures are skipped as decoration, list thumbnails are not read twice, the item photo says what it shows, badges say whether they are earned, and the shelf cards, badges and photo tile are real buttons. The password eye and the rating stars have names.
+- Large text: Home shelf cards grow instead of cutting names off; detail rows stack.
+- Forms: rejecting, reporting a problem, rating, editing your profile and posting a wanted item now open as bottom sheets; every text field has the same look.
+- Requests and Wanted share one heading style.
+- The request timeline shows older loans correctly.
+
 ## Batch 13: Component library, gallery, design system (2026-10-23)
 
 - The app's shared widgets moved from one 600-line file into `app/lib/widgets/ui/`, one component per file, with the code unchanged; `widgets/common.dart` exports them all, so no screen changed.

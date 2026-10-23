@@ -439,11 +439,14 @@ class _Timeline extends StatelessWidget {
     final String lang = context.lang;
     String when(String key) => str(r[key]).isEmpty ? '' : fmtDate(str(r[key]), lang);
     final bool ended = <String>['rejected', 'cancelled', 'expired'].contains(status);
+    // A step is done once the request has passed it, even for older requests saved before its time was recorded.
+    final bool approved = str(r['approved_at']).isNotEmpty || <String>['approved', 'handed_over', 'closed', 'disputed'].contains(status);
+    final bool borrowed = str(r['handed_over_at']).isNotEmpty || <String>['handed_over', 'closed', 'disputed'].contains(status);
     final List<_Step> steps = <_Step>[
       _Step(context.t('Requested'), when('created_at'), true),
-      if (!ended || str(r['approved_at']).isNotEmpty) _Step(context.t('Approved'), when('approved_at'), str(r['approved_at']).isNotEmpty),
+      if (!ended || str(r['approved_at']).isNotEmpty) _Step(context.t('Approved'), when('approved_at'), approved),
       if (ended) _Step(statusLabel(context, status), '', true, stop: true),
-      if (!ended) _Step(context.t('Borrowed'), when('handed_over_at'), str(r['handed_over_at']).isNotEmpty),
+      if (!ended) _Step(context.t('Borrowed'), when('handed_over_at'), borrowed),
       if (!ended && str(r['borrower_returned_at']).isNotEmpty) _Step(context.t('Borrower says returned'), when('borrower_returned_at'), true),
       if (!ended) _Step(context.t('Return confirmed'), when('returned_at'), str(r['returned_at']).isNotEmpty),
     ];

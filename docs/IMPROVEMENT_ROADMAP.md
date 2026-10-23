@@ -40,7 +40,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 11 | Notifications in the user's language | D6 | M | Done |
 | 12 | Request log, trimmed errors, lint back on, ESLint/Prettier, CI | A9, P3, A10, A11 | M | Done |
 | 13 | UI Phase 2: component library, gallery, `DESIGN_SYSTEM.md` | A4, D12 | M | Done |
-| 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Planned |
+| 14 | UI Phase 3: screens in 4 sub-batches, accessibility | D9, D12 | L | Done |
 | 15 | Containers: Dockerfile, compose, dev overlay, `CONTAINERS.md` | C | M | Planned |
 | **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1), one-page summary for the instructor | | | Later |
 | **Skip** | Push notifications, hosting/HTTPS now, iOS build, ORM or framework switch, separate worker service, certificate pinning, root detection | | | Skipped |
@@ -66,6 +66,16 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 - **Proof:** `flutter analyze` clean; Flutter 13/13 (the gallery lays out without errors at 320 px, 400 px and 400 px with 200% text; tabs announce which one is selected); screenshots of the gallery at 400 px checked by eye.
 - **Behavior changes users can notice:** none. Screens adopt the new pieces in Batch 14.
 - **Undo:** `git revert` the batch commit.
+
+### Batch 14: Screens and accessibility (four commits: 14a to 14d)
+- **Goal:** the screens use the kit, so they look like one product, and people using screen readers, keyboards or large text can use the app.
+- **14a (`4ae3179`):** loading placeholders instead of a spinner; Pawsa treated as decoration; list thumbnails not read twice and the item photo labeled; Home shelf cards, Profile badges and the photo tile are real buttons; shelf cards grow with large text; tooltips on the remaining icon buttons.
+- **14b (`6efc4ce`):** five form pop-ups became bottom sheets that own their fields (reject, report a problem, rate, edit profile, post a wanted item); new `askText` and `ScreenHeader`; hand-drawn field borders removed so the theme applies; `KeyValueRow`, `InfoBanner` and `HiListTile` in use.
+- **14c (`4c17618`):** font weights on the type scale (no visual change).
+- **14d:** the request timeline marks a step done once the request has passed it, also for requests saved before their times were recorded (found in the screenshot check: older loans showed "Approved" as unfinished).
+- **Proof:** `flutter analyze` clean; Flutter 15/15 (new: sheets, gallery at 200% text). Screenshot check of the real web build against a test server, signed in as a borrower: Home with the check-in card, the loan with contact, timeline and check-in (English and Filipino), Requests, Wanted with its new sheet, Profile with the new rows.
+- **Not done:** a screen-reader walk-through on a real phone (TalkBack), and a full 200% text pass on every screen (only the gallery and onboarding are tested at large sizes).
+- **Undo:** `git revert` the four commits, newest first.
 
 ### Batch 5: Daily check-in, fair lateness, request timeline
 - **Goal:** a borrower is never charged for a slow confirmation, owners know their item is safe, and everyone can see where a request stands.
