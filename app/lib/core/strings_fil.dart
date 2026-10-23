@@ -517,6 +517,13 @@ const Map<String, String> kFil = <String, String>{
   "{name} can help: {wanted}": "Makakatulong si {name}: {wanted}",
   "Check My Items or message them at the barangay pickup point.": "Tingnan ang Aking mga gamit o kausapin sila sa pickup point ng barangay.",
   "{name} wrote about {item}": "Sumulat si {name} tungkol sa {item}",
+  "Photo of": "Litrato ng",
+  "Change photo": "Palitan ang litrato",
+  "Show password": "Ipakita ang password",
+  "Hide password": "Itago ang password",
+  "earned": "nakuha na",
+  "not yet earned": "hindi pa nakukuha",
+  "Loading...": "Naglo-load...",
 };
 
 /// Messages from the server, by error code, in Filipino.

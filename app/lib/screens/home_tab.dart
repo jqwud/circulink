@@ -157,24 +157,33 @@ class HomeTab extends StatelessWidget {
               Padding(padding: const EdgeInsets.all(8), child: Text(ctx.t('Nothing on the shelf right now.'), style: const TextStyle(color: HiColors.muted)))
             else
               SizedBox(
-                height: 150,
+                height: 110 + 40 * MediaQuery.textScalerOf(ctx).scale(1),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: shelf
-                      .map((Map<String, dynamic> it) => GestureDetector(
-                            onTap: () => openItem(ctx, intOf(it['id'])),
-                            child: Container(
-                              width: 130,
-                              margin: const EdgeInsets.only(right: 10),
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(kRadius), border: Border.all(color: HiColors.line)),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  ItemThumb(item: it, size: 70),
-                                  const SizedBox(height: 6),
-                                  Text(str(it['title']), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                                ],
+                      .map((Map<String, dynamic> it) => Padding(
+                            padding: const EdgeInsets.only(right: 10),
+                            child: Semantics(
+                              button: true,
+                              child: Material(
+                                color: HiColors.card,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kRadius), side: const BorderSide(color: HiColors.line)),
+                                clipBehavior: Clip.antiAlias,
+                                child: InkWell(
+                                  onTap: () => openItem(ctx, intOf(it['id'])),
+                                  child: Container(
+                                    width: 130,
+                                    padding: const EdgeInsets.all(10),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: <Widget>[
+                                        ItemThumb(item: it, size: 70),
+                                        const SizedBox(height: 6),
+                                        Text(str(it['title']), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ))

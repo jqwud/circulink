@@ -93,7 +93,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 labelText: context.t('Password'),
                 border: const OutlineInputBorder(),
                 prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(icon: Icon(_hide ? Icons.visibility : Icons.visibility_off), onPressed: () => setState(() => _hide = !_hide)),
+                suffixIcon: IconButton(
+                  tooltip: _hide ? context.t('Show password') : context.t('Hide password'),
+                  icon: Icon(_hide ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _hide = !_hide),
+                ),
               ),
             ),
             if (_error != null) ...<Widget>[

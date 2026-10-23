@@ -6,6 +6,7 @@ import '../../core/theme.dart';
 import '../connection.dart';
 import '../pawsa.dart';
 import 'buttons.dart';
+import 'skeleton.dart';
 
 /// The three states of anything loaded from the server: loading, error, and empty.
 class EmptyState extends StatelessWidget {
@@ -69,7 +70,7 @@ class ErrorView extends StatelessWidget {
   }
 }
 
-/// Loads data, shows a spinner, an error with a retry button, or the content.
+/// Loads data, shows grey placeholder cards, an error with a retry button, or the content.
 /// Pull down to refresh. Change [refreshKey] to make it reload by itself.
 class AsyncView<T> extends StatefulWidget {
   final Future<T> Function() loader;
@@ -125,7 +126,7 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
   @override
   Widget build(BuildContext context) {
     if (_data == null) {
-      if (_loading) return const Center(child: CircularProgressIndicator(color: HiColors.accent));
+      if (_loading) return const SkeletonList();
       return ErrorView(error: _error ?? 'error', onRetry: _load);
     }
     final Widget body = RefreshIndicator(

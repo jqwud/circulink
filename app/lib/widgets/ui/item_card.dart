@@ -28,7 +28,7 @@ class ItemThumb extends StatelessWidget {
       borderRadius: BorderRadius.circular(14),
       child: photo.isEmpty
           ? placeholder
-          : Image.network(photo, width: size, height: size, fit: BoxFit.cover, errorBuilder: (BuildContext c, Object e, StackTrace? s) => placeholder),
+          : Image.network(photo, width: size, height: size, fit: BoxFit.cover, excludeFromSemantics: true, errorBuilder: (BuildContext c, Object e, StackTrace? s) => placeholder),
     );
   }
 }

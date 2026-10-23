@@ -77,7 +77,7 @@ class _ItemBody extends StatelessWidget {
                   width: double.infinity,
                   child: photo.isEmpty
                       ? Container(color: HiColors.primarySoft, child: Icon(categoryIcon(str(category['slug'])), size: 80, color: HiColors.accent))
-                      : Image.network(photo, fit: BoxFit.cover, errorBuilder: (BuildContext c, Object e, StackTrace? s) => Container(color: HiColors.primarySoft, child: const Icon(Icons.image_not_supported, color: HiColors.accent))),
+                      : Image.network(photo, fit: BoxFit.cover, semanticLabel: '${context.t('Photo of')} ${str(item['title'])}', errorBuilder: (BuildContext c, Object e, StackTrace? s) => Container(color: HiColors.primarySoft, child: const Icon(Icons.image_not_supported, color: HiColors.accent))),
                 ),
               ),
               const SizedBox(height: 14),

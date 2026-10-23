@@ -117,19 +117,26 @@ class _AddItemScreenState extends State<AddItemScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          GestureDetector(
-            onTap: _photoPick,
-            child: Container(
-              height: 160,
-              decoration: BoxDecoration(color: HiColors.primarySoft, borderRadius: BorderRadius.circular(kRadius)),
+          Semantics(
+            button: true,
+            label: photoUrl.isEmpty ? context.t('Add a photo') : context.t('Change photo'),
+            child: Material(
+              color: HiColors.primarySoft,
+              borderRadius: BorderRadius.circular(kRadius),
               clipBehavior: Clip.antiAlias,
-              child: photoUrl.isEmpty
-                  ? Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-                      const Icon(Icons.add_a_photo, size: 36, color: HiColors.accent),
-                      const SizedBox(height: 6),
-                      Text(context.t('Add a photo'), style: const TextStyle(color: HiColors.accent, fontWeight: FontWeight.w800)),
-                    ])
-                  : Image.network(photoUrl, fit: BoxFit.cover, width: double.infinity),
+              child: InkWell(
+                onTap: _photoPick,
+                child: SizedBox(
+                  height: 160,
+                  child: photoUrl.isEmpty
+                      ? Column(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
+                          const Icon(Icons.add_a_photo, size: 36, color: HiColors.accent),
+                          const SizedBox(height: 6),
+                          Text(context.t('Add a photo'), style: const TextStyle(color: HiColors.accent, fontWeight: FontWeight.w800)),
+                        ])
+                      : Image.network(photoUrl, fit: BoxFit.cover, width: double.infinity, excludeFromSemantics: true),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -168,7 +175,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
             final bool on = _tier == t;
             final String desc = t == 'low'
                 ? context.t('Anyone verified can borrow right away. Best for cheap, simple things.')
-                : (t == 'medium' ? context.t('You approve each request and take a photo at handover and return.') : context.t('Barangay staff approve and handle handover at the hall. For valuable items.'));
+                : (t == 'medium'
+                    ? context.t('You approve each request and take a photo at handover and return.')
+                    : context.t('Barangay staff approve and handle handover at the hall. For valuable items.'));
             return HiCard(
               margin: const EdgeInsets.only(bottom: 8),
               color: on ? HiColors.primarySoft : Colors.white,

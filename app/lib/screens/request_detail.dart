@@ -191,6 +191,8 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
                 children: List<Widget>.generate(
                   5,
                   (int i) => IconButton(
+                    tooltip: '${i + 1} / 5',
+                    isSelected: i < stars,
                     icon: Icon(i < stars ? Icons.star : Icons.star_border, color: HiColors.sun, size: 34),
                     onPressed: () => setLocal(() => stars = i + 1),
                   ),

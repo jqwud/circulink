@@ -95,7 +95,12 @@ class ProfileScreen extends StatelessWidget {
                     final String key = str(b['key']);
                     final bool earned = boolOf(b['earned']);
                     final List<String> text = _badgeText[key] ?? <String>[key, ''];
-                    return GestureDetector(
+                    return Semantics(
+                      button: true,
+                      label: '${ctx.t(text[0])}, ${earned ? ctx.t('earned') : ctx.t('not yet earned')}',
+                      excludeSemantics: true,
+                      child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
                       onTap: () => pawsaDialog(ctx, pose: earned ? 'cheer' : 'sleepy', title: ctx.tx(text[0]), message: earned ? ctx.tx('You earned this badge!') : ctx.tx(text[1])),
                       child: Container(
                         width: 100,
@@ -110,7 +115,7 @@ class ProfileScreen extends StatelessWidget {
                           Text(ctx.t(text[0]), textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: earned ? HiColors.ink : HiColors.muted)),
                         ]),
                       ),
-                    );
+                    ));
                   }).toList(),
                 ),
               ],
