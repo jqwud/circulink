@@ -3,13 +3,13 @@
 // The barangay fills in its Data Protection Officer in .env (DPO_NAME, DPO_EMAIL, DPO_PHONE).
 import { RULES } from './rules.js';
 
-export const PRIVACY_VERSION = '2026-10-22';
+export const PRIVACY_VERSION = '2026-10-23';
 
 const SECTIONS = {
   en: [
     ['What we collect',
       'Your name, email, phone number, purok and password (stored scrambled). A photo of your ID, to check that you live in the barangay. '
-      + 'The items you list, your requests and loans, daily check-ins, messages, ratings, reports and your credit history.'],
+      + 'The items you list, your requests and loans, daily check-ins, the quick replies you send, ratings, reports and concerns you send to the barangay, and your credit history.'],
     ['Why',
       'To verify that members are residents, to run borrowing and lending, to keep everyone safe, to settle problems, and to count how much '
       + 'the barangay saves together. Only totals are shared in reports, never names.'],
@@ -18,6 +18,7 @@ const SECTIONS = {
       + 'Barangay staff see your details and your ID photo to verify you and to help with problems. Nobody else. Your data is never sold.'],
     ['How long we keep it',
       `Your ID photo is deleted ${RULES.idPhotoRetentionDays} days after staff approve or reject it. Photos that were never used are deleted after a day. `
+      + `Messages you typed before quick replies existed are deleted ${RULES.oldTextKeptDays} days after that loan ends. `
       + 'Everything else stays while you have an account. When your account is deleted, your name, contact details, ID photo and messages are removed; '
       + 'loan records stay without your name so the barangay\'s totals stay correct.'],
     ['Your rights',
@@ -27,7 +28,7 @@ const SECTIONS = {
   fil: [
     ['Ano ang kinokolekta namin',
       'Ang pangalan, email, numero ng telepono, purok at password mo (naka-encrypt). Litrato ng ID mo, para matiyak na nakatira ka sa barangay. '
-      + 'Ang mga gamit na inilista mo, ang mga hiling at hiram mo, araw-araw na check-in, mga mensahe, rating, report at kasaysayan ng credits mo.'],
+      + 'Ang mga gamit na inilista mo, ang mga hiling at hiram mo, araw-araw na check-in, ang mga nakahandang sagot na ipinadala mo, rating, report at alalahaning ipinadala mo sa barangay, at kasaysayan ng credits mo.'],
     ['Bakit',
       'Para matiyak na residente ang mga miyembro, mapatakbo ang hiraman at pahiraman, mapanatiling ligtas ang lahat, maayos ang mga problema, '
       + 'at mabilang kung gaano kalaki ang natitipid ng barangay. Kabuuang bilang lang ang ibinabahagi sa mga ulat, hindi pangalan.'],
@@ -36,6 +37,7 @@ const SECTIONS = {
       + 'Nakikita ng barangay staff ang mga detalye at litrato ng ID mo para ma-verify ka at matulungan sa mga problema. Wala nang iba. Hindi kailanman ibinebenta ang datos mo.'],
     ['Gaano katagal itatago',
       `Binubura ang litrato ng ID mo ${RULES.idPhotoRetentionDays} araw matapos itong aprubahan o tanggihan ng staff. Binubura pagkalipas ng isang araw ang mga litratong hindi nagamit. `
+      + `Binubura ang mga mensaheng tinype mo bago nagkaroon ng nakahandang sagot ${RULES.oldTextKeptDays} araw matapos ang hiram na iyon. `
       + 'Ang iba ay mananatili habang may account ka. Kapag binura ang account mo, aalisin ang pangalan, contact, litrato ng ID at mga mensahe mo; '
       + 'mananatili ang mga tala ng hiraman nang walang pangalan mo para tama pa rin ang kabuuang bilang ng barangay.'],
     ['Ang iyong mga karapatan',

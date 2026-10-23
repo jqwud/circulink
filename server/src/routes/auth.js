@@ -9,6 +9,7 @@ import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
 import { PRIVACY_VERSION, privacyNotice } from '../privacy.js';
 import { config } from '../config.js';
 import { audit, notify } from '../services.js';
+import { phraseById, renderPhrase } from '../phrases.js';
 
 const router = Router();
 const limiter = rateLimit({
@@ -161,6 +162,12 @@ router.post('/me/id-consent', authRequired, wrap(async (req, res) => {
 }));
 
 // "My data": everything Hiraman holds about the person, in one download. Other people appear by first name only.
+// A sent message in words: a quick reply rendered in the person's language, or the text they wrote.
+function messageText(m, lang) {
+  const p = m.phrase_id ? phraseById(m.phrase_id) : null;
+  return p ? renderPhrase(p, m.slot_value, lang === 'en' ? 'en' : 'fil') : m.body;
+}
+
 router.get('/me/data', authRequired, wrap(async (req, res) => {
   const id = req.user.id;
   const u = req.user;
@@ -183,7 +190,8 @@ router.get('/me/data', authRequired, wrap(async (req, res) => {
     credit_history: await q('SELECT amount, reason, request_id, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id', [id]),
     checkins: await q(
       'SELECT c.request_id, c.day, c.answer, c.note FROM request_checkins c JOIN requests r ON r.id = c.request_id WHERE r.borrower_id = ? ORDER BY c.id', [id]),
-    messages_sent: await q('SELECT request_id, body, created_at FROM request_messages WHERE sender_id = ? ORDER BY id', [id]),
+    messages_sent: (await q('SELECT request_id, phrase_id, slot_value, body, created_at FROM request_messages WHERE sender_id = ? ORDER BY id', [id]))
+      .map((m) => ({ request_id: m.request_id, body: messageText(m, u.language), created_at: m.created_at })),
     ratings_given: await q('SELECT request_id, stars, comment, created_at FROM ratings WHERE rater_id = ? ORDER BY id', [id]),
     ratings_received: await q('SELECT request_id, stars, comment, created_at FROM ratings WHERE ratee_id = ? ORDER BY id', [id]),
     reports_filed: await q('SELECT target_type, reason, details, status, outcome, created_at FROM reports WHERE reporter_id = ? ORDER BY id', [id]),

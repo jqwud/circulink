@@ -13,7 +13,11 @@ export const RULES = {
   unusedUploadGraceHours: 24, // a photo nobody attached to anything is deleted after this long
   checkinAlertAfterMissedDays: 2, // missed daily check-ins in a row before the owner and staff are alerted
   contactDaysAfterClose: 7,   // phone numbers and the message thread stay open this long after a loan closes
-  messageMaxLength: 500,
+  messageMaxLength: 500,       // staff free text (residents send quick replies)
+  messagesPerRequestPerDay: 10, // quick replies one person can send on one request in a day
+  reportsPerDay: 3,             // reports and concerns one person can file in a day
+  harassmentConcernsToPause: 2, // harassment concerns about one person in 30 days that pause their messages
+  oldTextKeptDays: 365,         // residents' free text from before quick replies, kept this long after the loan ends
 };
 
 // How staff settle a dispute (an item returned damaged or lost), and what each outcome does to credits.
@@ -32,6 +36,28 @@ export const PROHIBITED = [
   'medicine', 'gamot', 'antibiotic', 'prescription', 'pesticide', 'poison', 'chemical',
   'gasoline', 'acid', 'drugs', 'alcohol', 'cigarette', 'vape',
 ];
+
+// Concern topics residents pick when no quick reply fits, and the report reasons staff should see first.
+export const CONCERN_TOPICS = ['safety', 'item_problem', 'money_asked', 'harassment', 'other'];
+export const URGENT_REASONS = ['safety', 'harassment', 'Unsafe or prohibited item', 'Rude or unsafe behavior'];
+
+// Unkind words (English and Filipino) refused in the few places residents still type: listings, Wanted posts,
+// rating comments and concern notes. Staff add more in the portal (word_filter table).
+export const UNKIND_WORDS = [
+  'fuck', 'fck', 'motherfucker', 'shit', 'bitch', 'asshole', 'bastard', 'dickhead',
+  'putangina', 'putang ina', 'tangina', 'tang ina', 'puta', 'gago', 'gaga', 'tarantado', 'tarantada', 'ulol',
+  'bobo', 'punyeta', 'pakyu', 'kupal', 'pokpok', 'hayop ka', 'inutil', 'engot',
+];
+
+// The first unkind word in the texts, also when disguised ("g a g o", "sh1t", "fuuuck"), or null.
+export function findUnkind(texts, extra = []) {
+  const raw = texts.filter(Boolean).join(' ');
+  if (!raw) return null;
+  const hay = `${raw.toLowerCase()} ${normalizeDisguise(raw)}`;
+  const words = [...UNKIND_WORDS, ...extra.map((w) => String(w).toLowerCase().trim()).filter(Boolean)];
+  const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return words.find((w) => new RegExp(`\\b${w.split(/\s+/).map(escape).join('[\\s.\\-_*]*')}(s|es|ing|er)?\\b`, 'i').test(hay)) || null;
+}
 
 export function findProhibited(...texts) {
   const hay = texts.filter(Boolean).join(' ').toLowerCase();

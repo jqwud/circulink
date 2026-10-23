@@ -20,6 +20,8 @@ export default function Dashboard() {
     { n: s.missed_checkins, label: 'Loans with no check-in for 2+ days', to: '/transactions', bad: true },
     { n: s.open_reports, label: 'Open reports', to: '/reports', bad: true },
     { n: s.deletion_requests, label: 'Account deletion requests', to: '/residents?deletion=1' },
+    { n: s.messaging_paused, label: 'Residents with paused messages', to: '/residents', bad: true },
+    { n: s.unkind_refusals_7d, label: 'Unkind words refused this week', to: '/staff' },
   ].filter((a) => a.n > 0);
 
   return (
@@ -33,6 +35,18 @@ export default function Dashboard() {
               <small>{t('They are hidden from neighbors until you check them. Review them first.')}</small>
             </span>
             <span className="alert-go">{t('Review now')} →</span>
+          </Link>
+        </div>
+      )}
+      {s.urgent_reports > 0 && (
+        <div role="alert">
+          <Link to="/reports" className="alert-urgent">
+            <span className="alert-icon" aria-hidden="true">⚠</span>
+            <span>
+              <b>{t('{n} safety or harassment concern(s) waiting').replace('{n}', s.urgent_reports)}</b>
+              <small>{t('A resident asked the barangay for help. Answer within 1 working day.')}</small>
+            </span>
+            <span className="alert-go">{t('Answer now')} →</span>
           </Link>
         </div>
       )}

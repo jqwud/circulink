@@ -16,7 +16,8 @@ import { removePrivateFile } from '../uploads.js';
 import { listRuleSettings, saveRuleSettings } from '../settings.js';
 import crypto from 'node:crypto';
 import { runReminders } from '../jobs.js';
-import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG } from '../rules.js';
+import { RULES, DISPUTE_OUTCOMES, PROHIBITED, AVG_WEIGHT_KG, URGENT_REASONS, UNKIND_WORDS } from '../rules.js';
+import { staffWords } from '../kindwords.js';
 import { SELECT_ITEM_SQL, mapItem, readItemBody } from './items.js';
 import { SELECT_REQUEST, mapRequest } from './requests.js';
 import { impactNumbers } from './community.js';
@@ -44,6 +45,9 @@ router.get('/admin/stats', wrap(async (_req, res) => {
     staff_requests_waiting: await n("SELECT COUNT(*) n FROM requests WHERE status='pending' AND handled_by_staff=1"),
     open_reports: await n("SELECT COUNT(*) n FROM reports WHERE status <> 'resolved'"),
     deletion_requests: await n('SELECT COUNT(*) n FROM users WHERE deletion_requested_at IS NOT NULL AND deleted_at IS NULL'),
+    urgent_reports: await n("SELECT COUNT(*) n FROM reports WHERE status <> 'resolved' AND reason IN (?)", [URGENT_REASONS]),
+    unkind_refusals_7d: await n("SELECT COUNT(*) n FROM audit_log WHERE action = 'unkind_words_refused' AND created_at >= NOW() - INTERVAL 7 DAY"),
+    messaging_paused: await n("SELECT COUNT(*) n FROM users WHERE messaging_paused = 1 AND deleted_at IS NULL"),
     completed_loans: impact.completed_loans,
     return_rate: impact.return_rate,
     purchases_avoided: impact.purchases_avoided,
@@ -58,13 +62,13 @@ router.get('/admin/users', wrap(async (req, res) => {
   if (req.query.deletion === '1') where.push('u.deletion_requested_at IS NOT NULL');
   if (req.query.q) { where.push('(u.name LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)'); params.push(like(req.query.q), like(req.query.q), like(req.query.q)); }
   const rows = await q(
-    `SELECT u.id, u.name, u.email, u.phone, u.purok, u.verification_status, u.reject_reason, u.credits, u.suspended, u.created_at, u.deletion_requested_at,
+    `SELECT u.id, u.name, u.email, u.phone, u.purok, u.verification_status, u.reject_reason, u.credits, u.suspended, u.messaging_paused, u.created_at, u.deletion_requested_at,
             (u.id_photo_path IS NOT NULL) AS has_id_photo,
             (SELECT COUNT(*) FROM items i WHERE i.owner_id = u.id AND i.status <> 'removed') AS items,
             (SELECT COUNT(*) FROM requests r WHERE r.borrower_id = u.id AND r.status = 'closed') AS loans
        FROM users u WHERE ${where.join(' AND ')}
       ORDER BY FIELD(u.verification_status,'pending','unverified','approved','rejected'), u.created_at DESC, u.id DESC ${pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`, params);
-  res.json(rows.map((u) => ({ ...u, has_id_photo: !!u.has_id_photo, suspended: !!u.suspended })));
+  res.json(rows.map((u) => ({ ...u, has_id_photo: !!u.has_id_photo, suspended: !!u.suspended, messaging_paused: !!u.messaging_paused })));
 }));
 
 router.get('/admin/users/:id', wrap(async (req, res) => {
@@ -72,7 +76,7 @@ router.get('/admin/users/:id', wrap(async (req, res) => {
   if (!u) throw notFound('Resident not found.');
   const history = await q(`${SELECT_REQUEST} WHERE r.borrower_id = ? OR i.owner_id = ? ORDER BY r.id DESC LIMIT 50`, [u.id, u.id]);
   const ledger = await q('SELECT amount, reason, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id DESC LIMIT 30', [u.id]);
-  res.json({ user: { ...publicUser(u), suspended: !!u.suspended, created_at: u.created_at }, history: history.map((r) => mapRequest(r, u.id)), ledger });
+  res.json({ user: { ...publicUser(u), suspended: !!u.suspended, messaging_paused: !!u.messaging_paused, created_at: u.created_at }, history: history.map((r) => mapRequest(r, u.id)), ledger });
 }));
 
 // ID photos are private: only staff, only through this authenticated route.
@@ -97,6 +101,35 @@ for (const [action, value, logged] of [['suspend', 1, 'user_suspended'], ['reins
     res.json({ id: u.id, suspended: !!value });
   }));
 }
+
+// Quick replies of a resident paused after repeated harassment concerns (or by staff); staff lift or set it.
+router.post('/admin/users/:id/messaging', wrap(async (req, res) => {
+  const u = await one('SELECT id, name FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
+  if (!u) throw notFound('Resident not found.');
+  const paused = !!req.body?.paused;
+  await q('UPDATE users SET messaging_paused = ? WHERE id = ?', [paused ? 1 : 0, u.id]);
+  await audit(req.user.id, paused ? 'messaging_paused' : 'messaging_allowed', `user #${u.id} ${u.name}`);
+  res.json({ id: u.id, messaging_paused: paused });
+}));
+
+// ---------- kind words: the built-in list plus words staff add ----------
+router.get('/admin/words', wrap(async (_req, res) => res.json({ built_in: UNKIND_WORDS, added: await staffWords() })));
+
+router.post('/admin/words', requireAdmin, wrap(async (req, res) => {
+  const word = String(req.body?.word || '').trim().toLowerCase();
+  if (!/^[a-z][a-z' -]{1,38}$/.test(word)) throw bad('Write one word or a short phrase, letters only.', 'bad_word');
+  await q('INSERT IGNORE INTO word_filter (word, added_by) VALUES (?, ?)', [word, req.user.id]);
+  await audit(req.user.id, 'word_added', word);
+  res.status(201).json({ word });
+}));
+
+router.delete('/admin/words/:word', requireAdmin, wrap(async (req, res) => {
+  const word = String(req.params.word || '').trim().toLowerCase();
+  const r = await q('DELETE FROM word_filter WHERE word = ?', [word]);
+  if (!r.affectedRows) throw notFound('That word is not on the list.');
+  await audit(req.user.id, 'word_removed', word);
+  res.json({ ok: true });
+}));
 
 // Staff-assisted password reset, done at the hall after checking the person in front of them.
 // Staff can reset residents; only an admin can reset a staff account; nobody resets their own here.
@@ -223,7 +256,8 @@ router.get('/admin/reports', wrap(async (req, res) => {
   const where = req.query.status ? 'WHERE rp.status = ?' : '';
   const rows = await q(
     `SELECT rp.*, u.name AS reporter_name FROM reports rp JOIN users u ON u.id = rp.reporter_id
-      ${where} ORDER BY FIELD(rp.status,'open','in_mediation','resolved'), rp.id DESC ${pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`, req.query.status ? [req.query.status] : []);
+      ${where} ORDER BY FIELD(rp.status,'open','in_mediation','resolved'), (rp.status <> 'resolved' AND rp.reason IN (?)) DESC, rp.id DESC ${pageOf(req.query, config.pages.staffDefault, config.pages.staffMax)}`,
+    req.query.status ? [req.query.status, URGENT_REASONS] : [URGENT_REASONS]);
   // What each report is about, fetched once per kind instead of once per report.
   const ids = (kind) => [...new Set(rows.filter((r) => r.target_type === kind).map((r) => r.target_id))];
   const inList = async (sql, list) => (list.length ? q(sql, [list]) : []);
@@ -246,7 +280,7 @@ router.get('/admin/reports', wrap(async (req, res) => {
     } else {
       target = userNames.has(r.target_id) ? { label: userNames.get(r.target_id) } : null;
     }
-    out.push({ id: r.id, target_type: r.target_type, target_id: r.target_id, reason: r.reason, details: r.details, status: r.status,
+    out.push({ id: r.id, target_type: r.target_type, target_id: r.target_id, reason: r.reason, urgent: URGENT_REASONS.includes(r.reason), details: r.details, status: r.status,
       mediator_notes: r.mediator_notes, outcome: r.outcome, reporter: r.reporter_name, created_at: r.created_at, resolved_at: r.resolved_at, target });
   }
   res.json(out);

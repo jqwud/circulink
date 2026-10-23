@@ -176,3 +176,6 @@ dl.kv dt { color: var(--c-muted); } dl.kv dd { margin: 0; font-weight: 700; }
 
 /* Text for screen readers only (for example the name of a table's buttons column). */
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* Safety and harassment concerns that are not resolved yet. */
+tr.row-urgent td:first-child { box-shadow: inset 4px 0 0 var(--c-danger); }

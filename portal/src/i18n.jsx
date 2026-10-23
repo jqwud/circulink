@@ -165,11 +165,22 @@ const FIL = {
   'flag_new_account_burst': 'maraming listing mula sa bagong account', 'flag_reported': 'inireport ng ilang kapitbahay',
   'Their name, contact details, ID photo and messages are removed for good. Loan records stay without their name. This cannot be undone.':
     'Permanenteng aalisin ang pangalan, contact, litrato ng ID at mga mensahe nila. Mananatili ang mga tala ng hiraman nang walang pangalan nila. Hindi na ito maibabalik.',
+  'concern_safety': 'Hindi ligtas ang residente', 'concern_item_problem': 'May problema sa gamit', 'concern_money_asked': 'Hiningan ng pera',
+  'concern_harassment': 'Bastos o nanliligalig', 'concern_other': 'Iba pang alalahanin', 'Urgent': 'Apurahan',
+  'Messages paused': 'Naka-pause ang mensahe', 'Allow messages': 'Payagan ang mensahe', 'Messages allowed again.': 'Pinayagan na ulit ang mensahe.',
+  'Residents with paused messages': 'Mga residenteng naka-pause ang mensahe', 'Unkind words refused this week': 'Mga bastos na salitang tinanggihan ngayong linggo',
+  '{n} safety or harassment concern(s) waiting': '{n} alalahanin tungkol sa kaligtasan o panliligalig ang naghihintay',
+  'A resident asked the barangay for help. Answer within 1 working day.': 'Humingi ng tulong sa barangay ang isang residente. Sagutin sa loob ng 1 araw ng trabaho.',
+  'Answer now': 'Sagutin ngayon', 'Kind words': 'Mabubuting salita', 'Word added.': 'Naidagdag ang salita.', 'Word removed.': 'Natanggal ang salita.',
+  'Listings, Wanted posts, ratings and concern notes with these words are refused with "Please use kind words". Residents message each other only with quick replies.': 'Tinatanggihan ang mga listing, Wanted post, rating at tala ng alalahanin na may ganitong salita. Sa mga nakahandang sagot lang nag-uusap ang mga residente.',
+  'Added by the barangay': 'Idinagdag ng barangay', 'None yet.': 'Wala pa.', 'Word to refuse': 'Salitang tatanggihan', 'Built-in list': 'Kasamang listahan',
 };
 
 // English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),
 // so English mode shows "Borrowed" instead of "handed_over".
 const EN = {
+  'concern_safety': 'Feels unsafe', 'concern_item_problem': 'Problem with the item', 'concern_money_asked': 'Money was asked',
+  'concern_harassment': 'Rude or harassing behavior', 'concern_other': 'Something else (concern)',
   'pending': 'Pending', 'approved': 'Approved', 'rejected': 'Rejected', 'unverified': 'Not verified', 'cancelled': 'Cancelled',
   'handed_over': 'Borrowed', 'closed': 'Returned', 'disputed': 'Disputed', 'expired': 'Expired', 'available': 'Available',
   'paused': 'Paused', 'removed': 'Removed', 'open': 'Open', 'in_mediation': 'In mediation', 'resolved': 'Resolved',

@@ -140,10 +140,59 @@ export default function Rules() {
         </table>
       </div>
       <Puroks />
+      <KindWords />
       <div className="card">
         <h2>{t('Pickup points')}</h2>
         <dl className="kv">{d.pickup_points.map((p) => <Fragment key={p.id}><dt>{p.name}</dt><dd>{p.hours} <span className="muted">· {p.note}</span></dd></Fragment>)}</dl>
       </div>
     </>
+  );
+}
+
+// Words refused in the text residents still type (listings, Wanted posts, ratings, concern notes). The built-in
+// list ships with Hiraman; admins add local words. Disguised spellings ("g a g o", "sh1t") are caught too.
+function KindWords() {
+  const { t } = useI18n();
+  const { user } = useAuth();
+  const toast = useToast();
+  const list = useLoad(() => api('/admin/words'), []);
+  const [word, setWord] = useState('');
+  const admin = user.role === 'lgu_admin';
+  async function add(e) {
+    e.preventDefault();
+    try { await api('/admin/words', { method: 'POST', body: { word } }); setWord(''); toast(t('Word added.')); list.reload(); }
+    catch (err) { toast(err.message, 'bad'); }
+  }
+  async function remove(w) {
+    try { await api(`/admin/words/${encodeURIComponent(w)}`, { method: 'DELETE' }); toast(t('Word removed.')); list.reload(); }
+    catch (err) { toast(err.message, 'bad'); }
+  }
+  return (
+    <div className="card">
+      <h2>{t('Kind words')}</h2>
+      <p className="muted">{t('Listings, Wanted posts, ratings and concern notes with these words are refused with "Please use kind words". Residents message each other only with quick replies.')}</p>
+      {list.data && (
+        <>
+          <h3>{t('Added by the barangay')}</h3>
+          {list.data.added.length === 0 ? <p className="muted">{t('None yet.')}</p> : (
+            <div className="tag-list">
+              {list.data.added.map((w) => (
+                <span className="tag" key={w}>{w}{admin && <> <button type="button" className="icon-btn" aria-label={`${t('Remove')} ${w}`} onClick={() => remove(w)}>×</button></>}</span>
+              ))}
+            </div>
+          )}
+          {admin && (
+            <form onSubmit={add} className="row" style={{ marginTop: 12 }}>
+              <input className="grow" value={word} onChange={(e) => setWord(e.target.value)} placeholder={t('Word to refuse')} aria-label={t('Word to refuse')} maxLength={40} />
+              <button className="btn primary">{t('Add')}</button>
+            </form>
+          )}
+          <details style={{ marginTop: 12 }}>
+            <summary>{t('Built-in list')} ({list.data.built_in.length})</summary>
+            <div className="tag-list">{list.data.built_in.map((w) => <span className="tag" key={w}>{w}</span>)}</div>
+          </details>
+        </>
+      )}
+    </div>
   );
 }

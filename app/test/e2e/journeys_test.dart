@@ -134,6 +134,27 @@ void main() {
     expect((await tester.runAsync(() => call('GET', '/me', token: carlo)))['credits'], before - 1, reason: 'one credit held');
 
     await tapAndWait(tester, find.widgetWithText(TextButton, 'OK'), find.text('Credits on hold: 1'));
+
+    // Quick replies instead of free text: no typing box, a phrase list for this situation.
+    await tester.scrollUntilVisible(find.text('Send a message'), 300, scrollable: find.byType(Scrollable).last);
+    await tapAndWait(tester, find.text('Send a message'), find.text('Choose a message'));
+    expect(find.text('Write a message'), findsNothing);
+    await tapAndWait(tester, find.text('Choose a message'), find.text("I'm on my way."));
+    await tester.tap(find.text("I'm on my way."));
+    final List<dynamic> mine = (await tester.runAsync(() => call('GET', '/requests', token: carlo))) as List<dynamic>;
+    final int loanId = (mine.first as Map<String, dynamic>)['id'] as int; // approved loans list first
+    Future<String> lastPhrase() async {
+      final Map<String, dynamic> t = (await tester.runAsync(() => call('GET', '/requests/$loanId/messages', token: carlo))) as Map<String, dynamic>;
+      final List<dynamic> list = t['messages'] as List<dynamic>;
+      return list.isEmpty ? '' : '${(list.last as Map<String, dynamic>)['phrase_id']}';
+    }
+    for (int i = 0; i < 50 && await lastPhrase() != 'A05'; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(await lastPhrase(), 'A05', reason: 'the quick reply reached the server as a phrase, not text');
+    await tester.pageBack();
+    await waitFor(tester, find.text('Credits on hold: 1'));
     await tester.scrollUntilVisible(find.text('Cancel request'), 300, scrollable: find.byType(Scrollable).last);
     await tapAndWait(tester, find.text('Cancel request'), find.text('Yes, cancel'));
     await tapAndWait(tester, find.text('Yes, cancel'), find.text('Cancelled'));

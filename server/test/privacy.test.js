@@ -67,7 +67,7 @@ describe('consent', () => {
 
 describe('My data', () => {
   test('a resident can download everything held about them, without secrets', async () => {
-    await s.api('POST', `/requests/${(await one("SELECT r.id FROM requests r JOIN users u ON u.id = r.borrower_id WHERE u.email = 'ben@hiraman.test' AND r.status = 'pending'")).id}/messages`, ben, { body: 'Is the speaker loud enough for a basketball court?' });
+    await s.api('POST', `/requests/${(await one("SELECT r.id FROM requests r JOIN users u ON u.id = r.borrower_id WHERE u.email = 'ben@hiraman.test' AND r.status = 'pending'")).id}/messages`, ben, { phrase_id: 'P03' });
     const r = await s.api('GET', '/me/data', ben);
     assert.equal(r.status, 200);
     const d = r.json;
@@ -76,6 +76,7 @@ describe('My data', () => {
     assert.ok(d.requests_as_borrower.length >= 2);
     assert.ok(d.credit_history.length >= 3);
     assert.equal(d.messages_sent.length, 1);
+    assert.match(d.messages_sent[0].body, /hiramin|borrow/, 'the quick reply in words');
     const text = JSON.stringify(d);
     assert.ok(!text.includes('password'), 'no password hash');
     assert.ok(!text.includes('0917 000 0001'), 'no other person\'s phone number');

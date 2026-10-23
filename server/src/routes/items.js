@@ -5,6 +5,7 @@ import { bad, forbidden, notFound, wrap } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
 import { RULES, SCREENING, creditCost, findProhibited, handledByStaff, screenListing } from '../rules.js';
 import { flagItemTx } from '../services.js';
+import { requireKind } from '../kindwords.js';
 import { ownPhoto } from '../uploads.js';
 
 const router = Router();
@@ -55,6 +56,7 @@ router.get('/meta', authRequired, wrap(async (_req, res) => {
     pickup_points: await q('SELECT id, name, note, hours FROM pickup_points ORDER BY id'),
     puroks: await purokNames(),
     rules: RULES,
+    hall_phone: config.hallPhone, // shown on "Report a concern" next to 911
   });
 }));
 
@@ -137,6 +139,7 @@ router.post('/items', authRequired, requireApproved, wrap(async (req, res) => {
   if (req.user.role !== 'resident') throw forbidden('Staff add Barangay Shelf items from the portal.', 'residents_only');
   const f = readItemBody(req.body);
   if (!f.pickup_point_id) throw bad('Choose a pickup point.', 'bad_pickup');
+  await requireKind(req.user, 'listing', f.title, f.description);
   const [r] = await pool.query(
     'INSERT INTO items (owner_id, category_id, title, description, item_condition, tier, pickup_point_id, photo_url, repair_reuse) VALUES (?,?,?,?,?,?,?,?,?)',
     [req.user.id, f.category_id, f.title, f.description || null, f.item_condition || 'good', f.tier || 'low', f.pickup_point_id, f.photo_url || null, f.repair_reuse || 0]);
@@ -155,6 +158,7 @@ router.patch('/items/:id', authRequired, wrap(async (req, res) => {
   const item = await one('SELECT * FROM items WHERE id = ?', [req.params.id]);
   if (!item || item.owner_id !== req.user.id) throw forbidden('You can only edit your own items.', 'cannot_manage');
   const f = readItemBody(req.body, { partial: true });
+  await requireKind(req.user, `listing #${item.id}`, f.title, f.description);
   if (req.body?.status && ['available', 'paused'].includes(req.body.status)) f.status = req.body.status;
   // The tier decides the cost, who approves and who hands over, so it cannot change under an active loan.
   if (f.tier && f.tier !== item.tier) {

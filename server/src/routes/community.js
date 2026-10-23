@@ -3,9 +3,10 @@ import { Router } from 'express';
 import { config } from '../config.js';
 import { SCREENING } from '../rules.js';
 import { pool, q, one, withTx, todayPH, pageOf } from '../db.js';
-import { bad, forbidden, notFound, wrap } from '../errors.js';
+import { bad, forbidden, notFound, wrap, HttpError } from '../errors.js';
 import { authRequired, requireApproved } from '../auth.js';
-import { bookKit, notify, flagItemTx } from '../services.js';
+import { bookKit, notify, flagItemTx, audit } from '../services.js';
+import { requireKind } from '../kindwords.js';
 import { RULES } from '../rules.js';
 
 const router = Router();
@@ -35,6 +36,7 @@ router.get('/wanted', wrap(async (req, res) => {
 router.post('/wanted', requireApproved, wrap(async (req, res) => {
   const { title, details, needed_by } = req.body || {};
   if (!title || title.trim().length < 2) throw bad('Say what you need.', 'bad_title');
+  await requireKind(req.user, 'wanted post', title, details);
   const [r] = await pool.query('INSERT INTO wanted_posts (user_id, title, details, needed_by) VALUES (?,?,?,?)',
     [req.user.id, title.trim().slice(0, 120), details ? String(details).slice(0, 255) : null, needed_by || null]);
   res.status(201).json({ id: r.insertId });
@@ -88,12 +90,31 @@ router.post('/notifications/read', wrap(async (req, res) => {
 }));
 
 // ---------- reports ----------
+// A report on an item, a person or a request. From a request's messages it is a "concern": only staff read it,
+// and it is about the other person on that request.
 router.post('/reports', wrap(async (req, res) => {
   const { target_type, target_id, reason, details } = req.body || {};
   if (!['item', 'user', 'request'].includes(target_type)) throw bad('Choose what you are reporting.', 'bad_target');
   if (!reason) throw bad('Choose a reason.', 'bad_reason');
-  const [r] = await pool.query('INSERT INTO reports (reporter_id, target_type, target_id, reason, details) VALUES (?,?,?,?,?)',
-    [req.user.id, target_type, Number(target_id), String(reason).slice(0, 80), details ? String(details).slice(0, 500) : null]);
+  const today = await one('SELECT COUNT(*) AS n FROM reports WHERE reporter_id = ? AND created_at > NOW() - INTERVAL 1 DAY', [req.user.id]);
+  if (today.n >= RULES.reportsPerDay) throw new HttpError(429, 'You have sent enough reports today. Barangay staff will look at them.', 'too_many_reports');
+  await requireKind(req.user, 'report', details);
+  let about = target_type === 'user' ? Number(target_id) : null;
+  if (target_type === 'request') {
+    const loan = await one('SELECT r.borrower_id, i.owner_id FROM requests r JOIN items i ON i.id = r.item_id WHERE r.id = ?', [Number(target_id)]);
+    if (loan?.borrower_id === req.user.id) about = loan.owner_id;
+    else if (loan?.owner_id === req.user.id) about = loan.borrower_id;
+  }
+  const [r] = await pool.query('INSERT INTO reports (reporter_id, target_type, target_id, about_user_id, reason, details) VALUES (?,?,?,?,?,?)',
+    [req.user.id, target_type, Number(target_id), about, String(reason).slice(0, 80), details ? String(details).slice(0, 500) : null]);
+  // Repeated harassment concerns about one person pause their quick replies until staff review.
+  if (about && reason === 'harassment') {
+    const seen = await one("SELECT COUNT(*) AS n FROM reports WHERE about_user_id = ? AND reason = 'harassment' AND created_at > NOW() - INTERVAL 30 DAY", [about]);
+    if (seen.n >= RULES.harassmentConcernsToPause) {
+      await q('UPDATE users SET messaging_paused = 1 WHERE id = ?', [about]);
+      await audit(req.user.id, 'messaging_paused', `user #${about} after ${seen.n} harassment concerns`);
+    }
+  }
   // An item reported by several different neighbors since staff last checked it is held back for review.
   if (target_type === 'item') {
     const seen = await one(

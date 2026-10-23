@@ -47,3 +47,26 @@ test('a flagged listing raises the alert, and staff clear it after checking', as
   await expect(page.getByText('Visible to neighbors again.')).toBeVisible();
   expect((await api('GET', `/items/${flagged.json.id}`, await loginApi('ben'))).status).toBe(200);
 });
+
+test('a harassment concern raises the urgent alert, and staff answer it', async ({ page }) => {
+  const fidel = await loginApi('fidel');
+  const luggage = (await api('GET', '/items?q=luggage', fidel)).json[0];
+  const loan = await api('POST', '/requests', fidel, { item_id: luggage.id, start_date: day(20), end_date: day(21) });
+  const sent = await api('POST', `/requests/${loan.json.id}/messages`, fidel, { body: 'free text is not allowed' });
+  expect(sent.json.code).toBe('phrases_only');
+  expect((await api('POST', '/reports', fidel, { target_type: 'request', target_id: loan.json.id, reason: 'harassment', details: 'Keeps asking for money' })).status).toBe(201);
+
+  await portalLogin(page, 'staff');
+  await expect(page.getByRole('alert').filter({ hasText: /safety or harassment/ })).toBeVisible();
+  await page.getByRole('link', { name: /Answer now/ }).click();
+  const row = page.getByRole('row', { name: new RegExp(`request #${loan.json.id}`) });
+  await expect(row.getByText('Urgent')).toBeVisible();
+  await expect(row.getByText('Rude or harassing behavior')).toBeVisible();
+  await row.getByRole('button', { name: 'View' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Outcome').fill('Called both. Reminded Ana that no money is ever asked on Hiraman.');
+  await dialog.getByRole('button', { name: 'Resolve case' }).click();
+  await expect(page.getByText('Case updated.')).toBeVisible();
+  const note = (await api('GET', '/notifications', fidel)).json.find((n) => n.type === 'report_resolved');
+  expect(note).toBeTruthy();
+});

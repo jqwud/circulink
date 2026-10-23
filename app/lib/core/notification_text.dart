@@ -103,7 +103,8 @@ import 'format.dart';
       return (title: fill('{name} can help: {wanted}'), body: fill('Check My Items or message them at the barangay pickup point.'));
     case 'message':
       if (p['staff'] == true) p['name'] = tr('Barangay staff');
-      return (title: fill('{name} wrote about {item}'), body: str(p['preview']));
+      final String fil = str(p['preview_fil']);
+      return (title: fill('{name} wrote about {item}'), body: lang == 'fil' && fil.isNotEmpty ? fil : str(p['preview']));
     default:
       return (title: fallbackTitle, body: fallbackBody);
   }

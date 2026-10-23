@@ -13,7 +13,7 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | B1 Lateness | While a borrower has an item they check in once a day (Still with me / I returned it / There's a problem). "I returned it" stops the clock. A missed day sends a reminder; after 2 missed days the owner and staff are alerted. No automatic credit penalty for a missed check-in. |
 | B2 Expiry | A pending request expires 7 days after it was made, or earlier if its end date passes. An approved request that is never picked up expires when its end date passes. Credits are refunded and both people are told. |
 | B4 Disputes | Staff choose an outcome: fine after all (normal rules) · accident, nobody's fault (owner +1) · damaged, borrower's fault (owner +1, borrower −2) · lost (owner +2, borrower −2, item removed). Never below 0. Numbers live in `rules.js`. |
-| D1 Contact | After approval, borrower and owner see each other's phone number until 7 days after the loan closes (shelf items show the barangay hall). Every request has a text thread for borrower, owner and staff. |
+| D1 Contact | After approval, borrower and owner see each other's phone number until 7 days after the loan closes (shelf items show the barangay hall). Every request has a thread for borrower, owner and staff (from batch 27: phrases only for residents, free text for staff). |
 | D10 Push notifications | Not now. |
 | S1 Hosting and HTTPS | Local only for now. |
 | P1 ID photos | Deleted 7 days after approval or rejection; a new upload deletes the old file at once. |
@@ -25,6 +25,8 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | Flagged listings (2026-10-23) | A flagged listing stays hidden from neighbors until staff check it (for everyone's safety); staff get a high-priority alert. |
 | Admin tools (2026-10-23) | Staff can edit or hide any listing, cancel or close any request (with correct refunds), and review listings the system flags automatically as unusual or possibly harmful. Not now: manual credit adjustment, pausing app features. |
 | Resident view (2026-10-23) | Residents see only what they need. The component gallery leaves the app (developers open `lib/main_gallery.dart`); badges become an even grid. |
+| Hiraman 2.0 (2026-10-23) | Built from the design spec (Claude Docs: "Hiraman 2.0 Design Spec"). Residents message each other only with pre-written phrases; anything else goes to a concern only staff read. The Tiwala score is separate from credits and can never be spent. Donations earn no credits. Repeat pairs count less for rewards. |
+| No paid services (2026-10-23) | Nothing that costs money: a 6-digit handover code instead of QR scanning, in-app reminders and a staff call list instead of SMS. |
 
 ## Batches
 
@@ -60,6 +62,12 @@ Effort: **S** under 2 hours, **M** about half a day, **L** a day or more.
 | 24 | API description (OpenAPI) | B12 | M | Done |
 | 25 | End-to-end, accessibility and load tests | QA | L | Done |
 | 26 | Release-ready app: signing key (kept by the team), no cloud backup of app data, versions, checklist | S1 | S | Done |
+| 27 | Hiraman 2.0: quick replies instead of free chat, Report a concern, kind-words check | Spec §6 | L | Done |
+| 28 | Hiraman 2.0: Barangay / Kapitbahay labels and filters, Barangay item rules, Extend a loan | Spec §5 | M | Planned |
+| 29 | Hiraman 2.0: Donate / free to take (claims, barangay choice, recognition) | Spec §3 | L | Planned |
+| 30 | Hiraman 2.0: Simple mode for seniors and PWDs | Spec §11 #1 | M | Planned |
+| 31 | Hiraman 2.0: decision effects with reduced-motion fallback | Spec §7, §10 | M | Planned |
+| 32 | Hiraman 2.0: Tiwala score in shadow mode (staff only) | Spec §8 | M | Planned |
 | **Do later** | Paging (B9), fewer queries (A6), constants (A7), service extraction (A3), OpenAPI (B12), time zones (B14), load and end-to-end tests, release key and backup setting (S1) | | | Later |
 | Summary | One-page summary for the instructor (`docs/INSTRUCTOR_SUMMARY.md`) | | S | Done |
 | **Skip** | Push notifications, hosting/HTTPS now, iOS build, ORM or framework switch, separate worker service, certificate pinning, root detection | | | Skipped |

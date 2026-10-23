@@ -773,7 +773,7 @@
           "items"
         ],
         "summary": "Share an item (may be held back by the automatic checks)",
-        "description": "A logged-in resident. Error codes: bad_title, bad_category, bad_pickup, bad_condition, bad_tier, prohibited_item, bad_photo, not_verified.",
+        "description": "A logged-in resident. Error codes: bad_title, bad_category, bad_pickup, bad_condition, bad_tier, prohibited_item, unkind_words, bad_photo, not_verified.",
         "responses": {
           "201": {
             "description": "Success",
@@ -862,7 +862,7 @@
           "items"
         ],
         "summary": "Edit, pause or resume my listing (the tier is locked during an active request)",
-        "description": "A logged-in resident. Error codes: cannot_manage, item_busy, prohibited_item.",
+        "description": "A logged-in resident. Error codes: cannot_manage, item_busy, prohibited_item, unkind_words.",
         "parameters": [
           {
             "name": "id",
@@ -1107,7 +1107,7 @@
         "tags": [
           "requests"
         ],
-        "summary": "The message thread of a request",
+        "summary": "The thread of a request, with the quick replies this person may send now",
         "description": "Any logged-in account. Error codes: cannot_manage.",
         "parameters": [
           {
@@ -1143,8 +1143,8 @@
         "tags": [
           "requests"
         ],
-        "summary": "Write in the thread",
-        "description": "Any logged-in account. Error codes: empty_message, message_too_long, thread_closed, cannot_manage.",
+        "summary": "Send a quick reply (residents: phrase_id + slot) or free text (staff: body)",
+        "description": "Any logged-in account. Error codes: phrases_only, unknown_phrase, phrase_not_now, bad_slot, messaging_paused, same_phrase_wait, too_many_messages, empty_message, message_too_long, thread_closed, cannot_manage.",
         "parameters": [
           {
             "name": "id",
@@ -1174,17 +1174,16 @@
           }
         },
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
+                  "phrase_id": {},
+                  "slot": {},
                   "body": {}
-                },
-                "required": [
-                  "body"
-                ]
+                }
               }
             }
           }
@@ -1594,7 +1593,7 @@
           "requests"
         ],
         "summary": "Rate the other neighbor (1 to 5 stars)",
-        "description": "A logged-in resident. Error codes: bad_stars, bad_state, cannot_manage, shelf_item.",
+        "description": "A logged-in resident. Error codes: bad_stars, bad_state, cannot_manage, shelf_item, unkind_words.",
         "parameters": [
           {
             "name": "id",
@@ -1721,7 +1720,7 @@
           "community"
         ],
         "summary": "Post something I need",
-        "description": "A logged-in resident. Error codes: bad_title, prohibited_item.",
+        "description": "A logged-in resident. Error codes: bad_title, prohibited_item, unkind_words.",
         "responses": {
           "201": {
             "description": "Success",
@@ -2013,8 +2012,8 @@
         "tags": [
           "community"
         ],
-        "summary": "Report an item, a person or a request",
-        "description": "Any logged-in account. Error codes: bad_target, bad_reason.",
+        "summary": "Report an item, a person or a request; from a request it is a concern only staff read",
+        "description": "Any logged-in account. Error codes: bad_target, bad_reason, unkind_words, too_many_reports.",
         "responses": {
           "201": {
             "description": "Success",
@@ -2421,6 +2420,168 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/messaging": {
+      "post": {
+        "operationId": "postAdminUsersIdMessaging",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Pause or allow the quick replies of a resident; audited",
+        "description": "LGU staff or admin. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "paused": {}
+                },
+                "required": [
+                  "paused"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/words": {
+      "get": {
+        "operationId": "getAdminWords",
+        "tags": [
+          "admin"
+        ],
+        "summary": "The kind-words list: built in and added by admins",
+        "description": "LGU staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminWords",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add a word to the kind-words check; audited",
+        "description": "LGU admin only. Error codes: bad_word.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "word": {}
+                },
+                "required": [
+                  "word"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/words/{word}": {
+      "delete": {
+        "operationId": "deleteAdminWordsWord",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Remove an added word; audited",
+        "description": "LGU admin only. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "word",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
         ],

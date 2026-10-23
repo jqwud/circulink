@@ -29,7 +29,7 @@ describe('every notification carries its values', () => {
     const speaker = await itemId('Bluetooth speaker');
     const a = (await s.api('POST', '/requests', carlo, { item_id: speaker, start_date: day(6), end_date: day(7) })).json.id;
     await s.api('PATCH', `/requests/${a}/dates`, carlo, { start_date: day(8), end_date: day(9) });
-    await s.api('POST', `/requests/${a}/messages`, carlo, { body: 'Hello!' });
+    await s.api('POST', `/requests/${a}/messages`, carlo, { phrase_id: 'P03' });
     await s.api('POST', `/requests/${a}/approve`, ana);
     await s.api('POST', `/requests/${a}/cancel`, carlo);
     const pending = await one("SELECT id FROM requests WHERE status = 'pending' AND borrower_id = (SELECT id FROM users WHERE email = 'ben@hiraman.test')");

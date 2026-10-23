@@ -2,6 +2,7 @@
 import { q, one, withTx, todayPH } from './db.js';
 import { bad, forbidden, notFound } from './errors.js';
 import { RULES, DISPUTE_OUTCOMES, creditCost, handledByStaff, autoApproves, photoRequired } from './rules.js';
+import { requireKind } from './kindwords.js';
 
 // ---------- small helpers ----------
 // title and body are the English text (kept for older app versions). `params` holds the values, so the
@@ -581,6 +582,7 @@ export async function saveRating(requestId, user, stars, comment = null) {
   else if (user.id === r.owner_id) rateeId = r.borrower_id;
   else throw forbidden('You were not part of this loan.', 'cannot_manage');
   if (!rateeId) throw bad('Shelf items are not rated.', 'shelf_item');
+  await requireKind(user, `rating on request #${requestId}`, comment);
   await q(
     'INSERT INTO ratings (request_id, rater_id, ratee_id, stars, comment) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE stars = VALUES(stars), comment = VALUES(comment)',
     [requestId, user.id, rateeId, stars, comment]);

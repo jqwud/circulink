@@ -2,6 +2,18 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 27: Quick replies instead of free chat (2026-10-23)
+
+First batch of Hiraman 2.0 (design spec in Claude Docs, "Hiraman 2.0 Design Spec", section 6).
+
+- **Residents message each other only with quick replies:** 35 pre-written phrases in English and Filipino, offered by the request's situation (before borrowing, before pickup, during the loan, return, problem, thanks) and by side (borrower or owner). A phrase can carry one picked value: a date, a date and time, a pickup point, a condition or a number. Nothing is typed, and each person reads the message in their own language. Replies such as "Yes, see you then" appear as buttons under a question.
+- **Limits:** at most 10 quick replies per person per request per day, and the same phrase at most once every 10 minutes.
+- **Staff keep free text.** Messages residents typed before this change stay readable (marked as old) and are deleted a year after the loan ends (new daily job).
+- **"My situation is not listed"** opens Report a concern: a topic (unsafe, item problem, money asked, harassment, something else), an optional note, and Call 911 / Call the hall buttons. Only staff read it. Safety and harassment concerns are urgent: a red alert on the dashboard and first in Reports. A second harassment concern about the same person within 30 days pauses that person's messages until staff tap **Allow messages** (audited). At most 3 reports per person per day.
+- **Kind words:** listings, Wanted posts, rating comments and concern notes refuse unkind English and Filipino words, also disguised ("g a g o", "sh1t"). Admins add local words on the Rules page; refusals are counted on the dashboard.
+- **Privacy notice** updated (quick replies, concerns, old text deleted after a year), so residents agree once more.
+- Migration 012 (backup taken first). Tests: 22 new server tests (`quick-replies.test.js`), message tests rewritten for phrases, an app end-to-end step that sends a quick reply, and a portal journey for an urgent concern.
+
 ## Batch 26: Release-ready app (2026-10-23)
 
 - **Release key, kept by the team:** release builds are signed with the key named in `app/android/key.properties` (git-ignored, like `*.jks`). Nothing secret is in the repository; the team makes the key once (`docs/RELEASE.md`, step 2). Without it, builds still work, signed with the debug key, for testing only.

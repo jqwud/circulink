@@ -75,9 +75,9 @@ describe('the message thread', () => {
   });
 
   test('borrower and owner can write, even while the request is waiting', async () => {
-    const a = await s.api('POST', `/requests/${id}/messages`, fidel, { body: 'Hi Ana, does it have a lock?' });
+    const a = await s.api('POST', `/requests/${id}/messages`, fidel, { phrase_id: 'P03' });
     assert.equal(a.status, 201);
-    const b = await s.api('POST', `/requests/${id}/messages`, ana, { body: 'Yes, a number lock. I will tell you the code.' });
+    const b = await s.api('POST', `/requests/${id}/messages`, ana, { phrase_id: 'P04' });
     assert.equal(b.status, 201);
     const thread = (await s.api('GET', `/requests/${id}/messages`, fidel)).json;
     assert.equal(thread.open, true);
@@ -86,25 +86,25 @@ describe('the message thread', () => {
 
   test('nobody else can read or write; staff can do both', async () => {
     assert.equal((await s.api('GET', `/requests/${id}/messages`, ben)).status, 403);
-    assert.equal((await s.api('POST', `/requests/${id}/messages`, ben, { body: 'hello' })).status, 403);
+    assert.equal((await s.api('POST', `/requests/${id}/messages`, ben, { phrase_id: 'P01', slot: day(4) })).status, 403);
     assert.equal((await s.api('POST', `/requests/${id}/messages`, staff, { body: 'The hall can keep it overnight if needed.' })).status, 201);
     const thread = (await s.api('GET', `/requests/${id}/messages`, staff)).json;
     assert.equal(thread.messages.at(-1).from, 'Barangay staff');
     assert.equal(thread.messages.at(-1).staff, true);
   });
 
-  test('empty and very long messages are refused', async () => {
-    const empty = await s.api('POST', `/requests/${id}/messages`, fidel, { body: '   ' });
+  test('staff messages cannot be empty or very long', async () => {
+    const empty = await s.api('POST', `/requests/${id}/messages`, staff, { body: '   ' });
     assert.equal(empty.status, 400); assert.equal(empty.json.code, 'empty_message');
-    const long = await s.api('POST', `/requests/${id}/messages`, fidel, { body: 'x'.repeat(501) });
+    const long = await s.api('POST', `/requests/${id}/messages`, staff, { body: 'x'.repeat(501) });
     assert.equal(long.status, 400); assert.equal(long.json.code, 'message_too_long');
   });
 
   test('a new message notifies the others once until they open the thread', async () => {
     await s.api('GET', `/requests/${id}/messages`, ana);
     assert.equal(await unread('ana@hiraman.test', id), 0, 'opening the thread marks it read');
-    await s.api('POST', `/requests/${id}/messages`, fidel, { body: 'Thanks!' });
-    await s.api('POST', `/requests/${id}/messages`, fidel, { body: 'See you Saturday.' });
+    await s.api('POST', `/requests/${id}/messages`, fidel, { phrase_id: 'P01', slot: day(4) });
+    await s.api('POST', `/requests/${id}/messages`, fidel, { phrase_id: 'P02', slot: '2' });
     assert.equal(await unread('ana@hiraman.test', id), 1);
     assert.equal(await unread('fidel@hiraman.test', id), 1, 'Fidel was told about the staff message');
   });
@@ -116,10 +116,10 @@ describe('the message thread', () => {
   test('the thread closes with the contact window, but stays readable', async () => {
     const r = await s.api('POST', '/requests', dina, { item_id: await itemId('Cooler box'), start_date: day(0), end_date: day(1) });
     await s.api('POST', `/requests/${r.json.id}/handover`, ben);
-    await s.api('POST', `/requests/${r.json.id}/messages`, dina, { body: 'Got it, thanks Ben.' });
+    await s.api('POST', `/requests/${r.json.id}/messages`, dina, { phrase_id: 'L01' });
     await s.api('POST', `/requests/${r.json.id}/return`, ben, { condition: 'good' });
     await q('UPDATE requests SET returned_at = NOW() - INTERVAL 9 DAY WHERE id = ?', [r.json.id]);
-    const late = await s.api('POST', `/requests/${r.json.id}/messages`, dina, { body: 'One more thing' });
+    const late = await s.api('POST', `/requests/${r.json.id}/messages`, dina, { phrase_id: 'T01' });
     assert.equal(late.status, 400); assert.equal(late.json.code, 'thread_closed');
     const thread = (await s.api('GET', `/requests/${r.json.id}/messages`, dina)).json;
     assert.equal(thread.open, false); assert.equal(thread.messages.length, 1);

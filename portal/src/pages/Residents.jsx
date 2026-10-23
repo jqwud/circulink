@@ -35,6 +35,13 @@ export default function Residents() {
       toast(u.suspended ? t('Reinstated.') : t('Suspended.')); reload(); detail.reload();
     } catch (e) { toast(e.message, 'bad'); }
   }
+  // Quick replies paused after repeated harassment concerns; staff allow them again after checking.
+  async function allowMessages(u) {
+    try {
+      await api(`/admin/users/${u.id}/messaging`, { method: 'POST', body: { paused: false } });
+      toast(t('Messages allowed again.')); reload(); detail.reload();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
   // Suspending locks a resident out, so it asks first. Reinstating is safe and happens at once.
   const askToggle = (u) => (u.suspended ? toggle(u) : setConfirming(u));
 
@@ -60,7 +67,7 @@ export default function Residents() {
                 <tr key={u.id}>
                   <td><b>{u.name}</b><small>{u.email}{u.phone ? ` · ${u.phone}` : ''}</small></td>
                   <td>{u.purok || '–'}</td>
-                  <td><Badge value={u.verification_status} />{u.suspended && <> <Badge value="suspended" /></>}{u.deletion_requested_at && <> <Badge value="removed" label={t('Deletion requested')} /></>}</td>
+                  <td><Badge value={u.verification_status} />{u.suspended && <> <Badge value="suspended" /></>}{u.messaging_paused && <> <Badge value="suspended" label={t('Messages paused')} /></>}{u.deletion_requested_at && <> <Badge value="removed" label={t('Deletion requested')} /></>}</td>
                   <td>{u.credits}</td>
                   <td>{u.items}</td>
                   <td>{u.loans}</td>
@@ -82,7 +89,7 @@ export default function Residents() {
                 <dt>Email</dt><dd>{detail.data.user.email}</dd>
                 <dt>{t('Phone')}</dt><dd>{detail.data.user.phone || '–'}</dd>
                 <dt>{t('Purok')}</dt><dd>{detail.data.user.purok || '–'}</dd>
-                <dt>{t('Status')}</dt><dd><Badge value={detail.data.user.verification_status} />{detail.data.user.suspended && <> <Badge value="suspended" /></>}</dd>
+                <dt>{t('Status')}</dt><dd><Badge value={detail.data.user.verification_status} />{detail.data.user.suspended && <> <Badge value="suspended" /></>}{detail.data.user.messaging_paused && <> <Badge value="suspended" label={t('Messages paused')} /></>}</dd>
                 <dt>{t('Credits')}</dt><dd>{detail.data.user.credits}</dd>
                 <dt>{t('Registered')}</dt><dd>{fmt(detail.data.user.created_at)}</dd>
               </dl>
@@ -108,6 +115,9 @@ export default function Residents() {
                   <button className="btn danger" onClick={() => setDeleting(detail.data.user)}>
                     {detail.data.user.deletion_requested ? t('Delete account (requested)') : t('Delete account')}
                   </button>
+                )}
+                {detail.data.user.messaging_paused && (
+                  <button className="btn" onClick={() => allowMessages(detail.data.user)}>{t('Allow messages')}</button>
                 )}
                 <button className={`btn ${detail.data.user.suspended ? '' : 'danger'}`} onClick={() => askToggle(detail.data.user)}>
                   {detail.data.user.suspended ? t('Reinstate') : t('Suspend')}

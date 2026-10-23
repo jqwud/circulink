@@ -147,6 +147,20 @@ export async function cleanupUploads(now = new Date()) {
   return { removed };
 }
 
+// ---------- old free text ----------
+// What residents typed before quick replies (batch 27) is kept read-only for a year after the loan ends, then
+// deleted. Quick replies and staff notes stay with the request.
+export async function deleteOldMessages(now = new Date()) {
+  const r = await q(
+    `DELETE m FROM request_messages m
+       JOIN users u ON u.id = m.sender_id
+       JOIN requests x ON x.id = m.request_id
+      WHERE m.phrase_id IS NULL AND m.body IS NOT NULL AND u.role = 'resident'
+        AND x.status IN ('closed','cancelled','rejected')
+        AND COALESCE(x.settled_at, x.returned_at, x.end_date) < DATE_SUB(?, INTERVAL ? DAY)`, [phTimestamp(now), RULES.oldTextKeptDays]);
+  return { deleted: r.affectedRows };
+}
+
 // ---------- the runner ----------
 export const JOBS = [
   { name: 'reminders', everyMs: 60 * MINUTE, run: runReminders },
@@ -154,6 +168,7 @@ export const JOBS = [
   { name: 'expire_requests', everyMs: 60 * MINUTE, run: expireRequests },
   { name: 'delete_old_id_photos', everyMs: 60 * MINUTE, run: deleteOldIdPhotos },
   { name: 'cleanup_uploads', everyMs: DAY, run: cleanupUploads },
+  { name: 'delete_old_messages', everyMs: DAY, run: deleteOldMessages },
 ];
 
 // Runs every job whose interval has passed since its last run, and records the result in job_runs.

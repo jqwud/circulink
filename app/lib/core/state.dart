@@ -24,6 +24,9 @@ class AppState extends ChangeNotifier {
 
   List<Map<String, dynamic>> categories = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> pickupPoints = <Map<String, dynamic>>[];
+
+  /// The barangay hall's phone (HALL_PHONE on the server), or empty when not set.
+  String hallPhone = '';
   List<String> puroks = <String>[];
   Map<String, dynamic> rules = <String, dynamic>{};
 
@@ -182,6 +185,7 @@ class AppState extends ChangeNotifier {
     pickupPoints = listOf(m['pickup_points']);
     puroks = (m['puroks'] is List ? m['puroks'] as List<dynamic> : <dynamic>[]).map((dynamic p) => p.toString()).toList();
     rules = mapOf(m['rules']);
+    hallPhone = str(m['hall_phone']);
   }
 
   /// Call after something changed on the server (a request, a listing, credits).
