@@ -81,7 +81,7 @@ class _ItemBody extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 14),
-              Text(str(item['title']), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: HiColors.ink)),
+              Text(str(item['title']), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: HiColors.ink)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 6,
@@ -289,7 +289,7 @@ class _RequestSheetState extends State<_RequestSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(context.t('Borrow'), style: const TextStyle(fontSize: 13, color: HiColors.muted, fontWeight: FontWeight.w700)),
-            Text(str(widget.item['title']), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+            Text(str(widget.item['title']), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
             const SizedBox(height: 14),
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(54), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), foregroundColor: HiColors.ink),

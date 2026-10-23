@@ -218,7 +218,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
                 children: <Widget>[
                   ItemThumb(item: <String, dynamic>{'photo_url': item['photo_url'], 'category': <String, dynamic>{'slug': item['category_slug']}}, size: 60),
                   const SizedBox(width: 12),
-                  Expanded(child: Text(str(item['title']), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900))),
+                  Expanded(child: Text(str(item['title']), style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800))),
                 ],
               ),
               const SizedBox(height: 12),
@@ -287,7 +287,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(context.t('Contact'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          Text(context.t('Contact'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           const SizedBox(height: 6),
           if (c.isNotEmpty) ...<Widget>[
             Row(children: <Widget>[
@@ -359,7 +359,7 @@ class _RequestDetailScreenState extends State<RequestDetailScreen> {
           Row(children: <Widget>[
             Icon(due ? Icons.notifications_active_outlined : Icons.event_available, color: due ? HiColors.warn : HiColors.accent),
             const SizedBox(width: 8),
-            Text(context.t('Daily check-in'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            Text(context.t('Daily check-in'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           ]),
           const SizedBox(height: 6),
           Text(text, style: const TextStyle(color: HiColors.ink)),
@@ -452,7 +452,7 @@ class _Timeline extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(context.t('Progress'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          Text(context.t('Progress'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
           const SizedBox(height: 8),
           for (int i = 0; i < steps.length; i++) _stepRow(steps[i], last: i == steps.length - 1, next: !steps[i].done && (i == 0 || steps[i - 1].done)),
           if (boolOf(r['credits_held']) && cost > 0) ...<Widget>[
@@ -594,7 +594,7 @@ class _ReturnSheetState extends State<_ReturnSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(context.t('Confirm return'), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
+            Text(context.t('Confirm return'), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
             const SizedBox(height: 12),
             Text(context.t('What is the condition of the item?'), style: const TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),

@@ -64,7 +64,7 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-              Text(str(u['name']), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: HiColors.ink)),
+              Text(str(u['name']), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: HiColors.ink)),
               Text('${str(u['purok'], '-')} · ${str(u['email'])}', style: const TextStyle(color: HiColors.muted, fontSize: 13)),
               const SizedBox(height: 4),
               StatusChip(vLabel, tone: vt),
@@ -164,7 +164,7 @@ class ProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: HiColors.line)),
         child: Column(children: <Widget>[
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: HiColors.accent)),
+          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: HiColors.accent)),
           Text(label, style: const TextStyle(fontSize: 11, color: HiColors.muted)),
         ]),
       ),

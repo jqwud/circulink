@@ -70,7 +70,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             if (widget.forced) ...<Widget>[
               const Center(child: PawsaImage(pose: 'point', size: 110)),
               const SizedBox(height: 8),
-              Text(context.t('Choose your own password'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+              Text(context.t('Choose your own password'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
               Text(context.t('The barangay gave you a temporary password. Pick a new one that only you know.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
               const SizedBox(height: 18),

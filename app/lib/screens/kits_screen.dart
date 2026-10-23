@@ -64,7 +64,7 @@ class KitsScreen extends StatelessWidget {
                       Row(children: <Widget>[
                         Text(str(k['emoji'], '🎉'), style: const TextStyle(fontSize: 30)),
                         const SizedBox(width: 10),
-                        Expanded(child: Text(ctx.lang == 'fil' ? str(k['name_fil']) : str(k['name_en']), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18))),
+                        Expanded(child: Text(ctx.lang == 'fil' ? str(k['name_fil']) : str(k['name_en']), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18))),
                       ]),
                       if (str(k['description']).isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text(str(k['description']), style: const TextStyle(color: HiColors.muted))),
                       const SizedBox(height: 8),

@@ -58,7 +58,7 @@ class HomeTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
-                      Text('${ctx.t('Hello')}, ${app.firstName}!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: HiColors.ink)),
+                      Text('${ctx.t('Hello')}, ${app.firstName}!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: HiColors.ink)),
                       Text(ctx.t('What do you need today?'), style: const TextStyle(color: HiColors.muted)),
                     ],
                   ),
@@ -260,7 +260,7 @@ class _VerifyBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(title, style: TextStyle(fontWeight: FontWeight.w900, color: toneFg(tone), fontSize: 16)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: toneFg(tone), fontSize: 16)),
           const SizedBox(height: 4),
           Text(body),
           if (action != null) ...<Widget>[

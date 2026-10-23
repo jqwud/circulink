@@ -55,7 +55,7 @@ class ImpactScreen extends StatelessWidget {
       child: HiCard(
         margin: const EdgeInsets.all(4),
         child: Column(children: <Widget>[
-          Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: HiColors.accent)),
+          Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: HiColors.accent)),
           Text(label, textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 13)),
         ]),
       ),

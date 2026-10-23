@@ -65,7 +65,7 @@ class WalletScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(ctx.t('How credits work'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                    Text(ctx.t('How credits work'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                     const SizedBox(height: 8),
                     _tip(ctx.tv('You start with {n} credits when the barangay verifies you.', <String, Object>{'n': ctx.app.rule('starterCredits', 3)})),
                     _tip(ctx.tv('Borrowing costs {low} credit ({high} for valuable items). Barangay Shelf items are free.',
@@ -92,7 +92,7 @@ class WalletScreen extends StatelessWidget {
                           Text(fmtDate(str(l['created_at']), ctx.lang), style: const TextStyle(color: HiColors.muted, fontSize: 12)),
                         ]),
                       ),
-                      Text(amount > 0 ? '+$amount' : '$amount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: amount >= 0 ? HiColors.leaf : HiColors.danger)),
+                      Text(amount > 0 ? '+$amount' : '$amount', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: amount >= 0 ? HiColors.leaf : HiColors.danger)),
                     ]),
                   );
                 }),

@@ -53,7 +53,7 @@ class _ReportScreenState extends State<ReportScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: <Widget>[
-          Text(widget.subject, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
+          Text(widget.subject, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
           Text(context.t('What happened?'), style: const TextStyle(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),

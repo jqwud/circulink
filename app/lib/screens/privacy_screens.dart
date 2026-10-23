@@ -54,14 +54,14 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 if (widget.mustAccept) ...<Widget>[
                   const Center(child: PawsaImage(pose: 'point', size: 110)),
                   const SizedBox(height: 8),
-                  Text(ctx.t('Before you continue'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                  Text(ctx.t('Before you continue'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
                   Text(ctx.t('Please read how Hiraman uses your information.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
                   const SizedBox(height: 14),
                 ],
                 ...listOf(notice['sections']).map((Map<String, dynamic> s) => HiCard(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                        Text(str(s['title']), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                        Text(str(s['title']), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                         const SizedBox(height: 4),
                         Text(str(s['body']), style: const TextStyle(height: 1.4)),
                       ]),
@@ -70,7 +70,7 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                   color: HiColors.infoSoft,
                   borderColor: HiColors.infoSoft,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                    Text(ctx.t('Data Protection Officer'), style: const TextStyle(fontWeight: FontWeight.w900, color: HiColors.info)),
+                    Text(ctx.t('Data Protection Officer'), style: const TextStyle(fontWeight: FontWeight.w800, color: HiColors.info)),
                     const SizedBox(height: 4),
                     Text(contact.isEmpty ? str(dpo['fallback']) : contact.join('\n'), style: const TextStyle(color: HiColors.info)),
                   ]),
@@ -125,7 +125,7 @@ class MyDataScreen extends StatelessWidget {
               const SizedBox(height: 10),
               HiCard(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                  Text(ctx.t('Profile'), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                  Text(ctx.t('Profile'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                   const SizedBox(height: 6),
                   for (final MapEntry<String, dynamic> e in p.entries)
                     if (e.value != null && str(e.value).isNotEmpty)

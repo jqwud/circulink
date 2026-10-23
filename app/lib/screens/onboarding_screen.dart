@@ -88,7 +88,7 @@ Widget _slideView(_Slide s) {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: sideways ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: <Widget>[
-          Text(s.title, textAlign: align, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: HiColors.ink)),
+          Text(s.title, textAlign: align, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: HiColors.ink)),
           const SizedBox(height: 12),
           Text(s.body, textAlign: align, style: const TextStyle(fontSize: 16, color: HiColors.muted, height: 1.4)),
         ],

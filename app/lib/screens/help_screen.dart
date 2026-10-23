@@ -41,7 +41,7 @@ class HelpScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Text(context.t(r[0]), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+                    Text(context.t(r[0]), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                     const SizedBox(height: 4),
                     Text(context.tv(r[1], n), style: const TextStyle(height: 1.4)),
                   ],

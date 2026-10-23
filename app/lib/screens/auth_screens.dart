@@ -74,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 8),
             const Center(child: PawsaImage(pose: 'wink', size: 170)),
             const SizedBox(height: 8),
-            const Text('Hiraman', textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: HiColors.ink)),
+            const Text('Hiraman', textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: HiColors.ink)),
             Text(context.t('Hiram muna, kapitbahay.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
             const SizedBox(height: 20),
             const ServerStatusCard(),

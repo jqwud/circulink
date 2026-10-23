@@ -88,7 +88,7 @@ class WantedScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text(str(w['title']), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 17)),
+                          Text(str(w['title']), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
                           if (str(w['details']).isNotEmpty) Padding(padding: const EdgeInsets.only(top: 2), child: Text(str(w['details']))),
                           const SizedBox(height: 4),
                           Text(
