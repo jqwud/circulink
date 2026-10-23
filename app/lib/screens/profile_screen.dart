@@ -117,6 +117,19 @@ class ProfileScreen extends StatelessWidget {
             () => askToDeleteAccount(context)),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
+          title: Text(context.t('Simple mode'), style: const TextStyle(fontWeight: FontWeight.w800)),
+          subtitle: Text(context.t('Bigger text and four big buttons. Good for seniors, or anyone who wants it simpler.')),
+          value: app.simpleMode,
+          onChanged: (bool v) async {
+            try {
+              await context.app.updateProfile(<String, dynamic>{'simple_mode': v});
+            } catch (e) {
+              if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
+            }
+          },
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
           title: Text(context.t('Thank-you board'), style: const TextStyle(fontWeight: FontWeight.w800)),
           subtitle: Text(context.t('Show my first name and purok on the monthly thank-you board when I give items away.')),
           value: boolOf(app.user?['thanks_opt_in']),

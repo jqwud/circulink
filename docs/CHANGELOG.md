@@ -2,6 +2,15 @@
 
 Newest first. Each entry is one batch from `docs/IMPROVEMENT_ROADMAP.md`, or one earlier commit.
 
+## Batch 30: Simple mode (2026-10-24)
+
+Hiraman 2.0, spec section 11, feature 1 (for seniors and PWDs).
+
+- **Simple mode** (Me tab, or switched on by staff on the Residents page, for example at the hall): text 1.3 times larger (on top of the phone's own setting, up to 2.4 times), and Home becomes four big buttons: **Borrow**, **My loans**, **Give** (opens "Give it away", Lend is one tap away) and **Help**, plus Notifications and Me. Each opens the usual screen with a clear back button.
+- **Calmer:** screens change without sliding, tabs do not swipe sideways, and animations are off (so the coming decision effects use their still version).
+- Kept on the account (migration 015), so it follows the person to any phone. Staff changes are audited.
+- Tests: the Simple home fits a 320 x 640 phone at normal and very large text with nothing cut off; server tests for both ways of switching it.
+
 ## Batch 29: Donate / free to take (2026-10-24)
 
 Hiraman 2.0, spec section 3. Donations never move credits.

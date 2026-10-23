@@ -29,8 +29,11 @@ class RequestsScreen extends StatelessWidget {
             ),
           ),
           TabBar(tabs: <Widget>[Tab(text: context.t('I am borrowing')), Tab(text: context.t('For my items')), Tab(text: context.t('Free items'))]),
-          const Expanded(
-            child: TabBarView(children: <Widget>[_RequestList(as: 'borrower'), _RequestList(as: 'owner'), _ClaimList()]),
+          Expanded(
+            child: TabBarView(
+              physics: context.watch<AppState>().simpleMode ? const NeverScrollableScrollPhysics() : null, // Simple mode: tap tabs, no swiping
+              children: const <Widget>[_RequestList(as: 'borrower'), _RequestList(as: 'owner'), _ClaimList()],
+            ),
           ),
         ],
       ),

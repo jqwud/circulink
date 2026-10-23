@@ -95,7 +95,7 @@ class HiText {
 /// The widest the app's content gets on a big screen, like Chrome on a desktop.
 const double kContentMaxWidth = 600;
 
-ThemeData buildTheme() {
+ThemeData buildTheme({bool simple = false}) {
   final ColorScheme scheme = ColorScheme.fromSeed(
     seedColor: HiColors.primary,
     brightness: Brightness.light,
@@ -143,6 +143,16 @@ ThemeData buildTheme() {
       );
 
   return ThemeData(
+    // Simple mode: screens change without sliding, which is calmer and easier to follow.
+    pageTransitionsTheme: simple
+        ? const PageTransitionsTheme(builders: <TargetPlatform, PageTransitionsBuilder>{
+            TargetPlatform.android: _NoMotionTransitions(),
+            TargetPlatform.iOS: _NoMotionTransitions(),
+            TargetPlatform.windows: _NoMotionTransitions(),
+            TargetPlatform.linux: _NoMotionTransitions(),
+            TargetPlatform.macOS: _NoMotionTransitions(),
+          })
+        : null,
     useMaterial3: true,
     colorScheme: scheme,
     fontFamily: HiText.family,
@@ -360,6 +370,31 @@ class ContentFrame extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _NoMotionTransitions extends PageTransitionsBuilder {
+  const _NoMotionTransitions();
+
+  @override
+  Widget buildTransitions<T>(PageRoute<T> route, BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) => child;
+}
+
+/// Simple mode for the whole app: text 1.3 times larger (on top of the phone's own size, up to 2.4 times)
+/// and animations off, so decision effects use their calm fallback.
+class SimpleModeFrame extends StatelessWidget {
+  final bool on;
+  final Widget child;
+  const SimpleModeFrame({super.key, required this.on, required this.child});
+
+  static const double factor = 1.3;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!on) return child;
+    final MediaQueryData mq = MediaQuery.of(context);
+    final double scale = (mq.textScaler.scale(1) * factor).clamp(factor, 2.4);
+    return MediaQuery(data: mq.copyWith(textScaler: TextScaler.linear(scale), disableAnimations: true), child: child);
   }
 }
 

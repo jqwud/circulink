@@ -17,13 +17,17 @@ class HiramanApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AppState>(
       create: (BuildContext c) => AppState()..init(),
-      child: MaterialApp(
-        title: 'Hiraman',
-        debugShowCheckedModeBanner: false,
-        navigatorKey: rootNavigatorKey,
-        theme: buildTheme(),
-        builder: (BuildContext context, Widget? child) => ContentFrame(child: child ?? const SizedBox.shrink()),
-        home: const Gate(),
+      // Only Simple mode changes the theme, so only it rebuilds the app shell.
+      child: Selector<AppState, bool>(
+        selector: (BuildContext c, AppState app) => app.simpleMode,
+        builder: (BuildContext c, bool simple, Widget? _) => MaterialApp(
+          title: 'Hiraman',
+          debugShowCheckedModeBanner: false,
+          navigatorKey: rootNavigatorKey,
+          theme: buildTheme(simple: simple),
+          builder: (BuildContext context, Widget? child) => ContentFrame(child: SimpleModeFrame(on: simple, child: child ?? const SizedBox.shrink())),
+          home: const Gate(),
+        ),
       ),
     );
   }

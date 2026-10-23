@@ -40,6 +40,9 @@ class AppState extends ChangeNotifier {
   bool get isApproved => user?['verification_status'] == 'approved';
   String get verification => str(user?['verification_status'], 'unverified');
   int get credits => intOf(user?['credits']);
+
+  /// Simple mode (seniors and PWDs): larger text, four big buttons, no swiping, calm transitions.
+  bool get simpleMode => boolOf(user?['simple_mode']);
   int get unread => intOf(user?['unread_notifications']);
   int get userId => intOf(user?['id']);
   String get firstName => str(user?['name']).split(' ').first;

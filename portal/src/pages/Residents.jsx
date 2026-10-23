@@ -53,6 +53,13 @@ export default function Residents() {
       toast(on ? t('Marked as a priority household.') : t('No longer a priority household.')); detail.reload();
     } catch (e) { toast(e.message, 'bad'); }
   }
+  // Simple mode: larger text and four big buttons in the app (for example for a senior at the hall).
+  async function setSimple(u, on) {
+    try {
+      await api(`/admin/users/${u.id}/simple-mode`, { method: 'POST', body: { on } });
+      toast(on ? t('Simple mode is on for this resident.') : t('Simple mode is off.')); detail.reload();
+    } catch (e) { toast(e.message, 'bad'); }
+  }
   async function liftPause(u, kind) {
     try {
       await api(`/admin/users/${u.id}/${kind}`, { method: 'POST', body: { paused: false } });
@@ -139,6 +146,9 @@ export default function Residents() {
                     {detail.data.user.deletion_requested ? t('Delete account (requested)') : t('Delete account')}
                   </button>
                 )}
+                <button className="btn" onClick={() => setSimple(detail.data.user, !detail.data.user.simple_mode)}>
+                  {detail.data.user.simple_mode ? t('Turn off Simple mode') : t('Turn on Simple mode')}
+                </button>
                 <button className="btn" onClick={() => setPriority(detail.data.user, !detail.data.user.priority_household)}>
                   {detail.data.user.priority_household ? t('Remove priority household') : t('Mark as priority household')}
                 </button>

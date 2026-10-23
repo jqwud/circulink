@@ -139,6 +139,16 @@ for (const [path, column, days, label] of [['claim-pause', 'claim_paused_until',
   }));
 }
 
+// Simple mode switched on for a resident by staff (for example a senior at the hall). Audited.
+router.post('/admin/users/:id/simple-mode', wrap(async (req, res) => {
+  const u = await one('SELECT id, name FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
+  if (!u) throw notFound('Resident not found.');
+  const on = !!req.body?.on;
+  await q('UPDATE users SET simple_mode = ? WHERE id = ?', [on ? 1 : 0, u.id]);
+  await audit(req.user.id, on ? 'simple_mode_on' : 'simple_mode_off', `user #${u.id} ${u.name}`);
+  res.json({ id: u.id, simple_mode: on });
+}));
+
 router.post('/admin/users/:id/priority', wrap(async (req, res) => {
   const u = await one('SELECT id, name FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
   if (!u) throw notFound('Resident not found.');

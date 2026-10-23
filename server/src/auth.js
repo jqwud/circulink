@@ -66,7 +66,8 @@ export const publicUser = (u, extra = {}) => ({
   shelf_paused_until: u.shelf_paused_until || null,
   claim_paused_until: u.claim_paused_until || null,
   donate_paused_until: u.donate_paused_until || null,
-  thanks_opt_in: !!u.thanks_opt_in, // priority_household is staff-only and never sent to residents
+  thanks_opt_in: !!u.thanks_opt_in,
+  simple_mode: !!u.simple_mode, // larger text and four big buttons (Simple mode) // priority_household is staff-only and never sent to residents
   must_change_password: !!u.must_change_password,
   ...extra,
 });

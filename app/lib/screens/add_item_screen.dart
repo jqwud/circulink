@@ -10,7 +10,10 @@ import '../widgets/photo.dart';
 /// M8: share an item, or edit one ([item] given). The risk tier decides who approves the loan.
 class AddItemScreen extends StatefulWidget {
   final Map<String, dynamic>? item;
-  const AddItemScreen({super.key, this.item});
+
+  /// Opens on "Give it away" (Simple mode's Give button). The person can still switch to "Lend it".
+  final bool startGiving;
+  const AddItemScreen({super.key, this.item, this.startGiving = false});
 
   @override
   State<AddItemScreen> createState() => _AddItemScreenState();
@@ -35,6 +38,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   void initState() {
     super.initState();
+    _give = widget.item == null && widget.startGiving;
     final Map<String, dynamic>? it = widget.item;
     if (it != null) {
       _title.text = str(it['title']);

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../core/i18n.dart';
 import '../core/theme.dart';
+import 'package:provider/provider.dart';
+
+import '../core/state.dart';
 import 'browse_screen.dart';
 import 'home_tab.dart';
 import 'profile_screen.dart';
 import 'requests_screen.dart';
+import 'simple_home.dart';
 import 'wanted_screen.dart';
 
 /// The main screen with the bottom bar: Home, Browse, Requests, Wanted, Me.
@@ -23,6 +27,7 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (context.watch<AppState>().simpleMode) return const SimpleHome();
     final List<Widget> pages = <Widget>[
       HomeTab(onGoTo: _go),
       const BrowseScreen(),

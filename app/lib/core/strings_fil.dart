@@ -696,6 +696,17 @@ const Map<String, String> kFil = <String, String>{
   "Nobody claimed it and there was no answer. You can list it again any time.": "Walang kumuha at walang sagot. Puwede mo itong ilista ulit kahit kailan.",
   "{item} is now on the Barangay Shelf": "Nasa Barangay Shelf na ang {item}",
   "Thank you! Neighbors can borrow it from the barangay hall.": "Salamat! Mahihiram ito ng mga kapitbahay sa barangay hall.",
+  // Simple mode (batch 30)
+  "You have {n} credits.": "May {n} credits ka.",
+  "Find something to borrow": "Maghanap ng mahihiram",
+  "My loans": "Mga hiram ko",
+  "What you borrow and lend": "Ang hinihiram at ipinapahiram mo",
+  "Give": "Magbigay",
+  "Lend or give something away": "Magpahiram o mamigay ng gamit",
+  "Help": "Tulong",
+  "How Hiraman works, and calling the barangay": "Paano gumagana ang Hiraman, at pagtawag sa barangay",
+  "Simple mode": "Simpleng anyo",
+  "Bigger text and four big buttons. Good for seniors, or anyone who wants it simpler.": "Mas malaking letra at apat na malaking button. Para sa mga senior, o sinumang gusto ng mas simple.",
 };
 
 /// Messages from the server, by error code, in Filipino.

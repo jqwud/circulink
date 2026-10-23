@@ -224,6 +224,10 @@ const FIL = {
   'Listed as free to take. Choose who receives it on the Donations page.': 'Nakalista bilang libreng kunin. Piliin ang tatanggap sa pahina ng Mga donasyon.',
   'Give it away (free to take; the barangay chooses who receives it)': 'Ipamigay (libreng kunin; barangay ang pipili ng tatanggap)',
   'donation_problem': 'Problema sa donasyon',
+  'Simple mode is on for this resident.': 'Naka-on ang simpleng anyo para sa residenteng ito.',
+  'Simple mode is off.': 'Naka-off ang simpleng anyo.',
+  'Turn off Simple mode': 'I-off ang simpleng anyo',
+  'Turn on Simple mode': 'I-on ang simpleng anyo (para sa senior)',
 };
 
 // English labels for the raw words the server sends (statuses, tiers, conditions, credit reasons),

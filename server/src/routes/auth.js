@@ -136,7 +136,7 @@ router.post('/me/password', authRequired, wrap(async (req, res) => {
 export { temporaryPassword };
 
 router.patch('/me', authRequired, wrap(async (req, res) => {
-  const { name, phone, purok, language, thanks_opt_in: thanks } = req.body || {};
+  const { name, phone, purok, language, thanks_opt_in: thanks, simple_mode: simple } = req.body || {};
   if (name !== undefined && String(name).trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
   // A field that is sent is saved; an empty phone clears it. Fields that are not sent stay as they are.
   const fields = {};
@@ -145,6 +145,7 @@ router.patch('/me', authRequired, wrap(async (req, res) => {
   if (purok !== undefined && purok !== '') fields.purok = await checkPurok(purok);
   if (['en', 'fil'].includes(language)) fields.language = language;
   if (thanks !== undefined) fields.thanks_opt_in = thanks ? 1 : 0;
+  if (simple !== undefined) fields.simple_mode = simple ? 1 : 0;
   const keys = Object.keys(fields);
   if (keys.length) await q(`UPDATE users SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => fields[k]), req.user.id]);
   res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));

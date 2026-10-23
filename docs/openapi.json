@@ -272,7 +272,7 @@
         "tags": [
           "account"
         ],
-        "summary": "Change name, phone, purok, language or thank-you board consent (an empty phone clears it)",
+        "summary": "Change name, phone, purok, language, thank-you board consent or Simple mode (an empty phone clears it)",
         "description": "Any logged-in account. Error codes: bad_name, bad_phone, bad_purok.",
         "responses": {
           "200": {
@@ -303,7 +303,8 @@
                   "phone": {},
                   "purok": {},
                   "language": {},
-                  "thanks_opt_in": {}
+                  "thanks_opt_in": {},
+                  "simple_mode": {}
                 }
               }
             }
@@ -3151,6 +3152,60 @@
                 },
                 "required": [
                   "paused"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/simple-mode": {
+      "post": {
+        "operationId": "postAdminUsersIdSimpleMode",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Switch Simple mode on or off for a resident; audited",
+        "description": "LGU staff or admin. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "on": {}
+                },
+                "required": [
+                  "on"
                 ]
               }
             }
