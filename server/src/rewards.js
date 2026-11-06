@@ -26,7 +26,7 @@ export async function issueVouchers(period, today = todayPH()) {
   const rows = await q(
     `SELECT t.user_id, t.tier, t.needs_staff_check FROM trust_scores t JOIN users u ON u.id = t.user_id
       WHERE t.period = ? AND t.tier IN ('bronze','silver','gold') AND u.deleted_at IS NULL AND u.suspended = 0
-        AND NOT EXISTS (SELECT 1 FROM vouchers v WHERE v.user_id = t.user_id AND v.period = t.period)`, [period]);
+        AND NOT EXISTS (SELECT 1 FROM vouchers v WHERE v.user_id = t.user_id AND v.period = t.period AND v.source = 'tier')`, [period]);
   let issued = 0;
   for (const r of rows) {
     const n = RULES[PER_TIER[r.tier]];
@@ -104,7 +104,7 @@ export function chooseReward(voucherId, user, catalogId) {
     const [[v]] = await conn.query('SELECT * FROM vouchers WHERE id = ? FOR UPDATE', [voucherId]);
     if (!v || v.user_id !== user.id) throw notFound('Voucher not found.');
     if (!['issued', 'chosen'].includes(v.status)) throw bad(v.status === 'held' ? 'Barangay staff are still checking this reward.' : 'This voucher is already used or closed.', 'bad_state');
-    const [[c]] = await conn.query('SELECT * FROM reward_catalog WHERE id = ? AND active = 1', [Number(catalogId)]);
+    const [[c]] = await conn.query('SELECT * FROM reward_catalog WHERE id = ? AND active = 1 AND for_tier = 1', [Number(catalogId)]);
     if (!c) throw bad('Choose a reward from the list.', 'bad_reward');
     if (v.catalog_id === c.id) return { id: v.id, status: 'chosen', catalog_id: c.id };
     await moveStock(conn, c.id, -1, 'voucher', `voucher #${v.id}`, user.id);
@@ -214,7 +214,7 @@ export async function myVouchers(userId) {
 
 export const rewardCatalog = () => q(
   `SELECT c.id, c.name_en, c.name_fil, c.stock, s.name AS supplier FROM reward_catalog c LEFT JOIN suppliers s ON s.id = c.supplier_id
-    WHERE c.active = 1 AND c.stock > 0 ORDER BY c.name_en`);
+    WHERE c.active = 1 AND c.for_tier = 1 AND c.stock > 0 ORDER BY c.name_en`);
 
 // The month's report for the barangay's accounts, plus about 5% of the vouchers given that month, picked at
 // random, for staff to phone and confirm the resident really got the goods.

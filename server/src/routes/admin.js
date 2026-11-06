@@ -82,7 +82,7 @@ router.get('/admin/users/:id', wrap(async (req, res) => {
   const u = await one('SELECT * FROM users WHERE id = ? AND role = ?', [req.params.id, 'resident']);
   if (!u) throw notFound('Resident not found.');
   const history = await q(`${SELECT_REQUEST} WHERE r.borrower_id = ? OR i.owner_id = ? ORDER BY r.id DESC LIMIT 50`, [u.id, u.id]);
-  const ledger = await q('SELECT amount, reason, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id DESC LIMIT 30', [u.id]);
+  const ledger = await q('SELECT account, amount, reason, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id DESC LIMIT 30', [u.id]);
   res.json({ user: { ...publicUser(u), suspended: !!u.suspended, messaging_paused: !!u.messaging_paused, shelf_paused_until: u.shelf_paused_until, priority_household: !!u.priority_household, created_at: u.created_at }, history: history.map((r) => mapRequest(r, u.id)), ledger });
 }));
 

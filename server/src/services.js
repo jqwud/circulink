@@ -18,14 +18,31 @@ export async function audit(actorId, action, target = null, conn = null) {
   await (conn || { query: q }).query('INSERT INTO audit_log (actor_id, action, target) VALUES (?,?,?)', [actorId, action, target]);
 }
 
-// Every credit change is a ledger row. A negative change never takes a balance below zero.
-export async function addCredits(conn, userId, amount, reason, requestId = null) {
+// One ledger row and its cached balance, in the caller's transaction (the user row is already locked).
+// account 'borrow' is users.credits; account 'reward' is users.reward_points (Ambag points, points.js).
+// o: { account, requestId, sourceType, sourceId, campaignId, reversalOf, actorId, note, expiresOn, remaining, key }
+export async function ledgerEntry(conn, userId, amount, reason, o = {}) {
+  const account = o.account === 'reward' ? 'reward' : 'borrow';
+  const [r] = await conn.query(
+    `INSERT INTO credit_ledger (user_id, account, request_id, amount, reason, source_type, source_id, campaign_id, reversal_of, actor_id, note,
+                                expires_on, remaining, award_key) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [userId, account, o.requestId ?? null, amount, reason, o.sourceType || null, o.sourceId ?? null, o.campaignId ?? null, o.reversalOf ?? null,
+      o.actorId ?? null, o.note ? String(o.note).slice(0, 255) : null, o.expiresOn || null, o.remaining ?? null, o.key || null]);
+  await conn.query(`UPDATE users SET ${account === 'reward' ? 'reward_points = reward_points' : 'credits = credits'} + ? WHERE id = ?`, [amount, userId]);
+  return r.insertId;
+}
+
+// Every borrow-credit change is a ledger row. A negative change never takes a balance below zero.
+// The fifth argument is the request id (as before) or an options object for ledgerEntry. Borrow credits
+// only: Ambag points move through points.js, which refuses instead of clamping at zero.
+export async function addCredits(conn, userId, amount, reason, requestIdOrOptions = null) {
+  const o = requestIdOrOptions && typeof requestIdOrOptions === 'object' ? requestIdOrOptions : { requestId: requestIdOrOptions };
+  if (o.account === 'reward') throw new Error('Ambag points move through points.js');
   const [[u]] = await conn.query('SELECT credits FROM users WHERE id = ? FOR UPDATE', [userId]);
   let delta = amount;
   if (amount < 0) delta = -Math.min(-amount, u.credits);
   if (delta === 0 && amount !== 0) return 0;
-  await conn.query('UPDATE users SET credits = credits + ? WHERE id = ?', [delta, userId]);
-  await conn.query('INSERT INTO credit_ledger (user_id, request_id, amount, reason) VALUES (?,?,?,?)', [userId, requestId, delta, reason]);
+  await ledgerEntry(conn, userId, delta, reason, { ...o, account: 'borrow' });
   return delta;
 }
 
