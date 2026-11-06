@@ -17,7 +17,7 @@ const firstName = (n) => String(n || '').split(' ')[0];
 
 // ---------- credits ----------
 router.get('/credits', wrap(async (req, res) => {
-  const ledger = await q('SELECT id, request_id, amount, reason, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id DESC LIMIT 100', [req.user.id]);
+  const ledger = await q("SELECT id, request_id, amount, reason, created_at FROM credit_ledger WHERE user_id = ? AND account = 'borrow' ORDER BY id DESC LIMIT 100", [req.user.id]);
   const fresh = await one('SELECT credits FROM users WHERE id = ?', [req.user.id]);
   res.json({ balance: fresh.credits, ledger, rules: RULES });
 }));

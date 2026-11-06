@@ -39,6 +39,13 @@ export const RULES = {
   vouchersSilver: 2,
   vouchersGold: 3,
   voucherDays: 30,              // a voucher must be collected within this many days
+  // Ambag points (batch 35+): earned for verified sharing, spent on LGU rewards. Separate from borrow credits
+  // and from the Tiwala score. How many points each activity earns is set per campaign (reward_campaigns).
+  pointsQuarterCap: 60,         // most points one resident can earn in a quarter, all activities together
+  pointsExpiryMonths: 12,       // points expire this many months after they were earned ...
+  pointsExpiryWarnDays: 30,     // ... and the resident is told this many days before
+  pointsAdjustMax: 500,         // the largest single correction an admin can make
+  pointsAdjustSecondAbove: 50,  // corrections bigger than this need a second admin
 };
 
 // How staff settle a dispute (an item returned damaged or lost), and what each outcome does to credits.

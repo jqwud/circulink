@@ -9,6 +9,7 @@ import { OUT_LOANS_SQL, addCredits, addDays, audit, checkinState, loadRequest, n
 import { removePrivateFile } from './uploads.js';
 import { runTiwala } from './tiwala.js';
 import { runVouchers } from './rewards.js';
+import { runPoints } from './points.js';
 import { safeErrorLine, safeMessage } from './errors.js';
 
 const MINUTE = 60 * 1000;
@@ -219,6 +220,7 @@ export const JOBS = [
   { name: 'donations', everyMs: 60 * MINUTE, run: runDonations },
   { name: 'tiwala', everyMs: DAY, run: runTiwala },
   { name: 'vouchers', everyMs: DAY, run: runVouchers },
+  { name: 'ambag_points', everyMs: DAY, run: runPoints },
 ];
 
 // Runs every job whose interval has passed since its last run, and records the result in job_runs.

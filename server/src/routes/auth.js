@@ -189,7 +189,7 @@ router.get('/me/data', authRequired, wrap(async (req, res) => {
     requests_for_my_items: await q(
       `SELECT r.id, i.title AS item, ${first.replace('%s', 'b.name')} AS borrower, r.start_date, r.end_date, r.status, r.created_at
          FROM requests r JOIN items i ON i.id = r.item_id JOIN users b ON b.id = r.borrower_id WHERE i.owner_id = ? ORDER BY r.id`, [id]),
-    credit_history: await q('SELECT amount, reason, request_id, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id', [id]),
+    credit_history: await q('SELECT account, amount, reason, request_id, source_type, source_id, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id', [id]),
     checkins: await q(
       'SELECT c.request_id, c.day, c.answer, c.note FROM request_checkins c JOIN requests r ON r.id = c.request_id WHERE r.borrower_id = ? ORDER BY c.id', [id]),
     messages_sent: (await q('SELECT request_id, phrase_id, slot_value, body, created_at FROM request_messages WHERE sender_id = ? ORDER BY id', [id]))
