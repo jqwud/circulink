@@ -6,6 +6,10 @@ const Duration kRequestTimeout = Duration(seconds: 25);
 /// How long each address is tried when the app looks for the server by itself.
 const Duration kServerProbeTimeout = Duration(milliseconds: 2500);
 
+/// While the app is open, it asks the server this often whether something new happened (a new notification),
+/// so a lender sees a borrower's request without refreshing. Also checked at once when the app comes back.
+const Duration kLiveRefresh = Duration(seconds: 10);
+
 /// The splash is shown at least this long, so it never just flickers.
 const Duration kSplashMinimum = Duration(milliseconds: 1400);
 

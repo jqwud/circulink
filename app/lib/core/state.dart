@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -204,6 +205,56 @@ class AppState extends ChangeNotifier {
     puroks = (m['puroks'] is List ? m['puroks'] as List<dynamic> : <dynamic>[]).map((dynamic p) => p.toString()).toList();
     rules = mapOf(m['rules']);
     hallPhone = str(m['hall_phone']);
+  }
+
+  // ---------- live updates while the app is open ----------
+  // No push service (it would need a paid or third-party account): the open app checks /me every
+  // kLiveRefresh, and at once when it comes back to the screen. When a new notification arrived, every list
+  // reloads (version++), so a new request shows up on the lender's Requests tab by itself.
+  Timer? _live;
+  bool _checking = false;
+
+  /// Starts (or restarts) the checks. HomeShell calls it while it is on screen and the app is in front.
+  void startLive() {
+    _live?.cancel();
+    _live = Timer.periodic(kLiveRefresh, (_) => liveCheck());
+  }
+
+  void stopLive() {
+    _live?.cancel();
+    _live = null;
+  }
+
+  /// One check. Changes nothing on screen unless the account changed; reloads the lists only when there
+  /// are more unread notifications than before. [fetch] lets tests answer instead of the server.
+  Future<void> liveCheck({Future<dynamic> Function()? fetch}) async {
+    if (_checking || user == null || api.token == null) return;
+    _checking = true;
+    try {
+      final Map<String, dynamic> r = mapOf(await (fetch ?? () => api.get('/me'))());
+      if (user == null) return; // logged out while waiting
+      final String renewed = str(r.remove('token'));
+      if (renewed.isNotEmpty) {
+        api.token = renewed;
+        await _saveToken(renewed);
+      }
+      final bool more = intOf(r['unread_notifications']) > unread;
+      if (jsonEncode(r) == jsonEncode(user) && !more) return;
+      user = r;
+      await _prefs?.setString('user', jsonEncode(user));
+      if (more) version++;
+      notifyListeners();
+    } catch (_) {
+      // Offline for a moment: the next check tries again.
+    } finally {
+      _checking = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    stopLive();
+    super.dispose();
   }
 
   /// Call after something changed on the server (a request, a listing, credits).

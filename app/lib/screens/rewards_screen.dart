@@ -60,9 +60,9 @@ class TiwalaCard extends StatelessWidget {
             const SizedBox(width: 14),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                Row(children: <Widget>[
+                // Wraps onto two lines on a narrow phone or with large text, instead of running off the card.
+                Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: <Widget>[
                   Text(ctx.t('Tiwala score'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                  const SizedBox(width: 8),
                   StatusChip(tierName(ctx, tier), tone: tierTone2(tier)),
                 ]),
                 const SizedBox(height: 4),
