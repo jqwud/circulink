@@ -1,6 +1,6 @@
 {
   "name": "circulink-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "CircuLink API: shared backend for the resident mobile app and the hub, partner and admin web portal",

@@ -1,11 +1,11 @@
 // Scheduled jobs. Each job takes a "now" (tests move it days ahead) and is safe to run again.
-// More jobs (expiring drop-off codes, flag checks) are added with the features that need them.
 import fs from 'node:fs';
 import path from 'node:path';
 import { q, one, phTimestamp } from './db.js';
 import { config } from './config.js';
 import { RULES } from './rules.js';
 import { safeErrorLine, safeMessage } from './errors.js';
+import { expireDeclarations } from './dropoffs.js';
 
 const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
@@ -41,6 +41,7 @@ export async function deleteOldNotifications(now = new Date()) {
 
 // ---------- the runner ----------
 export const JOBS = [
+  { name: 'expire_declarations', everyMs: 60 * MINUTE, run: expireDeclarations },
   { name: 'cleanup_uploads', everyMs: DAY, run: cleanupUploads },
   { name: 'delete_old_notifications', everyMs: DAY, run: deleteOldNotifications },
 ];
