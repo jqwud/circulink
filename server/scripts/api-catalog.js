@@ -12,7 +12,7 @@ export const TAGS = {
   staff: 'Hub staff check codes in, then weigh and sort items (the only place points are created)',
   partners: 'Approved partner organizations ask for reusable stock and confirm pickups',
   stock: 'Hub staff hand stock to partners, move items after sorting, and send recycle batches (items become final here)',
-  admin: 'Admins review flagged drop-offs',
+  admin: 'Admins: accounts, partner approval, hubs, recyclers, categories, flags and the audit log',
 };
 
 export const CATALOG = [
@@ -61,4 +61,23 @@ export const CATALOG = [
   R('GET', '/staff/recycle-batches', 'staff', 'Recycle batches at my hubs', { tag: 'stock' }),
   R('POST', '/staff/recycle-batches', 'staff', 'Put items sorted for recycling into a batch for one recycler', { tag: 'stock', ok: 201, body: ['hub_id*', 'recycler_id*', 'item_ids*'], errors: ['bad_recycler', 'bad_items', 'mixed_hubs', 'bad_state', 'item_busy', 'recycler_not_accredited', 'not_your_hub'] }),
   R('POST', '/staff/recycle-batches/{id}/send', 'staff', 'The batch leaves the hub: its items are recycled and their points confirmed', { tag: 'stock', errors: ['not_found', 'bad_state', 'recycler_not_accredited', 'not_your_hub'] }),
+  R('GET', '/admin/users', 'admin', 'Accounts, filtered by role or searched by name, email or phone', { tag: 'admin', query: ['role', 'q'] }),
+  R('POST', '/admin/users', 'admin', 'Create a staff, partner or admin account; returns a temporary password shown once', { tag: 'admin', ok: 201, body: ['role*', 'name*', 'email*', 'phone', 'org_name', 'kind', 'approve'], errors: ['bad_role', 'bad_name', 'bad_email', 'bad_phone', 'bad_org', 'bad_kind', 'account_exists'] }),
+  R('POST', '/admin/users/{id}/suspend', 'admin', 'Suspend an account (ends its sessions); never your own', { tag: 'admin', errors: ['not_found', 'not_on_self'] }),
+  R('POST', '/admin/users/{id}/reinstate', 'admin', 'Reinstate a suspended account', { tag: 'admin', errors: ['not_found', 'not_on_self'] }),
+  R('POST', '/admin/users/{id}/reset-password', 'admin', 'Give a temporary password (shown once; must be changed at login)', { tag: 'admin', errors: ['not_found', 'not_on_self'] }),
+  R('PUT', '/admin/users/{id}/hubs', 'admin', 'Set the hubs a staff member works at', { tag: 'admin', body: ['hub_ids*'], errors: ['not_found', 'not_staff', 'bad_hub'] }),
+  R('POST', '/admin/users/{id}/delete', 'admin', 'Delete a resident account that asked for it (weights and points stay without a name)', { tag: 'admin', errors: ['not_found', 'not_on_self', 'not_resident', 'not_requested'] }),
+  R('GET', '/admin/partners', 'admin', 'Partner organizations, waiting ones first', { tag: 'admin' }),
+  R('POST', '/admin/partners/{id}/{decision}', 'admin', 'approve or suspend an organization (suspending drops its open requests)', { tag: 'admin', errors: ['bad_decision', 'not_found', 'not_on_self'] }),
+  R('GET', '/admin/hubs', 'admin', 'Every hub, with its staff count', { tag: 'admin' }),
+  R('POST', '/admin/hubs', 'admin', 'Add a hub', { tag: 'admin', ok: 201, body: ['name*', 'type*', 'address*', 'hours', 'status'], errors: ['bad_name', 'bad_type', 'bad_address', 'bad_status'] }),
+  R('PATCH', '/admin/hubs/{id}', 'admin', 'Change a hub (pausing or closing it cancels its open codes)', { tag: 'admin', body: ['name', 'type', 'address', 'hours', 'status'], errors: ['not_found', 'bad_name', 'bad_type', 'bad_address', 'bad_status'] }),
+  R('GET', '/admin/recyclers', 'admin', 'Every recycler', { tag: 'admin' }),
+  R('POST', '/admin/recyclers', 'admin', 'Add a recycler', { tag: 'admin', ok: 201, body: ['name*', 'materials*', 'accredited', 'status'], errors: ['bad_name', 'bad_materials', 'bad_status'] }),
+  R('PATCH', '/admin/recyclers/{id}', 'admin', 'Change a recycler, including its accreditation for e-waste and batteries', { tag: 'admin', body: ['name', 'materials', 'accredited', 'status'], errors: ['not_found', 'bad_name', 'bad_materials', 'bad_status'] }),
+  R('GET', '/admin/categories', 'admin', 'Every category, with its point rate and CO2 estimate', { tag: 'admin' }),
+  R('POST', '/admin/categories', 'admin', 'Add a category (at most 50 points per kg)', { tag: 'admin', ok: 201, body: ['slug*', 'name_en*', 'name_fil*', 'rate_per_kg*', 'co2_per_kg*', 'hazardous', 'food', 'active'], errors: ['bad_slug', 'bad_name', 'bad_rate', 'bad_co2', 'duplicate'] }),
+  R('PATCH', '/admin/categories/{id}', 'admin', 'Change a category; the old values are kept in the audit log', { tag: 'admin', body: ['name_en', 'name_fil', 'rate_per_kg', 'co2_per_kg', 'hazardous', 'food', 'active'], errors: ['not_found', 'bad_name', 'bad_rate', 'bad_co2'] }),
+  R('GET', '/admin/audit', 'admin', 'The audit log, newest first (read-only)', { tag: 'admin', query: ['entity', 'entity_id', 'limit', 'before'] }),
 ];
