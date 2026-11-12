@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0: step 2, the rules engine (2026-11-12)
+
+- Every anti-abuse rule from the spec (R1 to R13) is now a small function in `server/src/rules.js`: who may act at a hub, who may receive items, no processing your own drop-off (also through a second account with the same phone or student ID), points from weight and outcome, the item life cycle, when points become confirmed or cancelled, review flags, drop-off codes, hazardous items, food, and rate limits.
+- 49 rule tests (`npm run test:unit`, no database needed), plus end-to-end tests for the login lockout and the per-person change limit.
+- Phone numbers written as +63 and 0 are now the same number (R8).
+- `database/create-test-db.sql` takes the app account's password on the command line (`SET @pw = '...'`), so a password is never written into the public repository.
+
 ## 0.1.0: CircuLink, step 1 (2026-11-12)
 
 The project is now **CircuLink**, a drop-off hub system for SDG 12. It replaces the Hiraman borrowing app; the Hiraman history stays in git.

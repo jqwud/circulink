@@ -34,7 +34,7 @@ The rules are numbered R1 to R13 in the spec, and each one has an automated test
 
 See **[`docs/SETUP.md`](docs/SETUP.md)** for the step-by-step version. In short:
 
-1. Install Node.js 22+ and MySQL 8, then run `mysql -u root -p -e "source database/create-test-db.sql"` once (it creates the `circulink` account and databases).
+1. Install Node.js 22+ and MySQL 8, then run `mysql -u root -p -e "SET @pw = 'your-password'; source database/create-test-db.sql"` once (it creates the `circulink` account and databases).
 2. `mysql -u root -p < database/schema.sql`, then in `server/`: copy `.env.example` to `.env`, fill in the database login, then `npm install`, `npm run migrate`, `npm run seed`, `npm start`.
 3. In `portal/`: `npm install`, `npm run build`. Open http://localhost:4000.
 4. In `app/`: plug in an Android phone and double-click `run-phone.cmd`, or run `flutter run -d chrome`.

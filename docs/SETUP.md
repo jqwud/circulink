@@ -10,12 +10,14 @@ You need three things running: the **database** (MySQL), the **server** (Node.js
 
 ## 2. Create the app account and the databases
 
-First open `database/create-test-db.sql` and change `change-me-local-password` (it appears twice) to a password of your own. Then, in the project folder, as MySQL root:
+In the project folder, as MySQL root, replace `your-password` with a password of your own for the app account:
 
 ```
-mysql -u root -p -e "source database/create-test-db.sql"
+mysql -u root -p -e "SET @pw = 'your-password'; source database/create-test-db.sql"
 mysql -u root -p -e "source database/schema.sql"
 ```
+
+Never write the password into `create-test-db.sql` itself: the file is public on GitHub.
 
 The first command creates the MySQL account `circulink` and the databases `circulink` and `circulink_test`. The second creates the platform tables in `circulink`. **Warning:** `schema.sql` deletes an existing `circulink` database first, so use it only for a new install. Later changes come as migrations (step 3).
 

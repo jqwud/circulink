@@ -49,7 +49,7 @@ export function buildOpenApi() {
     openapi: '3.1.0',
     info: {
       title: 'CircuLink API',
-      version: '0.1.0',
+      version: '0.2.0',
       description: 'The API behind the CircuLink resident app and the hub portal. All paths are under /api. Dates are Philippine time (UTC+8). Generated from server/scripts/api-catalog.js by npm run docs:api.',
     },
     servers: [{ url: 'http://localhost:4000/api' }],
