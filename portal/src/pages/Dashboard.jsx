@@ -1,86 +1,64 @@
-import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { ErrorBox, Loading, Pawsa, Stat, useLoad } from '../components.jsx';
+import { Badge, ErrorBox, Loading, PageHeader, Stat, useLoad } from '../components.jsx';
+
+// What each role will do here, so the team and testers can see where the portal is going.
+const NEXT = {
+  staff: 'Check in drop-offs by code, then weigh and sort each item.',
+  partner: 'Browse reusable stock and request items for your organization.',
+  admin: 'Approve hubs, staff and partners; review flags; see impact reports.',
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const { t } = useI18n();
-  const { data: s, loading, error, reload } = useLoad(() => api('/admin/stats'), []);
-  if (loading && !s) return <Loading />;
+  const { t, lang } = useI18n();
+  const { data, loading, error, reload } = useLoad(() => api('/meta'), []);
+  if (loading) return <Loading />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  // Listings the automatic checks held back come first: they may harm the community.
-  const attention = [
-    { n: s.flagged_listings, label: 'Listings flagged as possibly harmful', to: '/listings?review=flagged', bad: true, urgent: true },
-    { n: s.pending_verifications, label: 'IDs waiting for review', to: '/verification' },
-    { n: s.staff_requests_waiting, label: 'Staff approvals waiting', to: '/transactions' },
-    { n: s.overdue, label: 'Overdue items', to: '/transactions', bad: true },
-    { n: s.missed_checkins, label: 'Loans with no check-in for 2+ days', to: '/transactions', bad: true },
-    { n: s.open_reports, label: 'Open reports', to: '/reports', bad: true },
-    { n: s.deletion_requests, label: 'Account deletion requests', to: '/residents?deletion=1' },
-    { n: s.messaging_paused, label: 'Residents with paused messages', to: '/residents', bad: true },
-    { n: s.unkind_refusals_7d, label: 'Unkind words refused this week', to: '/staff' },
-  ].filter((a) => a.n > 0);
-
+  const hazardous = data.categories.filter((c) => c.hazardous).length;
   return (
     <>
-      {s.flagged_listings > 0 && (
-        <div role="alert">
-          <Link to="/listings?review=flagged" className="alert-urgent">
-            <span className="alert-icon" aria-hidden="true">⚠</span>
-            <span>
-              <b>{t('{n} listing(s) may harm the community').replace('{n}', s.flagged_listings)}</b>
-              <small>{t('They are hidden from neighbors until you check them. Review them first.')}</small>
-            </span>
-            <span className="alert-go">{t('Review now')} →</span>
-          </Link>
-        </div>
-      )}
-      {s.urgent_reports > 0 && (
-        <div role="alert">
-          <Link to="/reports" className="alert-urgent">
-            <span className="alert-icon" aria-hidden="true">⚠</span>
-            <span>
-              <b>{t('{n} safety or harassment concern(s) waiting').replace('{n}', s.urgent_reports)}</b>
-              <small>{t('A resident asked the barangay for help. Answer within 1 working day.')}</small>
-            </span>
-            <span className="alert-go">{t('Answer now')} →</span>
-          </Link>
-        </div>
-      )}
-      <div className="card hello">
-        <Pawsa pose={attention.length ? 'happy' : 'sleepy'} size={96} />
-        <div>
-          <h1>{t('Good day')}, {user.name.split(' ')[0]}!</h1>
-          <p className="muted">{t('Here is what Hiraman looks like today.')}</p>
-        </div>
+      <PageHeader title={`${t('Good day')}, ${user.name.split(' ')[0]}`} subtitle={t('Hubs and categories are ready. The screens below arrive in the next build steps.')} />
+      <div className="stats">
+        <Stat label={t('Active hubs')} value={data.hubs.length} />
+        <Stat label={t('Categories')} value={data.categories.length} hint={`${hazardous} ${t('Hazardous').toLowerCase()}`} />
       </div>
 
-      <div className="card">
-        <h2>{t('Needs your attention')}</h2>
-        {attention.length === 0 ? (
-          <p className="muted">{t('Everything is in order. Pawsa is taking a nap.')}</p>
-        ) : (
-          <ul className="attention">
-            {attention.map((a) => (
-              <li key={a.label}><Link to={a.to} className={a.bad ? 'bad' : ''}><span>{t(a.label)}</span><span>{a.n}</span></Link></li>
+      <section className="card">
+        <h2>{t('Coming next')}</h2>
+        <p>{t(NEXT[user.role] || NEXT.staff)}</p>
+      </section>
+
+      <section className="card">
+        <h2>{t('Drop-off hubs')}</h2>
+        <table className="table">
+          <thead><tr><th scope="col">{t('Name')}</th><th scope="col">Type</th><th scope="col">Address</th></tr></thead>
+          <tbody>
+            {data.hubs.map((h) => (
+              <tr key={h.id}><td>{h.name}</td><td><Badge value={h.type} /></td><td>{h.address}</td></tr>
             ))}
-          </ul>
-        )}
-      </div>
+          </tbody>
+        </table>
+      </section>
 
-      <div className="grid stats">
-        <Stat label={t('Verified residents')} value={s.verified_users} to="/residents" />
-        <Stat label={t('Active listings')} value={s.active_listings} to="/listings" />
-        <Stat label={t('Shelf items')} value={s.shelf_items} to="/shelf" />
-        <Stat label={t('Items out on loan')} value={s.active_loans} to="/transactions" />
-        <Stat label={t('Loans this week')} value={s.loans_this_week} />
-        <Stat label={t('Completed loans')} value={s.completed_loans} to="/impact" tone="good" />
-        <Stat label={t('Return rate')} value={s.return_rate === null ? '–' : `${s.return_rate}%`} to="/impact" tone="good" />
-        <Stat label={t('Purchases avoided')} value={s.purchases_avoided} to="/impact" tone="good" hint={t('Measured')} />
-      </div>
+      <section className="card">
+        <h2>{t('Categories')}</h2>
+        <table className="table">
+          <thead><tr><th scope="col">{t('Name')}</th><th scope="col">Points / kg</th><th scope="col">kg CO₂e / kg (estimate)</th><th scope="col">{t('Status')}</th></tr></thead>
+          <tbody>
+            {data.categories.map((c) => (
+              <tr key={c.id}>
+                <td>{lang === 'fil' ? c.name_fil : c.name_en}</td>
+                <td>{c.rate_per_kg}</td>
+                <td>{c.co2_per_kg}</td>
+                <td>{c.hazardous ? <Badge value="urgent" label={t('Hazardous')} /> : c.food ? <Badge value="info" label={t('Food')} /> : null}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
     </>
   );
 }

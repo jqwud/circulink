@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
-
-import '../core/i18n.dart';
-import '../core/theme.dart';
 import 'package:provider/provider.dart';
 
+import '../core/i18n.dart';
 import '../core/state.dart';
-import 'browse_screen.dart';
+import '../core/theme.dart';
 import 'home_tab.dart';
+import 'hubs_screen.dart';
 import 'profile_screen.dart';
-import 'requests_screen.dart';
-import 'simple_home.dart';
-import 'wanted_screen.dart';
 
-/// The main screen with the bottom bar: Home, Browse, Requests, Wanted, Me.
+/// The main screen with the bottom bar: Home, Hubs, Me.
+/// The drop-off tab (declare items, get a code) is added in build step 3.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -26,8 +23,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   void _go(int i) => setState(() => _index = i);
 
-  // Live updates (AppState.liveCheck) run while this screen is up and the app is in front: checked at once
-  // when the resident comes back to the app, paused while it is in the background.
+  // Live updates (AppState.liveCheck) run while this screen is up and the app is in front.
   @override
   void initState() {
     super.initState();
@@ -55,8 +51,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final AppState app = context.watch<AppState>();
-    if (app.simpleMode) return const SimpleHome();
-    // A red dot on Home (where the bell is) whenever there are unread notifications, seen from any tab.
+    // A red dot on Home (where the bell is) whenever there are unread notifications.
     Widget homeIcon(IconData icon) => Badge(
           isLabelVisible: app.unread > 0,
           label: Text('${app.unread}'),
@@ -65,9 +60,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         );
     final List<Widget> pages = <Widget>[
       HomeTab(onGoTo: _go),
-      const BrowseScreen(),
-      const RequestsScreen(),
-      const WantedScreen(),
+      const HubsScreen(),
       const ProfileScreen(),
     ];
     return Scaffold(
@@ -76,12 +69,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         selectedIndex: _index,
         onDestinationSelected: _go,
         backgroundColor: Colors.white,
-        indicatorColor: HiColors.primary,
+        indicatorColor: HiColors.primarySoft,
         destinations: <NavigationDestination>[
           NavigationDestination(icon: homeIcon(Icons.home_outlined), selectedIcon: homeIcon(Icons.home), label: context.t('Home')),
-          NavigationDestination(icon: const Icon(Icons.search), selectedIcon: const Icon(Icons.search), label: context.t('Browse')),
-          NavigationDestination(icon: const Icon(Icons.swap_horiz), selectedIcon: const Icon(Icons.swap_horiz), label: context.t('Requests')),
-          NavigationDestination(icon: const Icon(Icons.campaign_outlined), selectedIcon: const Icon(Icons.campaign), label: context.t('Wanted')),
+          NavigationDestination(icon: const Icon(Icons.place_outlined), selectedIcon: const Icon(Icons.place), label: context.t('Hubs')),
           NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: context.t('Me')),
         ],
       ),

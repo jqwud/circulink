@@ -16,7 +16,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: ci-root-password
-          MYSQL_DATABASE: hiraman_test
+          MYSQL_DATABASE: circulink_test
         ports:
           - 3306:3306
         options: >-
@@ -106,7 +106,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: ci-root-password
-          MYSQL_DATABASE: hiraman_test
+          MYSQL_DATABASE: circulink_test
         ports:
           - 3306:3306
         options: >-

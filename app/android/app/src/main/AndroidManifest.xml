@@ -7,7 +7,7 @@
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:usesCleartextTraffic="true"
-        android:label="Hiraman"
+        android:label="CircuLink"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

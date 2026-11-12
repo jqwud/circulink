@@ -1,9 +1,9 @@
 {
-  "name": "hiraman-server",
-  "version": "1.0.0",
+  "name": "circulink-server",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Hiraman API: shared backend for the resident mobile app and the LGU web portal",
+  "description": "CircuLink API: shared backend for the resident mobile app and the hub, partner and admin web portal",
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
@@ -18,8 +18,7 @@
     "lint": "eslint .",
     "format": "prettier --write",
     "create-admin": "node scripts/create-admin.js",
-    "docs:api": "node scripts/openapi.js",
-    "test:load": "node scripts/load-test.js"
+    "docs:api": "node scripts/openapi.js"
   },
   "engines": {
     "node": ">=22"

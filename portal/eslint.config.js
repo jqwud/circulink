@@ -1,4 +1,4 @@
-// Lint for the LGU portal (React in the browser). Catches real mistakes, including hooks used wrongly.
+// Lint for the CircuLink web portal (React in the browser). Catches real mistakes, including hooks used wrongly.
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';

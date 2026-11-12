@@ -2,14 +2,13 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import rateLimit from 'express-rate-limit';
-import { pool, q, one, withTx, purokNames } from '../db.js';
+import { pool, q, one, withTx } from '../db.js';
 import { HttpError, bad, wrap } from '../errors.js';
-import { authRequired, signToken, publicUser } from '../auth.js';
-import { publicUpload, privateUpload, removePrivateFile } from '../uploads.js';
+import { authRequired, requireResident, signToken, publicUser } from '../auth.js';
+import { publicUpload } from '../uploads.js';
 import { PRIVACY_VERSION, privacyNotice } from '../privacy.js';
 import { config } from '../config.js';
-import { audit, notify } from '../services.js';
-import { phraseById, renderPhrase } from '../phrases.js';
+import { audit } from '../services.js';
 
 const router = Router();
 const limiter = rateLimit({
@@ -17,17 +16,19 @@ const limiter = rateLimit({
   handler: (_req, res) => res.status(429).json({ error: 'Too many tries from this network. Please wait a few minutes.', code: 'too_many_requests' }),
 });
 
-// A purok must be one the barangay lists (empty is allowed: it is optional). Phone: digits, spaces, + and -.
-async function checkPurok(p) {
-  if (p === undefined || p === null || p === '') return null;
-  const names = await purokNames();
-  if (names.length && !names.includes(String(p).trim())) throw bad('Choose a purok from the list.', 'bad_purok');
-  return String(p).trim();
-}
-function checkPhone(p) {
+// Phone: digits, spaces, + and -. Stored without spaces or dashes, so "0917 123 4567" and "0917-123-4567"
+// are the same number and one person cannot open two accounts with it (rule R8).
+export function normalizePhone(p) {
   const v = String(p ?? '').trim();
   if (!v) return null;
   if (!/^\+?[0-9][0-9 -]{5,18}[0-9]$/.test(v)) throw bad('Enter a phone number with digits only, like 0917 123 4567.', 'bad_phone');
+  return v.replace(/[ -]/g, '');
+}
+// Student ID: letters, digits and dashes, stored in capitals (rule R8).
+export function normalizeStudentId(s) {
+  const v = String(s ?? '').trim().toUpperCase();
+  if (!v) return null;
+  if (!/^[A-Z0-9-]{4,30}$/.test(v)) throw bad('Enter your student ID as printed on your school ID.', 'bad_student_id');
   return v;
 }
 
@@ -41,7 +42,7 @@ function checkPassword(p) {
 }
 
 // After 5 wrong passwords for one email within 15 minutes, that email is locked for 15 minutes, whatever
-// the network. Kept in memory: a restart clears it, which is fine for one barangay server.
+// the network. Kept in memory: a restart clears it.
 const LOGIN_MAX_FAILURES = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const failures = new Map();   // email -> { count, first, lockedUntil }
@@ -59,35 +60,40 @@ function loginFailed(email, now = Date.now()) {
 }
 
 // A temporary password that is easy to read aloud and type: no 0/O or 1/l/I.
-function temporaryPassword() {
+export function temporaryPassword() {
   const letters = 'abcdefghjkmnpqrstuvwxyz23456789';
   return Array.from({ length: 10 }, () => letters[crypto.randomInt(letters.length)]).join('');
 }
 
+const fresh = (id) => one('SELECT * FROM users WHERE id = ?', [id]);
+
 // The privacy notice. Public: people read it before they sign up.
 router.get('/privacy', (req, res) => res.json(privacyNotice(req.query.lang)));
 
+// Sign-up makes a resident account only. Staff, partner and admin accounts are made by an admin.
 router.post('/auth/register', limiter, wrap(async (req, res) => {
-  const { name, email, password, phone, purok, language, accept_privacy: acceptPrivacy } = req.body || {};
-  if (!name || name.trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
+  const { name, email, password, phone, student_id: studentId, language, accept_privacy: acceptPrivacy } = req.body || {};
+  if (!name || String(name).trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
   if (!emailOk(email)) throw bad('Please enter a valid email.', 'bad_email');
   checkPassword(password);
-  const purokOk = await checkPurok(purok);
-  const phoneOk = checkPhone(phone);
+  const phoneOk = normalizePhone(phone);
+  if (!phoneOk) throw bad('Please enter your phone number.', 'bad_phone');
+  const studentOk = normalizeStudentId(studentId);
   if (acceptPrivacy !== true) throw bad('Please read and accept the privacy notice.', 'privacy_required');
   const hash = await bcrypt.hash(password, 10);
   let r;
   try {
     [r] = await pool.query(
-      `INSERT INTO users (name, email, phone, password_hash, purok, language, privacy_version, privacy_accepted_at)
+      `INSERT INTO users (name, email, phone, student_id, password_hash, language, privacy_version, privacy_accepted_at)
        VALUES (?,?,?,?,?,?,?, NOW())`,
-      [name.trim(), email.trim().toLowerCase(), phoneOk, hash, purokOk, language === 'en' ? 'en' : 'fil', PRIVACY_VERSION]);
+      [String(name).trim().slice(0, 120), email.trim().toLowerCase(), phoneOk, studentOk, hash, language === 'fil' ? 'fil' : 'en', PRIVACY_VERSION]);
   } catch (e) {
-    // The same answer whether or not the email is taken, so sign-up cannot be used to find out who is a member.
-    if (e.code === 'ER_DUP_ENTRY') throw bad('We could not create an account with these details. If you signed up before, log in or ask the barangay to reset your password.', 'signup_failed');
+    // The same answer whichever value is taken, so sign-up cannot be used to find out who is a member.
+    if (e.code === 'ER_DUP_ENTRY') throw bad('We could not create an account with these details. If you signed up before, log in instead.', 'signup_failed');
     throw e;
   }
-  const user = await one('SELECT * FROM users WHERE id = ?', [r.insertId]);
+  const user = await fresh(r.insertId);
+  await audit(user.id, 'account_created', { entity: 'user', entityId: user.id });
   res.status(201).json({ token: signToken(user), user: publicUser(user) });
 }));
 
@@ -95,7 +101,7 @@ router.post('/auth/login', limiter, wrap(async (req, res) => {
   const { email, password } = req.body || {};
   const key = String(email || '').trim().toLowerCase();
   if (loginLocked(key)) {
-    throw new HttpError(429, 'Too many wrong passwords. Wait 15 minutes, or ask the barangay to reset your password.', 'too_many_attempts');
+    throw new HttpError(429, 'Too many wrong passwords. Wait 15 minutes, or ask an admin to reset your password.', 'too_many_attempts');
   }
   const user = await one('SELECT * FROM users WHERE email = ?', [key]);
   const ok = user && (await bcrypt.compare(String(password || ''), user.password_hash));
@@ -104,7 +110,7 @@ router.post('/auth/login', limiter, wrap(async (req, res) => {
     throw new HttpError(401, 'Wrong email or password.', 'bad_login');
   }
   failures.delete(key);
-  if (user.suspended) throw bad('This account is suspended. Please contact the barangay.', 'suspended');
+  if (user.suspended) throw bad('This account is suspended. Please contact CircuLink support at your hub.', 'suspended');
   res.json({ token: signToken(user), user: publicUser(user) });
 }));
 
@@ -128,127 +134,81 @@ router.post('/me/password', authRequired, wrap(async (req, res) => {
   checkPassword(next);
   await q('UPDATE users SET password_hash = ?, must_change_password = 0, token_version = token_version + 1 WHERE id = ?',
     [await bcrypt.hash(next, 10), req.user.id]);
-  const fresh = await one('SELECT * FROM users WHERE id = ?', [req.user.id]);
-  await audit(req.user.id, 'password_changed', `user #${req.user.id}`);
-  res.json({ token: signToken(fresh), user: publicUser(fresh) });
+  await audit(req.user.id, 'password_changed', { entity: 'user', entityId: req.user.id });
+  const user = await fresh(req.user.id);
+  res.json({ token: signToken(user), user: publicUser(user) });
 }));
 
-export { temporaryPassword };
-
+// Name, phone and language. A sent field is saved; fields that are not sent stay as they are.
+// The student ID is fixed after sign-up (one account per student ID), so only an admin can change it.
 router.patch('/me', authRequired, wrap(async (req, res) => {
-  const { name, phone, purok, language, thanks_opt_in: thanks, simple_mode: simple } = req.body || {};
+  const { name, phone, language } = req.body || {};
   if (name !== undefined && String(name).trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
-  // A field that is sent is saved; an empty phone clears it. Fields that are not sent stay as they are.
   const fields = {};
   if (name !== undefined) fields.name = String(name).trim().slice(0, 120);
-  if (phone !== undefined) fields.phone = checkPhone(phone);
-  if (purok !== undefined && purok !== '') fields.purok = await checkPurok(purok);
+  if (phone !== undefined) {
+    fields.phone = normalizePhone(phone);
+    if (!fields.phone && req.user.role === 'resident') throw bad('Please enter your phone number.', 'bad_phone');
+  }
   if (['en', 'fil'].includes(language)) fields.language = language;
-  if (thanks !== undefined) fields.thanks_opt_in = thanks ? 1 : 0;
-  if (simple !== undefined) fields.simple_mode = simple ? 1 : 0;
   const keys = Object.keys(fields);
-  if (keys.length) await q(`UPDATE users SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => fields[k]), req.user.id]);
-  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+  try {
+    if (keys.length) await q(`UPDATE users SET ${keys.map((k) => `${k} = ?`).join(', ')} WHERE id = ?`, [...keys.map((k) => fields[k]), req.user.id]);
+  } catch (e) {
+    if (e.code === 'ER_DUP_ENTRY') throw bad('That phone number belongs to another account.', 'phone_taken');
+    throw e;
+  }
+  res.json(publicUser(await fresh(req.user.id)));
 }));
 
-// Agreeing to the current privacy notice (people who joined before it existed, or after it changed).
+// Agreeing to the current privacy notice (after it changed).
 router.post('/me/privacy', authRequired, wrap(async (req, res) => {
   await q('UPDATE users SET privacy_version = ?, privacy_accepted_at = NOW() WHERE id = ?', [PRIVACY_VERSION, req.user.id]);
-  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+  res.json(publicUser(await fresh(req.user.id)));
 }));
 
-// Agreeing that barangay staff may view the ID photo. Needed before the first ID upload.
-router.post('/me/id-consent', authRequired, wrap(async (req, res) => {
-  await q('UPDATE users SET id_consent_at = NOW() WHERE id = ?', [req.user.id]);
-  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
-}));
-
-// "My data": everything Hiraman holds about the person, in one download. Other people appear by first name only.
-// A sent message in words: a quick reply rendered in the person's language, or the text they wrote.
-function messageText(m, lang) {
-  const p = m.phrase_id ? phraseById(m.phrase_id) : null;
-  return p ? renderPhrase(p, m.slot_value, lang === 'en' ? 'en' : 'fil') : m.body;
-}
-
+// "My data": everything CircuLink holds about the person, in one download.
 router.get('/me/data', authRequired, wrap(async (req, res) => {
   const id = req.user.id;
   const u = req.user;
-  const first = "SUBSTRING_INDEX(%s, ' ', 1)";
   res.json({
     exported_at: new Date().toISOString(),
     profile: {
-      name: u.name, email: u.email, phone: u.phone, purok: u.purok, language: u.language, role: u.role,
-      verification_status: u.verification_status, credits: u.credits, joined: u.created_at, has_id_photo: !!u.id_photo_path,
-      privacy_version: u.privacy_version, privacy_accepted_at: u.privacy_accepted_at, id_consent_at: u.id_consent_at,
-      deletion_requested_at: u.deletion_requested_at,
+      name: u.name, email: u.email, phone: u.phone, student_id: u.student_id, language: u.language, role: u.role, joined: u.created_at,
+      privacy_version: u.privacy_version, privacy_accepted_at: u.privacy_accepted_at, deletion_requested_at: u.deletion_requested_at,
     },
-    items: await q('SELECT id, title, description, item_condition, tier, status, created_at FROM items WHERE owner_id = ? ORDER BY id', [id]),
-    requests_as_borrower: await q(
-      `SELECT r.id, i.title AS item, ${first.replace('%s', 'o.name')} AS owner, r.start_date, r.end_date, r.status, r.on_time, r.created_at
-         FROM requests r JOIN items i ON i.id = r.item_id LEFT JOIN users o ON o.id = i.owner_id WHERE r.borrower_id = ? ORDER BY r.id`, [id]),
-    requests_for_my_items: await q(
-      `SELECT r.id, i.title AS item, ${first.replace('%s', 'b.name')} AS borrower, r.start_date, r.end_date, r.status, r.created_at
-         FROM requests r JOIN items i ON i.id = r.item_id JOIN users b ON b.id = r.borrower_id WHERE i.owner_id = ? ORDER BY r.id`, [id]),
-    credit_history: await q('SELECT account, amount, reason, request_id, source_type, source_id, created_at FROM credit_ledger WHERE user_id = ? ORDER BY id', [id]),
-    checkins: await q(
-      'SELECT c.request_id, c.day, c.answer, c.note FROM request_checkins c JOIN requests r ON r.id = c.request_id WHERE r.borrower_id = ? ORDER BY c.id', [id]),
-    messages_sent: (await q('SELECT request_id, phrase_id, slot_value, body, created_at FROM request_messages WHERE sender_id = ? ORDER BY id', [id]))
-      .map((m) => ({ request_id: m.request_id, body: messageText(m, u.language), created_at: m.created_at })),
-    ratings_given: await q('SELECT request_id, stars, comment, created_at FROM ratings WHERE rater_id = ? ORDER BY id', [id]),
-    ratings_received: await q('SELECT request_id, stars, comment, created_at FROM ratings WHERE ratee_id = ? ORDER BY id', [id]),
-    reports_filed: await q('SELECT target_type, reason, details, status, outcome, created_at FROM reports WHERE reporter_id = ? ORDER BY id', [id]),
-    wanted_posts: await q('SELECT title, details, needed_by, status, created_at FROM wanted_posts WHERE user_id = ? ORDER BY id', [id]),
-    donation_claims: await q(
-      'SELECT c.id, i.title AS item, c.status, c.pickup_date, c.created_at, c.closed_at FROM donation_claims c JOIN items i ON i.id = c.item_id WHERE c.claimer_id = ? ORDER BY c.id', [id]),
-    thanks_board: !!u.thanks_opt_in,
-    survey_answers: await q(
-      'SELECT s.request_id, s.would_have_bought FROM impact_surveys s JOIN requests r ON r.id = s.request_id WHERE r.borrower_id = ?', [id]),
+    declarations: await q(
+      `SELECT d.id, h.name AS hub, d.status, d.created_at, d.received_at FROM declarations d JOIN hubs h ON h.id = d.hub_id
+        WHERE d.resident_id = ? ORDER BY d.id`, [id]),
+    items: await q(
+      `SELECT i.id, c.name_en AS category, i.description, i.weight_kg, i.outcome, i.state, i.processed_at
+         FROM items i JOIN declarations d ON d.id = i.declaration_id JOIN categories c ON c.id = i.category_id
+        WHERE d.resident_id = ? ORDER BY i.id`, [id]),
+    points: await q('SELECT item_id, points, status, reason, created_at, decided_at FROM points_ledger WHERE user_id = ? ORDER BY id', [id]),
     notifications: await q('SELECT type, title, body, created_at, read_at FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 200', [id]),
   });
 }));
 
-// Asking for the account to be deleted. An admin does it from the portal once no loan is active.
-router.post('/me/delete-request', authRequired, wrap(async (req, res) => {
-  if (req.user.role !== 'resident') throw bad('Staff accounts are managed by an admin.', 'bad_state');
+// Asking for the account to be deleted. An admin does it from the portal.
+router.post('/me/delete-request', authRequired, requireResident, wrap(async (req, res) => {
   await withTx(async (conn) => {
     await conn.query('UPDATE users SET deletion_requested_at = NOW() WHERE id = ?', [req.user.id]);
     const reason = String(req.body?.reason || '').trim().slice(0, 200);
-    await audit(req.user.id, 'deletion_requested', `user #${req.user.id}${reason ? `: ${reason}` : ''}`, conn);
+    await audit(req.user.id, 'deletion_requested', { entity: 'user', entityId: req.user.id, details: reason ? { reason } : null }, conn);
   });
-  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+  res.json(publicUser(await fresh(req.user.id)));
 }));
 
 router.delete('/me/delete-request', authRequired, wrap(async (req, res) => {
   await q('UPDATE users SET deletion_requested_at = NULL WHERE id = ?', [req.user.id]);
-  await audit(req.user.id, 'deletion_cancelled', `user #${req.user.id}`);
-  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
+  await audit(req.user.id, 'deletion_cancelled', { entity: 'user', entityId: req.user.id });
+  res.json(publicUser(await fresh(req.user.id)));
 }));
 
-// Public item photos (listings, handover and return photos).
+// Public item photos (taken by staff when they sort an item).
 router.post('/uploads', authRequired, publicUpload, wrap(async (req, res) => {
   if (!req.file) throw bad('Choose a photo first.', 'no_file');
   res.status(201).json({ url: `/uploads/public/${req.file.filename}` });
-}));
-
-// ID photo: stored privately. Only LGU staff can view it, through an authenticated endpoint.
-router.post('/me/id-photo', authRequired, privateUpload, wrap(async (req, res) => {
-  if (!req.file) throw bad('Choose a photo of your ID.', 'no_file');
-  if (req.user.role !== 'resident') {
-    removePrivateFile(req.file.filename);
-    throw bad('Staff accounts do not need verification.', 'bad_state');
-  }
-  if (!req.user.id_consent_at) {
-    removePrivateFile(req.file.filename);
-    throw bad('Please agree that barangay staff may view your ID first.', 'id_consent_required');
-  }
-  await q("UPDATE users SET id_photo_path = ?, verification_status = 'pending', reject_reason = NULL WHERE id = ?", [req.file.filename, req.user.id]);
-  // Keep only the newest ID photo: the old one is personal data we no longer need.
-  if (req.user.id_photo_path && req.user.id_photo_path !== req.file.filename) removePrivateFile(req.user.id_photo_path);
-  const staff = await q("SELECT id FROM users WHERE role IN ('lgu_staff','lgu_admin')");
-  for (const s of staff) {
-    await notify(pool, s.id, 'verification_new', `${req.user.name} sent an ID for verification`, null, req.user.id, { name: req.user.name });
-  }
-  res.json(publicUser(await one('SELECT * FROM users WHERE id = ?', [req.user.id])));
 }));
 
 export default router;

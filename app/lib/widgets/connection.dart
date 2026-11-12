@@ -6,7 +6,7 @@ import '../core/i18n.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
 
-/// Where is the Hiraman server? Over the USB cable it is localhost; on Wi-Fi or the laptop's
+/// Where is the CircuLink server? Over the USB cable it is localhost; on Wi-Fi or the laptop's
 /// hotspot it is the computer's address, for example http://192.168.137.1:4000.
 Future<void> showServerDialog(BuildContext context) async {
   final TextEditingController controller = TextEditingController(text: context.app.api.baseUrl);

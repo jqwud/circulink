@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/state.dart';
 import '../core/theme.dart';
-import '../widgets/pawsa.dart';
+import '../widgets/brand_mark.dart';
 import 'auth_screens.dart';
 import 'home_shell.dart';
 import 'onboarding_screen.dart';
@@ -40,11 +40,11 @@ class _Splash extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const PawsaImage(pose: 'hero', size: 240),
+            const BrandMark(size: 140),
             const SizedBox(height: 4),
-            const Text('Hiraman', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: HiColors.ink)),
+            const BrandWordmark(),
             const SizedBox(height: 4),
-            const Text('Hiram muna, kapitbahay.', style: TextStyle(color: HiColors.muted, fontSize: 15)),
+            const Text('Keep it in the loop.', style: TextStyle(color: HiColors.muted, fontSize: 15)),
             const SizedBox(height: 22),
             SizedBox(
               width: 120,

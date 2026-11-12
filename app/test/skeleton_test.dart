@@ -2,9 +2,9 @@
 // Found by the end-to-end tests in batch 25: before the fix, this layout failed while the badges loaded.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hiraman/core/state.dart';
-import 'package:hiraman/core/theme.dart';
-import 'package:hiraman/widgets/ui/skeleton.dart';
+import 'package:circulink/core/state.dart';
+import 'package:circulink/core/theme.dart';
+import 'package:circulink/widgets/ui/skeleton.dart';
 import 'package:provider/provider.dart';
 
 void main() {

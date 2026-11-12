@@ -1,277 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../core/format.dart';
 import '../core/i18n.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
+import '../widgets/brand_mark.dart';
 import '../widgets/common.dart';
-import '../widgets/pawsa.dart';
-import 'item_detail.dart';
-import 'kits_screen.dart';
 import 'notifications_screen.dart';
-import 'request_detail.dart';
-import 'verification_screen.dart';
-import 'wallet_screen.dart';
 
-/// M4: the home tab. Greeting, credits, verification status, news, shelf, kits and new items.
+/// Home: a greeting, the person's impact (filled in once drop-offs exist), and how CircuLink works.
 class HomeTab extends StatelessWidget {
-  final void Function(int) onGoTo;
+  final void Function(int tab) onGoTo;
   const HomeTab({super.key, required this.onGoTo});
-
-  Future<Map<String, dynamic>> _load(BuildContext context) async {
-    final api = context.app.api;
-    final List<dynamic> results = await Future.wait<dynamic>(<Future<dynamic>>[
-      api.get('/announcements'),
-      api.get('/items', query: <String, String>{'shelf': '1'}),
-      api.get('/items', query: <String, String>{'owner': 'others'}),
-      api.get('/requests', query: <String, String>{'as': 'borrower'}),
-    ]);
-    return <String, dynamic>{
-      'news': listOf(results[0]),
-      'shelf': listOf(results[1]),
-      'items': listOf(results[2]).where((Map<String, dynamic> i) => !boolOf(i['is_shelf'])).take(6).toList(),
-      'checkins': listOf(results[3]).where((Map<String, dynamic> r) => boolOf(mapOf(r['checkin'])['due_today'])).toList(),
-    };
-  }
 
   @override
   Widget build(BuildContext context) {
     final AppState app = context.watch<AppState>();
-    return AsyncView<Map<String, dynamic>>(
-      refreshKey: app.version,
-      loader: () => _load(context),
-      builder: (BuildContext ctx, Map<String, dynamic> data, Future<void> Function() reload) {
-        final List<Map<String, dynamic>> news = listOf(data['news']);
-        final List<Map<String, dynamic>> shelf = listOf(data['shelf']);
-        final List<Map<String, dynamic>> items = listOf(data['items']);
-        final List<Map<String, dynamic>> checkins = listOf(data['checkins']);
-        return ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                const PawsaImage(pose: 'head', size: 52),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text('${ctx.t('Hello')}, ${app.firstName}!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: HiColors.ink)),
-                      Text(ctx.t('What do you need today?'), style: const TextStyle(color: HiColors.muted)),
-                    ],
-                  ),
-                ),
-                Stack(
-                  children: <Widget>[
-                    IconButton(
-                      tooltip: ctx.t('Notifications'),
-                      icon: const Icon(Icons.notifications_none, size: 28, color: HiColors.ink),
-                      onPressed: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => const NotificationsScreen())),
-                    ),
-                    if (app.unread > 0)
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(color: HiColors.danger, borderRadius: BorderRadius.circular(99)),
-                          child: Text('${app.unread}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            HiCard(
-              gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: <Color>[HiColors.mint, HiColors.primary]),
-              onTap: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => const WalletScreen())),
-              child: Row(
-                children: <Widget>[
-                  const CircleAvatar(radius: 22, backgroundColor: HiColors.sun, child: Icon(Icons.star_rounded, color: HiColors.ink, size: 28)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(ctx.t('Your credits'), style: const TextStyle(color: HiColors.ink, fontWeight: FontWeight.w600)),
-                        Text('${app.credits}', style: const TextStyle(color: HiColors.ink, fontSize: 30, fontWeight: FontWeight.w800, height: 1.1)),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(12, 7, 6, 7),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(HiRadius.pill), boxShadow: HiShadow.card),
-                    child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
-                      Text(ctx.t('See history'), style: const TextStyle(color: HiColors.ink, fontWeight: FontWeight.w800, fontSize: 13)),
-                      const Icon(Icons.chevron_right, color: HiColors.ink, size: 18),
-                    ]),
-                  ),
-                ],
+    return RefreshIndicator(
+      onRefresh: () => app.bump(),
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(HiSpace.gutter, HiSpace.md, HiSpace.gutter, HiSpace.xl),
+        children: <Widget>[
+          Row(children: <Widget>[
+            const BrandMark(size: 44),
+            const SizedBox(width: HiSpace.ms),
+            Expanded(child: Semantics(header: true, child: Text('${context.t('Hello')}, ${app.firstName}!', style: HiText.h1))),
+            IconButton(
+              tooltip: context.t('Notifications'),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (BuildContext c) => const NotificationsScreen())),
+              icon: Badge(
+                isLabelVisible: app.unread > 0,
+                label: Text('${app.unread}'),
+                backgroundColor: HiColors.danger,
+                child: const Icon(Icons.notifications_outlined),
               ),
             ),
-            // Things the borrower has today: one card per item that needs today's check-in.
-            ...checkins.map((Map<String, dynamic> r) => HiCard(
-                  color: HiColors.sunSoft,
-                  borderColor: HiColors.sun,
-                  onTap: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => RequestDetailScreen(requestId: intOf(r['id'])))),
-                  child: Row(children: <Widget>[
-                    const Icon(Icons.notifications_active_outlined, color: HiColors.warn),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                        Text('${ctx.t('Daily check-in')}: ${str(mapOf(r['item'])['title'])}', style: const TextStyle(fontWeight: FontWeight.w800)),
-                        Text(ctx.t('Is the item still with you? Tap to answer.'), style: const TextStyle(color: HiColors.ink)),
-                      ]),
-                    ),
-                    const Icon(Icons.chevron_right, color: HiColors.ink),
-                  ]),
-                )),
-            if (!app.isApproved) _VerifyBanner(status: app.verification, reason: str(app.user?['reject_reason'])),
-            if (news.isNotEmpty) ...<Widget>[
-              SectionTitle(ctx.t('From your barangay')),
-              ...news.take(2).map((Map<String, dynamic> n) => HiCard(
-                    color: HiColors.infoSoft,
-                    borderColor: HiColors.infoSoft,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(children: <Widget>[
-                          const Icon(Icons.campaign, color: HiColors.info, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(str(n['title']), style: const TextStyle(fontWeight: FontWeight.w800, color: HiColors.info))),
-                        ]),
-                        const SizedBox(height: 4),
-                        Text(str(n['message'])),
-                      ],
-                    ),
-                  )),
-            ],
-            SectionTitle(
-              ctx.t('Barangay items'),
-              trailing: TextButton(onPressed: () => onGoTo(1), child: Text(ctx.t('See all'))),
-            ),
-            if (shelf.isEmpty)
-              Padding(padding: const EdgeInsets.all(8), child: Text(ctx.t('Nothing on the shelf right now.'), style: const TextStyle(color: HiColors.muted)))
-            else
-              SizedBox(
-                height: 110 + 40 * MediaQuery.textScalerOf(ctx).scale(1),
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: shelf
-                      .map((Map<String, dynamic> it) => Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: Semantics(
-                              button: true,
-                              child: Material(
-                                color: HiColors.card,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kRadius), side: const BorderSide(color: HiColors.line)),
-                                clipBehavior: Clip.antiAlias,
-                                child: InkWell(
-                                  onTap: () => openItem(ctx, intOf(it['id'])),
-                                  child: Container(
-                                    width: 130,
-                                    padding: const EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: <Widget>[
-                                        ItemThumb(item: it, size: 70),
-                                        const SizedBox(height: 6),
-                                        Text(str(it['title']), maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ),
-            SectionTitle(ctx.t('Event kits')),
-            HiCard(
-              color: HiColors.primarySoft,
-              borderColor: HiColors.primarySoft,
-              onTap: () => Navigator.of(ctx).push(MaterialPageRoute<void>(builder: (BuildContext c) => const KitsScreen())),
-              child: Row(
-                children: <Widget>[
-                  const Icon(Icons.celebration, color: HiColors.accent, size: 30),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text(ctx.t('Planning a party or wake?'), style: const TextStyle(fontWeight: FontWeight.w800)),
-                        Text(ctx.t('Borrow chairs, tables and more in one go.'), style: const TextStyle(color: HiColors.muted, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-            ),
-            SectionTitle(ctx.t('New from neighbors'), trailing: TextButton(onPressed: () => onGoTo(1), child: Text(ctx.t('Browse')))),
-            if (items.isEmpty)
-              EmptyState(message: ctx.t('No listings yet. Be the first to share something!'))
-            else
-              ...items.map((Map<String, dynamic> it) => ItemCard(item: it, onTap: () => openItem(ctx, intOf(it['id'])))),
-          ],
-        );
-      },
+          ]),
+          const SizedBox(height: HiSpace.md),
+          HiCard(
+            color: HiColors.primary,
+            borderColor: HiColors.primary,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+              Text(context.t('Your impact'), style: const TextStyle(color: HiColors.onPrimary, fontWeight: FontWeight.w700)),
+              const SizedBox(height: HiSpace.sm),
+              Row(children: <Widget>[
+                Expanded(child: _Figure(value: '0 kg', label: context.t('kept in use'))),
+                Expanded(child: _Figure(value: '0', label: context.t('points'))),
+              ]),
+              const SizedBox(height: HiSpace.sm),
+              Text(context.t('Bring items to a hub to start. Your numbers grow after staff weigh them.'),
+                  style: const TextStyle(color: HiColors.onPrimary, height: 1.35)),
+            ]),
+          ),
+          SectionTitle(context.t('How CircuLink works')),
+          _Step(n: 1, icon: Icons.edit_note_rounded, text: context.t('Declare the things you no longer need and choose a hub.')),
+          _Step(n: 2, icon: Icons.qr_code_2_rounded, text: context.t('You get a 6-character drop-off code. Bring the items and show the code.')),
+          _Step(n: 3, icon: Icons.scale_rounded, text: context.t('Hub staff weigh each item and decide: reuse, repair, recycle or reject.')),
+          _Step(n: 4, icon: Icons.volunteer_activism_rounded, text: context.t('Reusable items go to partner organizations. Recyclables go to recyclers.')),
+          _Step(n: 5, icon: Icons.eco_rounded, text: context.t('You earn points and see the kilograms you kept out of the landfill.')),
+          const SizedBox(height: HiSpace.sm),
+          InfoBanner(
+            context.t('Points come only from hub staff after weighing. They cannot be transferred and have no cash value.'),
+            icon: Icons.verified_user_outlined,
+          ),
+          SoftButton(label: context.t('Find a hub near you'), icon: Icons.place_outlined, onPressed: () => onGoTo(1)),
+        ],
+      ),
     );
   }
 }
 
-class _VerifyBanner extends StatelessWidget {
-  final String status;
-  final String reason;
-  const _VerifyBanner({required this.status, required this.reason});
+class _Figure extends StatelessWidget {
+  final String value;
+  final String label;
+  const _Figure({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    String title;
-    String body;
-    Tone tone;
-    String? action;
-    switch (status) {
-      case 'pending':
-        title = context.t('Waiting for verification');
-        body = context.t('Barangay staff are checking your ID. You can browse in the meantime.');
-        tone = Tone.warn;
-        break;
-      case 'rejected':
-        title = context.t('Verification was not approved');
-        body = reason.isEmpty ? context.t('Please send a clearer photo of your ID.') : reason;
-        tone = Tone.bad;
-        action = context.t('Send ID again');
-        break;
-      default:
-        title = context.t('Verify your account');
-        body = context.tv('Send a photo of your ID so you can borrow and lend. You get {n} starter credits.', <String, Object>{'n': context.app.rule('starterCredits', 3)});
-        tone = Tone.info;
-        action = context.t('Send my ID');
-    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
+      Text(value, style: const TextStyle(color: HiColors.onPrimary, fontSize: 28, fontWeight: FontWeight.w800)),
+      Text(label, style: const TextStyle(color: HiColors.onPrimary)),
+    ]);
+  }
+}
+
+class _Step extends StatelessWidget {
+  final int n;
+  final IconData icon;
+  final String text;
+  const _Step({required this.n, required this.icon, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
     return HiCard(
-      margin: const EdgeInsets.only(top: 12),
-      color: toneBg(tone),
-      borderColor: toneBg(tone),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(title, style: TextStyle(fontWeight: FontWeight.w800, color: toneFg(tone), fontSize: 16)),
-          const SizedBox(height: 4),
-          Text(body),
-          if (action != null) ...<Widget>[
-            const SizedBox(height: 10),
-            PrimaryButton(
-              label: action,
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (BuildContext c) => const VerificationScreen())),
-            ),
-          ],
-        ],
-      ),
+      margin: const EdgeInsets.only(bottom: HiSpace.sm),
+      padding: const EdgeInsets.all(14),
+      child: Row(children: <Widget>[
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: HiColors.primarySoft,
+          child: ExcludeSemantics(child: Icon(icon, color: HiColors.accent, size: 20)),
+        ),
+        const SizedBox(width: HiSpace.ms),
+        Expanded(child: Text('$n. $text', style: HiText.body)),
+      ]),
     );
   }
 }

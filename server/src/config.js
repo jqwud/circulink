@@ -19,7 +19,7 @@ export const config = {
     user: process.env.DB_USER || 'root',
     // In the containers the password is named once, as MYSQL_PASSWORD (docker.env).
     password: process.env.DB_PASSWORD ?? process.env.MYSQL_PASSWORD ?? '',
-    database: process.env.DB_NAME || 'hiraman',
+    database: process.env.DB_NAME || 'circulink',
   },
   jwtSecret: secret || 'dev-only-change-me',
   // Web pages on other addresses that may call the API: a comma-separated list, or * for any.
@@ -27,7 +27,7 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN || '',
   // One log line per API request (LOG_REQUESTS=0 turns it off; the tests do).
   logRequests: process.env.LOG_REQUESTS !== '0',
-  // Database connections the API keeps open (DB_POOL_SIZE). 10 serves a barangay; raise it for heavy use.
+  // Database connections the API keeps open (DB_POOL_SIZE). 10 serves a few hubs; raise it for heavy use.
   dbPoolSize: Number(process.env.DB_POOL_SIZE) || 10,
   // Photo uploads: the largest file accepted.
   uploadMaxBytes: 5 * 1024 * 1024,
@@ -37,11 +37,9 @@ export const config = {
   pages: { residentDefault: 50, residentMax: 100, staffDefault: 100, staffMax: 200 },
   // Changes (POST, PATCH, DELETE) one person may make per 15 minutes.
   writeLimit: Number(process.env.WRITE_LIMIT) || 300,
-  // Shown to borrowers of items the barangay handles. Optional.
-  hallPhone: process.env.HALL_PHONE || null,
   uploadDir: path.resolve(process.env.UPLOAD_DIR || path.join(here, '..', 'uploads')),
 };
 
 if (config.jwtSecret === 'dev-only-change-me') {
-  console.warn('[hiraman] JWT_SECRET is not set. Fine on localhost, but set one in .env before sharing the server.');
+  console.warn('[circulink] JWT_SECRET is not set. Fine on localhost, but set one in .env before sharing the server.');
 }

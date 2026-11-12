@@ -1,9 +1,9 @@
 // Short forms open as bottom sheets: a required answer is asked for, Cancel returns nothing.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hiraman/core/state.dart';
-import 'package:hiraman/core/theme.dart';
-import 'package:hiraman/widgets/common.dart';
+import 'package:circulink/core/state.dart';
+import 'package:circulink/core/theme.dart';
+import 'package:circulink/widgets/common.dart';
 import 'package:provider/provider.dart';
 
 /// A button that opens askText and shows what came back.

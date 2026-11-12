@@ -7,11 +7,9 @@ import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/connection.dart';
 import '../widgets/language_toggle.dart';
-import '../widgets/pawsa.dart';
+import '../widgets/brand_mark.dart';
 import 'privacy_screens.dart';
 
-/// Used only when the server cannot be reached; the real list comes from GET /puroks (managed by staff).
-const List<String> kPuroks = <String>['Purok 1', 'Purok 2', 'Purok 3', 'Purok 4', 'Purok 5', 'Purok 6', 'Purok 7'];
 
 /// M2: log in.
 class LoginScreen extends StatefulWidget {
@@ -75,10 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            const Center(child: PawsaImage(pose: 'wink', size: 170)),
+            const Center(child: BrandMark(size: 112)),
             const SizedBox(height: 8),
-            const Text('Hiraman', textAlign: TextAlign.center, style: TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: HiColors.ink)),
-            Text(context.t('Hiram muna, kapitbahay.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
+            const Center(child: BrandWordmark()),
+            Text(context.t('Keep it in the loop.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
             const SizedBox(height: 20),
             const ServerStatusCard(),
             TextField(
@@ -124,7 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // Demo data only exists on test servers, so the hint shows in debug builds only.
             if (kDebugMode)
               Text(
-                context.t('Demo resident: ana@hiraman.test, password hiraman123'),
+                context.t('Demo resident: ana@circulink.test, password circulink123'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: HiColors.muted, fontSize: 12),
               ),
@@ -135,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-/// M2: create an account. The barangay verifies it afterwards.
+/// Create a resident account: one per email, phone number and student ID.
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -148,29 +146,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _email = TextEditingController();
   final TextEditingController _phone = TextEditingController();
   final TextEditingController _password = TextEditingController();
-  List<String> _puroks = kPuroks;
-  String _purok = kPuroks.first;
+  final TextEditingController _studentId = TextEditingController();
   bool _agreed = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPuroks();
-  }
-
-  Future<void> _loadPuroks() async {
-    try {
-      final dynamic list = await context.app.api.get('/puroks');
-      if (list is List && list.isNotEmpty && mounted) {
-        setState(() {
-          _puroks = list.map((dynamic p) => p.toString()).toList();
-          if (!_puroks.contains(_purok)) _purok = _puroks.first;
-        });
-      }
-    } catch (_) {
-      // Offline: keep the built-in list; the server checks the choice anyway.
-    }
-  }
   bool _busy = false;
   String? _error;
 
@@ -180,12 +158,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _email.dispose();
     _phone.dispose();
     _password.dispose();
+    _studentId.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
-    if (_name.text.trim().length < 2 || !_email.text.contains('@') || _password.text.length < 8) {
-      setState(() => _error = context.tx('Please fill in your name, a valid email and a password of at least 8 characters.'));
+    if (_name.text.trim().length < 2 || !_email.text.contains('@') || _phone.text.trim().length < 7 || _password.text.length < 8) {
+      setState(() => _error = context.tx('Please fill in your name, a valid email, your phone number and a password of at least 8 characters.'));
       return;
     }
     if (!_agreed) {
@@ -201,8 +180,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         name: _name.text,
         email: _email.text,
         password: _password.text,
-        phone: _phone.text.trim().isEmpty ? null : _phone.text.trim(),
-        purok: _purok,
+        phone: _phone.text.trim(),
+        studentId: _studentId.text.trim().isEmpty ? null : _studentId.text.trim(),
         acceptPrivacy: _agreed,
       );
       if (mounted) Navigator.of(context).popUntil((Route<dynamic> r) => r.isFirst);
@@ -221,20 +200,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: <Widget>[
-            const Center(child: PawsaImage(pose: 'happy', size: 120)),
+            const Center(child: BrandMark(size: 80)),
             const SizedBox(height: 12),
             TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: context.t('Full name'))),
             const SizedBox(height: 14),
             TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: context.t('Email'))),
             const SizedBox(height: 14),
-            TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: '${context.t('Phone')} (${context.t('Optional')})')),
+            TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: context.t('Phone'), helperText: context.t('One account per phone number'))),
             const SizedBox(height: 14),
-            DropdownButtonFormField<String>(
-              initialValue: _purok,
-              decoration: InputDecoration(labelText: context.t('Purok')),
-              items: _puroks.map((String p) => DropdownMenuItem<String>(value: p, child: Text(p))).toList(),
-              onChanged: (String? v) => setState(() => _purok = v ?? _purok),
-            ),
+            TextField(controller: _studentId, textCapitalization: TextCapitalization.characters, decoration: InputDecoration(labelText: '${context.t('Student ID')} (${context.t('Optional')})', helperText: context.t('Only if you drop off at a school hub'))),
             const SizedBox(height: 14),
             TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: context.t('Password'), helperText: context.t('At least 8 characters'))),
             const SizedBox(height: 8),
@@ -265,7 +239,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             PrimaryButton(label: context.t('Create account'), busy: _busy, onPressed: _submit),
             const SizedBox(height: 12),
             Text(
-              context.t('After signing up, you send a photo of your ID. Barangay staff verify it before you can borrow or lend.'),
+              context.t('Points are given only by hub staff after they weigh your items. They cannot be transferred or exchanged for cash.'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: HiColors.muted, fontSize: 13),
             ),

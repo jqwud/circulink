@@ -37,7 +37,7 @@ export function startServer(options) {
     return { status: res.status, json };
   }
 
-  const login = async (who) => (await api('POST', '/auth/login', null, { email: `${who}@hiraman.test`, password: 'hiraman123' })).json.token;
+  const login = async (who) => (await api('POST', '/auth/login', null, { email: `${who}@circulink.test`, password: 'circulink123' })).json.token;
   const close = () => new Promise((resolve) => server.close(resolve));
   return { base, api, upload, login, close };
 }

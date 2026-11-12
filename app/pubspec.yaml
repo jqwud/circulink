@@ -1,7 +1,7 @@
-name: hiraman
-description: Hiraman, the barangay sharing app. Borrow what you need, lend what you don't.
+name: circulink
+description: CircuLink, drop-off hubs that keep items in use (SDG 12). Resident app.
 publish_to: 'none'
-version: 1.0.0+1
+version: 0.1.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -25,7 +25,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/pawsa/
+    - assets/brand/
     - assets/icon/
   fonts:
     - family: Nunito

@@ -11,40 +11,28 @@ import 'constants.dart';
 import 'format.dart';
 import 'strings_fil.dart';
 import 'theme.dart';
-import '../widgets/ui/decision_effect.dart';
 
 /// Everything the whole app needs to know: who is logged in, the language, and shared lists.
 class AppState extends ChangeNotifier {
   final Api api = Api.instance;
   Map<String, dynamic>? user;
-  String lang = 'fil';
+  String lang = 'en';
   bool ready = false;
   bool seenOnboarding = false;
 
   /// Screens that show lists watch this number. bump() makes them reload.
   int version = 0;
 
+  /// From GET /meta: the item categories, the active drop-off hubs, the badge tiers and the rule numbers.
   List<Map<String, dynamic>> categories = <Map<String, dynamic>>[];
-  List<Map<String, dynamic>> pickupPoints = <Map<String, dynamic>>[];
-
-  /// The barangay hall's phone (HALL_PHONE on the server), or empty when not set.
-  String hallPhone = '';
-
-  /// The Browse origin filter ('', 'barangay' or 'kapitbahay'), remembered on this phone.
-  String browseOrigin = '';
-  List<String> puroks = <String>[];
+  List<Map<String, dynamic>> hubs = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> badges = <Map<String, dynamic>>[];
   Map<String, dynamic> rules = <String, dynamic>{};
 
   /// A rule number from the server (RULES in server/src/rules.js), or [fallback] before /meta has loaded.
   int rule(String key, int fallback) => intOf(rules[key], fallback);
   SharedPreferences? _prefs;
 
-  bool get isApproved => user?['verification_status'] == 'approved';
-  String get verification => str(user?['verification_status'], 'unverified');
-  int get credits => intOf(user?['credits']);
-
-  /// Simple mode (seniors and PWDs): larger text, four big buttons, no swiping, calm transitions.
-  bool get simpleMode => boolOf(user?['simple_mode']);
   int get unread => intOf(user?['unread_notifications']);
   int get userId => intOf(user?['id']);
   String get firstName => str(user?['name']).split(' ').first;
@@ -110,12 +98,8 @@ class AppState extends ChangeNotifier {
       await _prefs!.setString('server', kServerFromBuild);
     }
     api.baseUrl = _prefs!.getString('server') ?? api.baseUrl;
-    lang = _prefs!.getString('lang') ?? 'fil';
+    lang = _prefs!.getString('lang') ?? 'en';
     seenOnboarding = _prefs!.getBool('seen_onboarding') ?? false;
-    browseOrigin = _prefs!.getString('browse_origin') ?? '';
-    // Decision effects: remember a slow phone so effects stay simple fades (see MotionBudget).
-    MotionBudget.instance.lowEnd = _prefs!.getBool('low_end_motion') ?? false;
-    MotionBudget.instance.store = (bool v) => _prefs?.setBool('low_end_motion', v);
     api.token = await _readToken();
     api.onUnauthorized = _expired;
 
@@ -150,7 +134,7 @@ class AppState extends ChangeNotifier {
     final Map<String, dynamic> body = mapOf(res);
     final Map<String, dynamic> u = mapOf(body['user']);
     if (u['role'] != 'resident') {
-      throw ApiException('This app is for residents. LGU staff use the web portal.', code: 'staff_in_app');
+      throw ApiException('This app is for residents. Hub staff, partners and admins use the web portal.', code: 'staff_in_app');
     }
     api.token = str(body['token']);
     user = u;
@@ -165,13 +149,13 @@ class AppState extends ChangeNotifier {
     await _startSession(res);
   }
 
-  Future<void> register({required String name, required String email, required String password, String? phone, String? purok, bool acceptPrivacy = false}) async {
+  Future<void> register({required String name, required String email, required String password, required String phone, String? studentId, bool acceptPrivacy = false}) async {
     final dynamic res = await api.post('/auth/register', <String, dynamic>{
       'name': name.trim(),
       'email': email.trim(),
       'password': password,
       'phone': phone,
-      'purok': purok,
+      'student_id': studentId,
       'language': lang,
       'accept_privacy': acceptPrivacy,
     });
@@ -201,10 +185,9 @@ class AppState extends ChangeNotifier {
   Future<void> loadMeta() async {
     final Map<String, dynamic> m = mapOf(await api.get('/meta'));
     categories = listOf(m['categories']);
-    pickupPoints = listOf(m['pickup_points']);
-    puroks = (m['puroks'] is List ? m['puroks'] as List<dynamic> : <dynamic>[]).map((dynamic p) => p.toString()).toList();
+    hubs = listOf(m['hubs']);
+    badges = listOf(m['badges']);
     rules = mapOf(m['rules']);
-    hallPhone = str(m['hall_phone']);
   }
 
   // ---------- live updates while the app is open ----------
@@ -257,7 +240,7 @@ class AppState extends ChangeNotifier {
     super.dispose();
   }
 
-  /// Call after something changed on the server (a request, a listing, credits).
+  /// Call after something changed on the server (a declaration, points).
   Future<void> bump() async {
     version++;
     notifyListeners();
@@ -266,12 +249,6 @@ class AppState extends ChangeNotifier {
     } catch (_) {
       // Offline for a moment: lists will show their own retry button.
     }
-  }
-
-  Future<void> setBrowseOrigin(String origin) async {
-    browseOrigin = origin;
-    notifyListeners();
-    await _prefs?.setString('browse_origin', origin);
   }
 
   Future<void> setLang(String l) async {

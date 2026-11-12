@@ -1,4 +1,4 @@
-# Runs Hiraman on an Android phone plugged in by USB.
+# Runs CircuLink on an Android phone plugged in by USB.
 # No Wi-Fi, IP address or firewall setup: the phone reaches this computer's server
 # through the USB cable (adb reverse), as http://localhost:4000.
 # Start it by double-clicking app\run-phone.cmd.
@@ -27,10 +27,10 @@ if (-not $adb) {
 if (-not $adb) { Fail 'adb was not found. Run "flutter doctor" and install the Android SDK it asks for.' }
 
 Write-Host ''
-Write-Host '  Hiraman: run on my phone' -ForegroundColor White
+Write-Host '  CircuLink: run on my phone' -ForegroundColor White
 
 # 1. Server
-Step 1 'Hiraman server'
+Step 1 'CircuLink server'
 if (ServerUp) {
   Ok "Already running on port $port."
 } else {
@@ -89,7 +89,7 @@ $wifi = (Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias 'Wi-Fi' -ErrorActi
 if ($wifi) { Info "To use Wi-Fi instead of the cable later, set the app's server to  http://${wifi}:$port" }
 
 # 4. Build, install and open the app
-Step 4 'Installing and opening Hiraman on the phone'
+Step 4 'Installing and opening CircuLink on the phone'
 Info 'The first time takes 3-10 minutes. Later runs take under a minute.'
 Info 'When it is running, press  r = reload,  R = restart,  q = quit.'
 Write-Host ''
@@ -101,4 +101,4 @@ $addrs = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
   ForEach-Object { "http://$($_.IPAddress):$port" })
 $servers = (@("http://localhost:$port") + $addrs) -join ','
 Info "The app will look for the server at: $servers"
-flutter run -d $serial --dart-define=HIRAMAN_SERVER=http://localhost:$port "--dart-define=HIRAMAN_SERVERS=$servers"
+flutter run -d $serial --dart-define=CIRCULINK_SERVER=http://localhost:$port "--dart-define=CIRCULINK_SERVERS=$servers"

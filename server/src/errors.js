@@ -26,7 +26,7 @@ export const safeMessage = (err) => String(err?.message ?? err)
 export function safeErrorLine(err, requestId) {
   const message = safeMessage(err);
   const where = String(err?.stack || '').split('\n')[1]?.trim().slice(0, 120) || '';
-  return `[hiraman] error ${requestId || '-'} ${err?.code || err?.name || 'Error'}: ${message}${where ? ` (${where})` : ''}`;
+  return `[circulink] error ${requestId || '-'} ${err?.code || err?.name || 'Error'}: ${message}${where ? ` (${where})` : ''}`;
 }
 
 export function errorMiddleware(err, req, res, _next) {

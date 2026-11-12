@@ -3,12 +3,11 @@ import { config } from './config.js';
 import { pool } from './db.js';
 import { startScheduler } from './jobs.js';
 import { pendingMigrations } from './migrations.js';
-import { loadRuleSettings } from './settings.js';
 
 try {
   await pool.query('SELECT 1');
 } catch (e) {
-  console.error('\n[hiraman] Cannot reach MySQL. Is it running, and are DB_* values in .env correct?\n  ', e.message, '\n');
+  console.error('\n[circulink] Cannot reach MySQL. Is it running, and are DB_* values in .env correct?\n  ', e.message, '\n');
   process.exit(1);
 }
 
@@ -16,23 +15,16 @@ try {
 try {
   const pending = await pendingMigrations();
   if (pending.length) {
-    console.warn(`\n[hiraman] The database is missing ${pending.length} migration(s): ${pending.join(', ')}\n  Run:  npm run migrate   (it takes a backup first)\n`);
+    console.warn(`\n[circulink] The database is missing ${pending.length} migration(s): ${pending.join(', ')}\n  Run:  npm run migrate   (it takes a backup first)\n`);
   }
 } catch (e) {
-  console.warn('[hiraman] Could not check migrations:', e.message);
-}
-
-// Rule numbers an admin changed in the portal (defaults otherwise).
-try {
-  await loadRuleSettings();
-} catch (e) {
-  console.warn('[hiraman] Could not load rule settings, using the defaults:', e.message);
+  console.warn('[circulink] Could not check migrations:', e.message);
 }
 
 const app = createApp();
 app.listen(config.port, '0.0.0.0', () => {
-  console.log(`Hiraman API running on http://localhost:${config.port}  (health: /api/health)`);
+  console.log(`CircuLink API running on http://localhost:${config.port}  (health: /api/health)`);
 });
 
-// Scheduled jobs: reminders, request expiry, ID photo deletion, unused upload cleanup (see src/jobs.js).
+// Scheduled jobs: unused upload and old notification cleanup (see src/jobs.js).
 startScheduler();

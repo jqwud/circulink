@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { blobUrl } from './api.js';
 import { useI18n } from './i18n.jsx';
 import { useAuth } from './auth.jsx';
 import { api } from './api.js';
@@ -82,14 +81,15 @@ export function ToastProvider({ children }) {
 export const useToast = () => useContext(ToastCtx);
 
 // ---------- small pieces ----------
-export function Pawsa({ pose = 'happy', size = 96 }) {
-  return <img src={`/pawsa/pawsa-${pose}.webp`} width={size} height={size} alt="" />;
+// The CircuLink mark (two arrows around a chain link). Decorative: screens say what they mean in words.
+export function Mark({ size = 96 }) {
+  return <img src="/logo-mark.svg" width={size} height={size} alt="" />;
 }
 
-export function Empty({ pose = 'sleepy', children }) {
+export function Empty({ children }) {
   return (
     <div className="empty">
-      <Pawsa pose={pose} size={110} />
+      <Mark size={88} />
       <p>{children}</p>
     </div>
   );
@@ -99,7 +99,7 @@ export function ErrorBox({ error, onRetry }) {
   const { t } = useI18n();
   return (
     <div className="card error-box" role="alert">
-      <Pawsa pose="oops" size={80} />
+      <Mark size={64} />
       <p>{error?.message || 'Something went wrong.'}</p>
       {onRetry && <button className="btn" onClick={onRetry}>{t('Try again')}</button>}
     </div>
@@ -112,9 +112,10 @@ export function Loading() {
 }
 
 const TONE = {
-  pending: 'warn', approved: 'ok', rejected: 'bad', unverified: 'muted', cancelled: 'muted', expired: 'muted', handed_over: 'info', closed: 'ok',
-  disputed: 'bad', available: 'ok', paused: 'muted', removed: 'bad', open: 'warn', in_mediation: 'info', resolved: 'ok',
-  low: 'ok', medium: 'warn', high: 'bad', suspended: 'bad', overdue: 'bad', shelf: 'info', info: 'info', urgent: 'bad', warn: 'warn',
+  pending: 'warn', approved: 'ok', rejected: 'bad', cancelled: 'muted', expired: 'muted', open: 'warn', received: 'info',
+  active: 'ok', paused: 'muted', closed: 'muted', suspended: 'bad', cleared: 'ok', upheld: 'bad', confirmed: 'ok',
+  reuse: 'ok', repair: 'info', recycle: 'info', reject: 'bad', in_stock: 'ok', released: 'ok', recycled: 'ok',
+  school: 'info', barangay: 'info', other: 'muted', info: 'info', urgent: 'bad', warn: 'warn',
 };
 export function Badge({ value, label }) {
   const { t } = useI18n();
@@ -220,38 +221,6 @@ export function PasswordModal({ forced, onClose }) {
   );
 }
 
-// Staff-assisted password reset: confirm, then show the temporary password once.
-export function ResetPasswordButton({ person, small }) {
-  const { t } = useI18n();
-  const toast = useToast();
-  const [step, setStep] = useState(null);   // 'confirm' | { temp }
-  async function reset() {
-    try { const r = await api(`/admin/users/${person.id}/reset-password`, { method: 'POST' }); setStep({ temp: r.temporary_password }); }
-    catch (e) { toast(e.message, 'bad'); setStep(null); }
-  }
-  return (
-    <>
-      <button type="button" className={`btn ${small ? 'small' : ''}`} onClick={() => setStep('confirm')}>{t('Reset password')}</button>
-      {step === 'confirm' && (
-        <ConfirmModal
-          title={t('Reset the password of {name}?').replace('{name}', person.name)}
-          message={t('Do this only with the person in front of you, after checking their ID. They will be logged out everywhere and must pick a new password when they log in.')}
-          confirmLabel={t('Reset password')}
-          onConfirm={reset}
-          onClose={() => setStep((s) => (s === 'confirm' ? null : s))}
-        />
-      )}
-      {step?.temp && (
-        <Modal title={t('Temporary password')} onClose={() => setStep(null)}>
-          <p className="temp-password" aria-live="polite">{step.temp}</p>
-          <p className="muted">{t('Give it to the person now. It is shown only once. They must change it when they log in.')}</p>
-          <div className="modal-actions"><button className="btn primary" onClick={() => setStep(null)}>{t('Done')}</button></div>
-        </Modal>
-      )}
-    </>
-  );
-}
-
 export function PageHeader({ title, subtitle, children }) {
   return (
     <div className="page-head">
@@ -273,20 +242,6 @@ export function Stat({ label, value, tone, to, hint }) {
     </>
   );
   return to ? <Link className={`stat ${tone || ''}`} to={to}>{body}</Link> : <div className={`stat ${tone || ''}`}>{body}</div>;
-}
-
-// Private photos (like an ID) are fetched with the login token and shown as a local blob.
-export function PrivatePhoto({ path, alt }) {
-  const [url, setUrl] = useState(null);
-  const [err, setErr] = useState(false);
-  useEffect(() => {
-    let made;
-    blobUrl(path).then((u) => { made = u; setUrl(u); }).catch(() => setErr(true));
-    return () => { if (made) URL.revokeObjectURL(made); };
-  }, [path]);
-  if (err) return <p className="muted">No photo.</p>;
-  if (!url) return <p className="muted">…</p>;
-  return <img className="id-photo" src={url} alt={alt} />;
 }
 
 export function Tabs({ tabs, value, onChange }) {
@@ -316,4 +271,3 @@ export function useDateFormat() {
   };
 }
 
-export const daysLate = (end) => Math.max(0, Math.round((Date.now() - Date.parse(`${end}T23:59:59+08:00`)) / 86400000));

@@ -1,14 +1,14 @@
-// Live updates while the app is open: a lender sees a new request's notification (the red dot) and the lists
+// Live updates while the app is open: a resident sees a new notification (the red dot) and the lists
 // reload by themselves, without pulling to refresh. Nothing is redrawn when nothing changed.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hiraman/core/state.dart';
-import 'package:hiraman/core/theme.dart';
-import 'package:hiraman/screens/home_shell.dart';
+import 'package:circulink/core/state.dart';
+import 'package:circulink/core/theme.dart';
+import 'package:circulink/screens/home_shell.dart';
 import 'package:provider/provider.dart';
 
 Map<String, dynamic> me(int unread) => <String, dynamic>{
-      'id': 1, 'name': 'Ana Cruz', 'credits': 3, 'verification_status': 'approved', 'unread_notifications': unread,
+      'id': 1, 'name': 'Ana Cruz', 'role': 'resident', 'unread_notifications': unread,
     };
 
 void main() {

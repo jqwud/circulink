@@ -1,6 +1,5 @@
 // Photo uploads. Files are stored under UPLOAD_DIR:
-//   public/   item, handover and return photos, served to everyone at /uploads/public
-//   private/  ID photos, served only through the staff route in routes/admin.js
+//   public/   item photos taken at the hub, served to everyone at /uploads/public
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -56,7 +55,6 @@ function checkSavedImage(req, _res, next) {
 }
 
 export const publicUpload = [receiver('public'), checkSavedImage];
-export const privateUpload = [receiver('private'), checkSavedImage];
 
 // Photo fields must point at a file our own upload endpoint created. Empty means "no photo".
 const OWN_PHOTO = /^\/uploads\/public\/[a-f0-9]{24}\.(jpg|png|webp)$/;
@@ -66,10 +64,4 @@ export function ownPhoto(value) {
     && fs.existsSync(path.join(config.uploadDir, 'public', path.basename(value)));
   if (!ok) throw new HttpError(400, 'Use a photo uploaded in the app.', 'bad_photo');
   return value;
-}
-
-// Deletes a private file (an old ID photo). Only ever inside the private folder.
-export function removePrivateFile(name) {
-  if (!name) return;
-  fs.rmSync(path.join(config.uploadDir, 'private', path.basename(name)), { force: true });
 }

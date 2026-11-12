@@ -1,104 +1,63 @@
-# Hiraman architecture
+# CircuLink architecture
 
-A neighbourhood borrowing app for one barangay. Residents borrow and lend items with a mobile app; barangay staff run verification, the Barangay Shelf, disputes and announcements from a web portal. Both talk to one API backed by MySQL.
+Residents use a mobile app to find hubs and declare items. Hub staff, partner organizations and admins use a web portal. Both apps talk to one API backed by MySQL. The design and the anti-abuse rules (R1 to R13) are in [`CIRCULAR_HUB_SPEC.md`](CIRCULAR_HUB_SPEC.md).
 
 ## System map
 
 ```
-  Resident phone                                   Barangay staff
+  Resident phone                                   Hub staff / partners / admins
   ┌──────────────────────┐                         ┌──────────────────────┐
   │ Flutter app (app/)   │                         │ React portal         │
-  │ token: phone storage │                         │ (portal/)            │
+  │ token: secure store  │                         │ (portal/)            │
   └──────────┬───────────┘                         └──────────┬───────────┘
              │ HTTP + JSON, "Authorization: Bearer <token>"    │ same API (same address once built)
              ▼                                                ▼
   ┌────────────────────────────────────────────────────────────────────────┐
-  │ Hiraman API (server/): Node.js + Express, one process, port 4000       │
-  │ • routes: auth, items, requests, community, admin (~65 endpoints)      │
+  │ CircuLink API (server/): Node.js + Express, one process, port 4000     │
+  │ • routes: auth (account), meta (hubs, categories, notifications)       │
   │ • serves the built portal and public photos (/uploads/public)          │
   │ • scheduled jobs inside the same process (src/jobs.js)                 │
   └───────────────┬─────────────────────────────────────┬──────────────────┘
                   ▼                                     ▼
   ┌──────────────────────────────┐   ┌─────────────────────────────────────┐
-  │ MySQL 8: hiraman (15 tables) │   │ Local disk: server/uploads/         │
-  │ session time zone +08:00     │   │  public/  item, handover, return     │
-  └──────────────────────────────┘   │  private/ ID photos (staff route)    │
-                                     └─────────────────────────────────────┘
+  │ MySQL 8: circulink           │   │ Local disk: server/uploads/public   │
+  │ session time zone +08:00     │   │ item photos taken at the hub        │
+  └──────────────────────────────┘   └─────────────────────────────────────┘
 ```
 
-`/api/health` reports `db: ok` (200) or `db: down` (503).
-
-There are no push notifications: reminders and alerts are rows in `notifications` that the app fetches when it is opened.
+`/api/health` reports `db: ok` (200) or `db: down` (503). There are no paid services: no SMS and no push. Notifications are rows the app fetches while it is open.
 
 ## Folders
 
-| Folder | What it holds | Entry point |
-|---|---|---|
-| `server/` | The API | `src/index.js` (starts the server and the reminder timer) → `src/app.js` (builds the Express app) |
-| `server/src/routes/` | One file per area: `auth`, `items`, `requests`, `community`, `admin` | |
-| `server/src/rules.js` | Every rule number and small rule function (costs, tiers, banned words) | |
-| `server/src/services.js` | The request life cycle and credit movements, shared by app and portal routes. `TAKEN_SQL` / `findClash` is the one definition of "this item is taken on these dates". | |
-| `server/src/jobs.js` | Scheduled jobs: reminders, missed check-ins, request expiry, ID photo deletion, unused upload cleanup, and the runner that records each run in `job_runs` | |
-| `server/src/uploads.js` | Photo uploads: 5 MB limit, real-type check from the file's first bytes, own-upload paths only, ID photo clean-up | |
-| `server/test/` | One file per area (rules, the borrow loop, uploads, booking, jobs, check-ins, disputes, contact, privacy, accounts, data rules, notifications, logging), all against `hiraman_test`; `helpers/` | `npm test` |
-| `database/` | `schema.sql` (starting point for a new database), `migrations/` (numbered changes, each with an undo part), `create-test-db.sql` | |
-| `server/scripts/` | `migrate.js`, `backup.js`, `restore.js`, `create-admin.js` (run through `npm run migrate`, `backup`, `restore`, `create-admin`) | |
-| `portal/` | React + Vite staff portal, 12 pages | `src/main.jsx` → `src/App.jsx` |
-| `app/` | Flutter resident app | `lib/main.dart` → `screens/gate.dart`; `lib/main_gallery.dart` opens the component gallery |
-| `app/lib/core/` | API client, app state, theme, Filipino strings, notification sentences | |
-| `app/lib/widgets/ui/` | The UI kit, one component per file, exported by `widgets/common.dart` (see `docs/DESIGN_SYSTEM.md`) | |
-| `brand/` | Design tokens (`build-brand.mjs`), mascot art and icons (`build-icons.mjs`, `pawsa-art/`) | |
-| `docs/` | This file, setup, containers, QA plan, roadmap, changelog, design system, build notes | |
-| `Dockerfile`, `docker-compose.yml`, `docker-compose.dev.yml`, `docker/` | One image for the API and the built portal; MySQL plus the API with data in volumes; a development overlay (see `docs/CONTAINERS.md`) | `docker compose up -d --build` |
-
-## How a loan flows
-
-```
- borrower requests ──► pending ──owner/staff approve──► approved ──handover──► handed_over ──return good──► closed
-        │                 │                                │                       │
-        │                 └──reject / cancel──► rejected / cancelled (credits refunded)
-        │                                                  └──cancel──► cancelled (refunded)
-        │                                                                          └──return damaged/lost──► disputed ──staff settle (fine / accident / borrower's fault / lost)──► closed
- low-tier items skip "pending" and are approved at once
- pending with no answer for 7 days (or past its end date), or approved but never picked up by its end date ──► expired (credits refunded)
- while handed_over: the borrower checks in once a day (Still with me / I returned it / There's a problem)
-```
-
-- **Credits** move only inside database transactions (`withTx` in `server/src/db.js`) and every change writes a `credit_ledger` row. Rows are locked (`SELECT ... FOR UPDATE`) so two requests cannot book the same dates or spend the same credit.
-- **Who manages a loan:** the item owner for their own low and medium items; LGU staff for high-tier and Barangay Shelf items (`handledByStaff` in `rules.js`).
-- **Daily check-ins** (`request_checkins`): one answer per loan per day. "I returned it" stores `borrower_returned_at`, and on-time is judged by that day, not by when the owner confirms. The `checkins` job reminds the borrower after a missed day and alerts the owner after 2 (`RULES.checkinAlertAfterMissedDays`); staff see the count on the dashboard.
-- **Contact:** after approval the two neighbors see each other's phone number until 7 days after the loan closes (`contactOpen` in `services.js`); each request has a message thread (`request_messages`) for borrower, owner and staff.
-- **One source of truth:** rule numbers live in `server/src/rules.js` (defaults; admins override ten of them from the portal, stored in `rule_settings`, see `settings.js`) and reach the app through `/meta` (`context.app.rule(...)`, `context.tv(...)`); puroks live in the `puroks` table. Clients keep their own checks only as hints.
-- **Time:** everything counts days in Philippine time (UTC+8): the database session (`time_zone = '+08:00'`), `todayPH()` on the server, `phToday()` in the app, and Manila time in the portal's date display.
-- **Sessions:** login tokens carry the account's `token_version`; logout, a password change, a staff reset or account deletion raise it, which ends older sessions. Staff tokens last 12 hours, resident tokens 14 days and are renewed daily by `GET /me`. The app stores the token with `flutter_secure_storage`.
-- **Privacy:** the notice lives in `server/src/privacy.js` (both languages, `PRIVACY_VERSION`). Consent is recorded on the user at sign-up and before the first ID upload. "My data" is `GET /me/data`. Deleting an account (`deleteAccountTx`) anonymizes the user row instead of removing it, so loans, ledger rows and totals still add up.
-- **Disputes** are settled by staff with one of four outcomes (`DISPUTE_OUTCOMES` in `rules.js`, applied by `settleDisputeTx`); each credit change is a ledger row (`settle_*`), and "lost" removes the item.
-- **On a good return:** the lender earns 1 credit if it was on time and they have not hit the 2-per-30-days cap with this borrower; a late borrower loses 1 credit (never below 0).
-
-## Key decisions
-
-| Decision | Why |
+| Folder | What it holds |
 |---|---|
-| One API for app and portal | One place for rules and data; the portal is served by the API in production. |
-| Rules in `rules.js` and `services.js`, not in the clients | The server is the authority. (Some numbers are still repeated in client text; see the roadmap.) |
-| Philippine time everywhere | MySQL sessions use `+08:00` and dates are compared as `YYYY-MM-DD` strings (`todayPH`), so loans do not shift with the server's own clock. |
-| ID photos private | Stored in `uploads/private`, served only through an authenticated staff route, every view is written to `audit_log`, only the newest ID photo is kept, and `server/uploads/` is ignored by git. |
-| Residents see first names only | Phone and email are visible to staff only. |
-| Login tokens are JWTs (30 days) and the user is reloaded on every request | A suspension or role change takes effect immediately. |
-| Schema changes go through migrations | `schema.sql` creates a new database; every later change is a numbered file in `database/migrations` with an undo part, recorded in `schema_migrations`. `npm run migrate` backs up first. The server warns at start-up if a migration is missing. |
-| The database enforces the main rules too | Since migration 001: credits never below 0, end date on or after start date, 1–5 stars, and foreign keys on every link, so a bug or manual edit cannot create orphans. |
-| Scheduled work runs inside the API | `startScheduler()` checks every 10 minutes which jobs are due (reminders, check-ins, expiry and ID photo deletion hourly, upload cleanup daily). Each run is recorded in `job_runs`, visible to staff at `/api/admin/jobs`. A failing job is logged and does not stop the others. Jobs only run while the server runs, and catch up on the next start. |
-| Personal data is kept only as long as needed | ID photos are deleted 7 days after staff approve or reject them; unused uploads after a day. |
-| Tests use their own database | `server/test/helpers/env.js` forces a `*_test` database and a temporary upload folder before anything else loads. |
+| `server/src/app.js` | Builds the Express app: security headers, CORS, request ids and logging, the write rate limit, routes, and the portal. |
+| `server/src/routes/` | `auth.js` (sign-up, login, profile, privacy, my data, uploads) and `meta.js` (hubs, categories, rule numbers, notifications). New areas get their own file. |
+| `server/src/rules.js` | Every rule number in one place (codes, flag thresholds, outcomes and multipliers, badges). |
+| `server/src/services.js` | `notify` and `audit`. `audit` is the only code that writes the audit log. |
+| `server/src/jobs.js` | Scheduled jobs (unused upload cleanup, old notifications) and the runner that records each run in `job_runs`. |
+| `server/test/` | One file per area, against the `circulink_test` database. `npm test`. |
+| `database/` | `schema.sql` (platform tables) and `migrations/` (numbered, each with an undo part). `001_hubs_and_items.sql` holds the hub tables. |
+| `portal/` | React + Vite. `src/App.jsx` (shell and navigation by role), `src/pages/`, `e2e/` (Playwright with an accessibility scan). |
+| `app/` | Flutter. `lib/core/` (API client, state, theme, Filipino strings), `lib/screens/`, `lib/widgets/ui/` (UI kit). |
+| `brand/` | Tokens (`build-brand.mjs`) and the logo and icons (`build-icons.mjs`). |
 
-## Configuration
+## Roles
 
-`server/.env` (copy from `.env.example`): `PORT`, `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET` (required with `NODE_ENV=production`), `CORS_ORIGIN` (allowed web origins; empty = this server and localhost), optional `WRITE_LIMIT`, `UPLOAD_DIR`, `BACKUP_DIR`, `HALL_PHONE` (shown for items the barangay handles) and `DPO_NAME`, `DPO_EMAIL`, `DPO_PHONE` (the Data Protection Officer in the privacy notice). Never commit `.env`.
+| Role | Where | Made by |
+|---|---|---|
+| `resident` | App | Sign-up (the only role sign-up can create) |
+| `staff` | Portal | Admin; assigned to hubs in `hub_staff` |
+| `partner` | Portal | Admin; acts only while `partners.status = 'approved'` |
+| `admin` | Portal | `npm run create-admin` or another admin |
 
-The app's server address: set at build time by `run-phone.cmd` (`HIRAMAN_SERVER`, `HIRAMAN_SERVERS`), discovered at start-up (`AppState.findServer`), or typed on the login screen.
+## The item life cycle (built in steps 3 and 4)
 
-## Run, build and test
+```
+declared ──staff checks in code──► received ──staff weighs + sorts──► in_stock ──release to partner──► released
+                                                                   ├► in_repair ──► in_stock / in_recycle_batch
+                                                                   ├► in_recycle_batch ──batch sent──► recycled
+                                                                   └► rejected (0 points)
+```
 
-See `docs/SETUP.md`. In short: `npm start` in `server/`, `npm run build` in `portal/`, `run-phone.cmd` or `flutter run` in `app/`, `npm test` in `server/`, `flutter analyze` and `flutter test` in `app/`. `npm run lint` checks the API and the portal. The API is described in `docs/openapi.json` (`npm run docs:api` regenerates it from `server/scripts/api-catalog.js`). GitHub Actions (`.github/workflows/ci.yml`) runs all of these on every push.
-
-**Logs:** the API prints one line per request with a short request id (also sent as `X-Request-Id` and returned with server errors). Unexpected errors are logged as one line with personal values hidden (`safeErrorLine` in `server/src/errors.js`).
+Points are written to `points_ledger` as `pending` when staff process an item. They become `confirmed` when the item reaches a final state, and `cancelled` if the outcome is reversed (R6).
