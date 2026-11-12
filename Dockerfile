@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Hiraman in one image: the API, which also serves the built LGU portal from the same address.
+# CircuLink in one image: the API, which also serves the built web portal from the same address.
 # The phone app is built separately (docs/SETUP.md). See docs/CONTAINERS.md for how to run it.
 
 # 1) Build the portal into static files.
@@ -22,15 +22,15 @@ RUN npm ci --omit=dev
 COPY server/ ./
 COPY database/ /app/database/
 COPY --from=portal /src/portal/dist /app/portal/dist
-COPY docker/entrypoint.sh /usr/local/bin/hiraman-entrypoint
+COPY docker/entrypoint.sh /usr/local/bin/circulink-entrypoint
 # Strip Windows line endings in case the file was checked out with them, then hand the app to the "node" user.
-RUN sed -i 's/\r$//' /usr/local/bin/hiraman-entrypoint \
- && chmod +x /usr/local/bin/hiraman-entrypoint \
+RUN sed -i 's/\r$//' /usr/local/bin/circulink-entrypoint \
+ && chmod +x /usr/local/bin/circulink-entrypoint \
  && mkdir -p uploads backups \
  && chown -R node:node /app
 USER node
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:4000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
-ENTRYPOINT ["hiraman-entrypoint"]
+ENTRYPOINT ["circulink-entrypoint"]
 CMD ["node", "src/index.js"]

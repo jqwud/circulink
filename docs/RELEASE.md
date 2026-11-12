@@ -1,10 +1,10 @@
-# Releasing Hiraman
+# Releasing CircuLink
 
 How to give residents a new version of the app, and update the server and portal, without losing anyone's data. Work through it top to bottom. Tick each box.
 
 ## 1. Decide once, before the first public release
 
-- [ ] **The app's ID** (`applicationId` in `app/android/app/build.gradle.kts`, now `com.hiraman.hiraman`). Phones and the Play Store know the app by it, and **it can never change** after residents install it. Something like `ph.gov.<barangay>.hiraman` is typical.
+- [ ] **The app's ID** (`applicationId` in `app/android/app/build.gradle.kts`, now `com.circulink.app`). Phones and the Play Store know the app by it, and **it can never change** after residents install it. Keep `com.circulink.app` unless your school or LGU needs its own.
 - [ ] **Who keeps the release key** (step 2), and where its backup copy lives. Two people should know.
 - [ ] **The server address** residents' phones will use. A release build has it built in, and residents cannot change it (the server address setting is hidden in release builds).
 - [ ] **HTTPS.** The app can talk plain HTTP (needed for the laptop on Wi-Fi during development). For a real rollout, put the server behind HTTPS (for example a reverse proxy with a certificate), or anyone on the same Wi-Fi can read logins. This is roadmap item S1 and is not done yet.
@@ -15,15 +15,15 @@ The key proves that an update comes from you. **If it is lost, the app can never
 
 1. Make it on the computer that builds releases (`keytool` comes with Android Studio's Java):
    ```
-   keytool -genkey -v -keystore C:\keys\hiraman-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias hiraman
+   keytool -genkey -v -keystore C:\keys\circulink-release.jks -keyalg RSA -keysize 2048 -validity 10000 -alias circulink
    ```
    Choose strong passwords and write them in your password manager, not in a file in the project.
-2. Copy `hiraman-release.jks` to a second safe place (an encrypted USB stick kept at the barangay hall, for example).
+2. Copy `circulink-release.jks` to a second safe place (an encrypted USB stick kept by the project lead, for example).
 3. Create `app/android/key.properties` (it is git-ignored, never commit it):
    ```
-   storeFile=C:/keys/hiraman-release.jks
+   storeFile=C:/keys/circulink-release.jks
    storePassword=<the store password>
-   keyAlias=hiraman
+   keyAlias=circulink
    keyPassword=<the key password>
    ```
    Keep the `.jks` file **outside** the project folder. `git status` must never show `key.properties` or a `.jks` file.
@@ -55,7 +55,7 @@ node tools/build-release.mjs --server https://<your server>
 (`--bundle` makes a `.aab` for the Play Store instead of an `.apk`.) Then, with the built app on a real phone (uninstall the debug app first, since the keys differ):
 
 - [ ] It opens and finds the server; no server address button anywhere.
-- [ ] Log in, browse, borrow a quick-borrow item and cancel it (the credit comes back).
+- [ ] Log in, open Hubs, and check that the hubs and categories load.
 - [ ] Me tab shows the right version; no component gallery.
 - [ ] Switch to Filipino and back.
 - [ ] Turn on airplane mode: a clear "No connection" message, no crash.
@@ -73,7 +73,7 @@ node tools/build-release.mjs --server https://<your server>
 
 ## 7. Hand out the app
 
-- [ ] Share the `.apk` only from a place the barangay controls (the hall, the official page), never through random chat forwards.
+- [ ] Share the `.apk` only from a place the team controls (the official page or the hub), never through random chat forwards.
 - [ ] Keep the previous `.apk` and the database backup until the new version has run for a week.
 
 ## If something goes wrong

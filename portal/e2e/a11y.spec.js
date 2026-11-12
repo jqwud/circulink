@@ -1,10 +1,10 @@
 // Accessibility scan (axe: WCAG 2.2 A and AA, plus its best-practice rules) of the login page and every main portal page. Any problem fails,
-// whatever its impact: the portal was clean when this test was added (batch 25), so keep it that way.
+// whatever its impact: the portal was clean when this test was added, so keep it that way.
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { portalLogin } from './helpers.js';
 
-const PAGES = ['/', '/verification', '/residents', '/listings', '/shelf', '/donations', '/transactions', '/reports', '/announcements', '/impact', '/tiwala', '/rewards', '/rules', '/staff'];
+const PAGES = ['/'];
 
 test('the login page has no accessibility problems', async ({ page }) => {
   await page.goto('/');

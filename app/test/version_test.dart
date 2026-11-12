@@ -2,7 +2,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hiraman/core/constants.dart';
+import 'package:circulink/core/constants.dart';
 
 void main() {
   test('kAppVersion matches the version in pubspec.yaml', () {

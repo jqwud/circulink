@@ -11,12 +11,7 @@ import { config } from './config.js';
 import { errorMiddleware } from './errors.js';
 import { pool } from './db.js';
 import authRoutes from './routes/auth.js';
-import itemRoutes from './routes/items.js';
-import requestRoutes from './routes/requests.js';
-import communityRoutes from './routes/community.js';
-import adminRoutes from './routes/admin.js';
-import donationRoutes from './routes/donations.js';
-import rewardRoutes from './routes/rewards.js';
+import metaRoutes from './routes/meta.js';
 
 // The API's version (package.json), shown by /api/health so staff can tell which release is running.
 const VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -77,27 +72,22 @@ export function createApp(options = {}) {
   });
   app.use('/api', writeLimit);
 
-  // Public item photos only. ID photos live in uploads/private and are never served here.
+  // Public item photos.
   app.use('/uploads/public', express.static(path.join(config.uploadDir, 'public'), { maxAge: '7d' }));
 
   // Healthy means the API can also reach the database (checked within 3 seconds).
   app.get('/api/health', async (_req, res) => {
     try {
       await Promise.race([checkDb(), new Promise((_, fail) => setTimeout(() => fail(new Error('timeout')), 3000))]);
-      res.json({ ok: true, app: 'Hiraman API', version: VERSION, db: 'ok' });
+      res.json({ ok: true, app: 'CircuLink API', version: VERSION, db: 'ok' });
     } catch {
-      res.status(503).json({ ok: false, app: 'Hiraman API', version: VERSION, db: 'down' });
+      res.status(503).json({ ok: false, app: 'CircuLink API', version: VERSION, db: 'down' });
     }
   });
 
   const api = express.Router();
   api.use(authRoutes);
-  api.use(itemRoutes);
-  api.use(requestRoutes);
-  api.use(communityRoutes);
-  api.use(donationRoutes);
-  api.use(rewardRoutes);
-  api.use(adminRoutes);
+  api.use(metaRoutes);
   app.use('/api', api);
 
   // If the portal has been built (npm run build in /portal), serve it from the same address as the API.

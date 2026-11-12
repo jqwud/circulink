@@ -8,7 +8,6 @@ server/uploads
 server/backups
 portal/dist
 app
-brand/node_modules
-brand/pawsa-art
+brand
 docs
 *.log

@@ -1,9 +1,9 @@
 {
-  "name": "hiraman-portal",
+  "name": "circulink-portal",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0",
   "type": "module",
-  "description": "Hiraman LGU web portal (React + Vite)",
+  "description": "CircuLink web portal for hub staff, partner organizations and admins (React + Vite)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

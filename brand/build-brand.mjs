@@ -10,39 +10,39 @@ const root = path.join(here, '..');
 // ---------- design tokens (shared by app and portal) ----------
 export const tokens = {
   color: {
-    primary: '#A3E635',      // lime: buttons, selected states, highlights (always with ink text)
-    primarySoft: '#ECFCCB',  // pale lime tint
-    mint: '#D9F99D',         // light green surface, credits card
-    onPrimary: '#1F2A1F',    // text and icons on lime
-    accent: '#4D7C0F',       // leaf green: links and small icons on light backgrounds (4.9:1)
-    sun: '#FACC15',          // sun yellow: credits, rewards, the sun emblem
-    sunSoft: '#FEF3C7',
-    fur: '#F5A04A',          // Pawsa's orange (mascot only)
-    furDark: '#DA7A1F',
-    cream: '#FFFDF2',        // ivory page background
+    primary: '#0E7C66',      // CircuLink green: buttons, selected states, the loop in the logo (5.1:1 with white)
+    primarySoft: '#D7F2EA',  // pale green tint
+    mint: '#E6F6EF',         // light green surface, impact cards
+    onPrimary: '#FFFFFF',    // text and icons on green
+    accent: '#0B6B58',       // links and small icons on light backgrounds
+    sun: '#F2B33D',          // amber: points, badges, the link in the logo
+    sunSoft: '#FDF0D5',
+    fur: '#F2B33D',          // kept for older components: same as sun
+    furDark: '#C98A12',
+    cream: '#F7FAF8',        // page background
     card: '#FFFFFF',         // raised surfaces
-    surfaceMuted: '#F6F4E4', // input fill, skeletons, quiet panels
-    ink: '#1F2A1F',          // all text
-    muted: '#4B5F52',        // secondary text (6.7:1 on ivory)
-    mutedSoft: '#E9EADC',
-    leaf: '#0F766E',         // success (teal, so it never fights the green brand)
-    leafSoft: '#D5F3EE',
+    surfaceMuted: '#EEF3F0', // input fill, skeletons, quiet panels
+    ink: '#12261F',          // all text
+    muted: '#4A5F57',        // secondary text
+    mutedSoft: '#E3EBE7',
+    leaf: '#166534',         // success
+    leafSoft: '#DCFCE7',
     warn: '#7A5410',         // text-safe on warnSoft
     warnSoft: '#FDF1D6',
     danger: '#B42318',
     dangerSoft: '#FEE4E2',
     info: '#1B4F9C',
     infoSoft: '#E3EFFF',
-    line: '#E8E2C8',         // hairlines and input borders
-    lineStrong: '#D3CDB0',
+    line: '#DCE5E0',         // hairlines and input borders
+    lineStrong: '#C3D0C9',
   },
   radius: { sm: 10, md: 14, lg: 20, pill: 999 },
   space: { xs: 4, sm: 8, ms: 12, md: 16, lg: 24, xl: 32 },
   // Soft shadows tinted with ink. card: resting cards, float: bars and sheets, modal: dialogs.
   shadow: {
-    card: '0 1px 2px rgba(31,42,31,.05), 0 2px 8px rgba(31,42,31,.05)',
-    float: '0 2px 6px rgba(31,42,31,.06), 0 8px 24px rgba(31,42,31,.08)',
-    modal: '0 8px 16px rgba(31,42,31,.08), 0 20px 48px rgba(31,42,31,.14)',
+    card: '0 1px 2px rgba(18,38,31,.05), 0 2px 8px rgba(18,38,31,.05)',
+    float: '0 2px 6px rgba(18,38,31,.06), 0 8px 24px rgba(18,38,31,.08)',
+    modal: '0 8px 16px rgba(18,38,31,.08), 0 20px 48px rgba(18,38,31,.14)',
   },
   // size / weight / line height
   type: {
@@ -52,7 +52,7 @@ export const tokens = {
   font: { family: "'Nunito', 'Segoe UI', system-ui, sans-serif" },
 };
 
-// Pawsa is no longer drawn here. The artwork lives in pawsa-art/ and build-icons.mjs places it in the app and the portal.
+// The logo and icons are drawn in build-icons.mjs.
 
 fs.writeFileSync(path.join(here, 'tokens.json'), JSON.stringify(tokens, null, 2));
 const kebab = (k) => k.replace(/[A-Z]/g, m => '-' + m.toLowerCase());

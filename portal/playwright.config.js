@@ -1,4 +1,4 @@
-// End-to-end tests of the LGU portal in a real browser, against the real API on the test database.
+// End-to-end tests of the CircuLink web portal in a real browser, against the real API on the test database.
 //   npm run test:e2e        (builds the portal, starts e2e/test-server.mjs, runs e2e/*.spec.js)
 // Locally it uses the installed Google Chrome; in CI, Playwright's own Chromium.
 import { defineConfig } from '@playwright/test';

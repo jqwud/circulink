@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/i18n.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
-import '../widgets/pawsa.dart';
+import '../widgets/brand_mark.dart';
 
 /// Change password. With [forced] it is the gate after a staff-assisted reset: the person types the
 /// temporary password once and picks their own.
@@ -68,11 +68,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           padding: const EdgeInsets.all(24),
           children: <Widget>[
             if (widget.forced) ...<Widget>[
-              const Center(child: PawsaImage(pose: 'point', size: 110)),
+              const Center(child: BrandMark(size: 80)),
               const SizedBox(height: 8),
               Text(context.t('Choose your own password'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
-              Text(context.t('The barangay gave you a temporary password. Pick a new one that only you know.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
+              Text(context.t('An admin gave you a temporary password. Pick a new one that only you know.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
               const SizedBox(height: 18),
             ],
             TextField(controller: _current, obscureText: true, decoration: _field(widget.forced ? context.t('Temporary password') : context.t('Current password'))),

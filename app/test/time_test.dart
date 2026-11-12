@@ -1,6 +1,6 @@
 // The app counts days in Philippine time, like the server, whatever time zone the phone is set to.
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hiraman/core/format.dart';
+import 'package:circulink/core/format.dart';
 
 void main() {
   test('just before and just after midnight in Manila', () {

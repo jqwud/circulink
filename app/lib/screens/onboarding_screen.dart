@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../core/i18n.dart';
 import '../core/theme.dart';
+import '../widgets/brand_mark.dart';
 import '../widgets/common.dart';
 import '../widgets/language_toggle.dart';
-import '../widgets/pawsa.dart';
 
-/// M1: three short slides where Pawsa explains Hiraman.
+/// Three short slides that explain CircuLink before sign-up.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -35,9 +35,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final List<_Slide> slides = <_Slide>[
-      _Slide('hero', context.t('Borrow what you need'), context.t('Need a ladder, chairs or a calculator for a day? Ask a neighbor instead of buying.')),
-      _Slide('happy', context.t("Lend what you don't use"), context.t('Share things that sit idle at home. Only verified neighbors can borrow from you.')),
-      _Slide('cheer', context.t('Earn credits, be a good neighbor'), context.t('Get credits for every on-time lend and use them to borrow. Together we waste less.')),
+      _Slide(null, context.t('Keep things in the loop'), context.t('Clothes, books, gadgets and bottles you no longer need still have value. Bring them to a hub instead of the trash.')),
+      _Slide(Icons.scale_rounded, context.t('Weighed and sorted at the hub'), context.t('Staff decide what happens to each item: reuse, repair, recycle, or proper disposal.')),
+      _Slide(Icons.eco_rounded, context.t('See the waste you prevented'), context.t('Reusable items go to shelters, schools and NGOs. You see the kilograms you kept out of the landfill.')),
     ];
     return Scaffold(
       backgroundColor: HiColors.cream,
@@ -76,14 +76,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-/// One slide. Pawsa shrinks to the space available; on a phone held sideways he sits beside the text.
+/// One slide. The picture shrinks to the space available; sideways it sits beside the text.
 /// If the text still does not fit (very large text settings), the slide scrolls instead of cutting off.
 Widget _slideView(_Slide s) {
   return LayoutBuilder(
     builder: (BuildContext context, BoxConstraints c) {
       final bool sideways = c.maxWidth > c.maxHeight * 1.3;
-      final double art = (sideways ? c.maxHeight * 0.85 : c.maxHeight * 0.45).clamp(90.0, 250.0);
+      final double art = (sideways ? c.maxHeight * 0.6 : c.maxHeight * 0.32).clamp(80.0, 180.0);
       final TextAlign align = sideways ? TextAlign.start : TextAlign.center;
+      final Widget picture = s.icon == null
+          ? BrandMark(size: art)
+          : Container(
+              width: art,
+              height: art,
+              decoration: const BoxDecoration(color: HiColors.primarySoft, shape: BoxShape.circle),
+              child: Icon(s.icon, size: art * 0.5, color: HiColors.primary),
+            );
       final Widget words = Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: sideways ? CrossAxisAlignment.start : CrossAxisAlignment.center,
@@ -94,8 +102,8 @@ Widget _slideView(_Slide s) {
         ],
       );
       final Widget content = sideways
-          ? Row(children: <Widget>[PawsaImage(pose: s.pose, size: art), const SizedBox(width: 24), Expanded(child: words)])
-          : Column(mainAxisSize: MainAxisSize.min, children: <Widget>[PawsaImage(pose: s.pose, size: art), const SizedBox(height: 20), words]);
+          ? Row(children: <Widget>[picture, const SizedBox(width: 24), Expanded(child: words)])
+          : Column(mainAxisSize: MainAxisSize.min, children: <Widget>[picture, const SizedBox(height: 24), words]);
       return SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32),
         child: ConstrainedBox(constraints: BoxConstraints(minHeight: c.maxHeight), child: Center(child: content)),
@@ -105,8 +113,8 @@ Widget _slideView(_Slide s) {
 }
 
 class _Slide {
-  final String pose;
+  final IconData? icon;
   final String title;
   final String body;
-  const _Slide(this.pose, this.title, this.body);
+  const _Slide(this.icon, this.title, this.body);
 }

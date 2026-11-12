@@ -34,8 +34,8 @@ describe('request log', () => {
   });
 
   test('one line per request: method, path, status, time and user, but never the query string', async () => {
-    const lines = await capture(() => s.api('GET', `/items?q=${encodeURIComponent('secret.search@example.com')}`, ana));
-    const line = lines.find((l) => l.includes('GET /api/items'));
+    const lines = await capture(() => s.api('GET', `/notifications?q=${encodeURIComponent('secret.search@example.com')}`, ana));
+    const line = lines.find((l) => l.includes('GET /api/notifications'));
     assert.ok(line, lines.join('\n'));
     assert.match(line, / 200 \d+ms user=\d+$/);
     assert.ok(!line.includes('secret'), 'no search words or emails in the log');
@@ -51,14 +51,14 @@ describe('unexpected errors', () => {
   };
 
   test('the person gets a request id to quote; the log gets a short line without personal values', async () => {
-    const err = Object.assign(new Error("Duplicate entry 'ana@hiraman.test' for key 'users.email' (phone 09170000001)"), { code: 'ER_SOMETHING' });
+    const err = Object.assign(new Error("Duplicate entry 'ana@circulink.test' for key 'users.email' (phone 09170000001)"), { code: 'ER_SOMETHING' });
     const res = fakeRes();
     const lines = await capture(() => errorMiddleware(err, { id: 'abcd1234' }, res, () => {}));
     assert.equal(res.code, 500);
     assert.equal(res.body.request_id, 'abcd1234');
     assert.equal(lines.length, 1);
     assert.match(lines[0], /abcd1234 ER_SOMETHING/);
-    assert.ok(!lines[0].includes('ana@hiraman.test'), lines[0]);
+    assert.ok(!lines[0].includes('ana@circulink.test'), lines[0]);
     assert.ok(!lines[0].includes('09170000001'), lines[0]);
     assert.ok(lines[0].includes("key 'users.email'"), 'the key name stays, it helps debugging');
   });

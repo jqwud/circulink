@@ -8,7 +8,7 @@ import '../core/i18n.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
-import '../widgets/pawsa.dart';
+import '../widgets/brand_mark.dart';
 
 /// The privacy notice (RA 10173), written once on the server in Filipino and English.
 /// With [mustAccept] it is the gate for people who joined before the notice existed or changed.
@@ -52,11 +52,11 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
               padding: const EdgeInsets.all(20),
               children: <Widget>[
                 if (widget.mustAccept) ...<Widget>[
-                  const Center(child: PawsaImage(pose: 'point', size: 110)),
+                  const Center(child: BrandMark(size: 80)),
                   const SizedBox(height: 8),
                   Text(ctx.t('Before you continue'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
-                  Text(ctx.t('Please read how Hiraman uses your information.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
+                  Text(ctx.t('Please read how CircuLink uses your information.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
                   const SizedBox(height: 14),
                 ],
                 ...listOf(notice['sections']).map((Map<String, dynamic> s) => HiCard(
@@ -91,22 +91,14 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
   }
 }
 
-/// "My data": everything Hiraman holds about the person, with a button to copy it all.
+/// "My data": everything CircuLink holds about the person, with a button to copy it all.
 class MyDataScreen extends StatelessWidget {
   const MyDataScreen({super.key});
 
   static const List<List<String>> _sections = <List<String>>[
-    <String>['items', 'My listings'],
-    <String>['requests_as_borrower', 'Things I asked to borrow'],
-    <String>['requests_for_my_items', 'Requests for my items'],
-    <String>['credit_history', 'Credit history'],
-    <String>['checkins', 'Check-ins'],
-    <String>['messages_sent', 'Messages I sent'],
-    <String>['ratings_given', 'Ratings I gave'],
-    <String>['ratings_received', 'Ratings I received'],
-    <String>['reports_filed', 'Reports I filed'],
-    <String>['wanted_posts', 'Wanted posts'],
-    <String>['survey_answers', 'Survey answers'],
+    <String>['declarations', 'My drop-offs'],
+    <String>['items', 'My items'],
+    <String>['points', 'Points history'],
     <String>['notifications', 'Notifications'],
   ];
 
@@ -121,7 +113,7 @@ class MyDataScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: <Widget>[
-              Text(ctx.t('This is everything Hiraman keeps about you. Other people appear by first name only.'), style: const TextStyle(color: HiColors.muted)),
+              Text(ctx.t('This is everything CircuLink keeps about you.'), style: const TextStyle(color: HiColors.muted)),
               const SizedBox(height: 10),
               HiCard(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
@@ -184,7 +176,7 @@ Future<void> askToDeleteAccount(BuildContext context) async {
   }
   final bool ok = await confirmDialog(context,
       title: context.tx('Delete your account?'),
-      message: context.tx('The barangay will delete your name, contact details, ID photo and messages. Loans you are part of must be finished first. Your loan records stay without your name.'),
+      message: context.tx('An admin will delete your name and contact details. The weights of items you dropped off stay without your name, so the totals stay correct.'),
       confirmLabel: context.tx('Ask to delete'),
       danger: true);
   if (!ok || !context.mounted) return;
@@ -192,7 +184,7 @@ Future<void> askToDeleteAccount(BuildContext context) async {
   try {
     await app.api.post('/me/delete-request');
     await app.refreshMe();
-    if (context.mounted) showMessage(context, context.tx('Request sent. The barangay will delete your account soon.'));
+    if (context.mounted) showMessage(context, context.tx('Request sent. An admin will delete your account soon.'));
   } catch (e) {
     if (context.mounted) showMessage(context, context.app.errorText(e), bad: true);
   }

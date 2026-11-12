@@ -1,12 +1,12 @@
 // Run once after `flutter create`, from the app folder:   node tools/patch-android.mjs
 // It makes the Android app allowed to use the internet and to talk to the local server (http, not https),
-// and names the app "Hiraman".
+// and names the app "CircuLink".
 import fs from 'node:fs';
 import path from 'node:path';
 
 const manifest = path.join('android', 'app', 'src', 'main', 'AndroidManifest.xml');
 if (!fs.existsSync(manifest)) {
-  console.error('Cannot find ' + manifest + '.\nRun "flutter create . --org com.hiraman --project-name hiraman --platforms android" in the app folder first.');
+  console.error('Cannot find ' + manifest + '.\nRun "flutter create . --org com.circulink --project-name circulink --platforms android" in the app folder first.');
   process.exit(1);
 }
 
@@ -23,7 +23,7 @@ if (!xml.includes('usesCleartextTraffic')) {
 }
 xml = xml.replace(/android:label="[^"]*"/, () => {
   changed = true;
-  return 'android:label="Hiraman"';
+  return 'android:label="CircuLink"';
 });
 
 if (changed) {

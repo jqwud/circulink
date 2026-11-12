@@ -4,18 +4,17 @@ import '../../core/api.dart';
 import '../../core/i18n.dart';
 import '../../core/theme.dart';
 import '../connection.dart';
-import '../pawsa.dart';
+import '../brand_mark.dart';
 import 'buttons.dart';
 import 'skeleton.dart';
 
 /// The three states of anything loaded from the server: loading, error, and empty.
 class EmptyState extends StatelessWidget {
-  final String pose;
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const EmptyState({super.key, this.pose = 'sleepy', required this.message, this.actionLabel, this.onAction});
+  const EmptyState({super.key, required this.message, this.actionLabel, this.onAction});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +24,7 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            PawsaImage(pose: pose, size: 160),
+            const BrandMark(size: 96),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
             if (actionLabel != null && onAction != null) ...<Widget>[
@@ -53,7 +52,7 @@ class ErrorView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const PawsaImage(pose: 'oops', size: 150),
+            const Icon(Icons.cloud_off_rounded, size: 72, color: HiColors.muted),
             const SizedBox(height: 12),
             Text(context.app.errorText(error), textAlign: TextAlign.center, style: const TextStyle(fontSize: 15)),
             const SizedBox(height: 16),

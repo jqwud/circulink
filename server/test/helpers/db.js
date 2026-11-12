@@ -29,7 +29,7 @@ export async function resetTestDatabase() {
     await conn.query('SET FOREIGN_KEY_CHECKS = 0');
     for (const row of tables) await conn.query(`DROP TABLE \`${Object.values(row)[0]}\``);
     await conn.query('SET FOREIGN_KEY_CHECKS = 1');
-    // schema.sql creates the real "hiraman" database; keep only the table definitions and reference data.
+    // schema.sql creates the real "circulink" database; keep only the table definitions and reference data.
     const sql = fs.readFileSync(schemaFile, 'utf8').replace(/^\s*(DROP DATABASE|CREATE DATABASE|USE)\b[^;]*;/gim, '');
     await conn.query(sql);
   } finally {

@@ -5,15 +5,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-process.env.DB_NAME = process.env.TEST_DB_NAME || 'hiraman_test';
+process.env.DB_NAME = process.env.TEST_DB_NAME || 'circulink_test';
 if (!/_test$/.test(process.env.DB_NAME)) {
-  console.error(`\n[hiraman tests] Refusing to run against "${process.env.DB_NAME}". Test databases must end in "_test".\n`);
+  console.error(`\n[circulink tests] Refusing to run against "${process.env.DB_NAME}". Test databases must end in "_test".\n`);
   process.exit(1);
 }
 
-process.env.UPLOAD_DIR = path.join(os.tmpdir(), 'hiraman-test-uploads');
+process.env.UPLOAD_DIR = path.join(os.tmpdir(), 'circulink-test-uploads');
 fs.rmSync(process.env.UPLOAD_DIR, { recursive: true, force: true });
-process.env.BACKUP_DIR = path.join(os.tmpdir(), 'hiraman-test-backups');
+process.env.BACKUP_DIR = path.join(os.tmpdir(), 'circulink-test-backups');
 fs.rmSync(process.env.BACKUP_DIR, { recursive: true, force: true });
 
 process.env.JWT_SECRET ||= 'test-only-secret';

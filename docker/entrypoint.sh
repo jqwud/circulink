@@ -1,5 +1,5 @@
 #!/bin/sh
-# Starts the Hiraman API in a container: brings the database up to date first (with a backup, except on a
+# Starts the CircuLink API in a container: brings the database up to date first (with a backup, except on a
 # brand-new database), then runs the given command (the API by default).
 set -e
 

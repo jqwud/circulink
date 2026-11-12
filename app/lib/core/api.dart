@@ -10,15 +10,15 @@ import 'package:image_picker/image_picker.dart';
 import 'constants.dart';
 
 /// Server address, connection status and the plug button are for testing only. Real (release) builds show
-/// residents none of it: the address is built in. Test builds (debug, or --dart-define=HIRAMAN_SERVER_TOOLS=true) keep them.
-const bool kShowServerTools = kDebugMode || bool.fromEnvironment('HIRAMAN_SERVER_TOOLS');
+/// residents none of it: the address is built in. Test builds (debug, or --dart-define=CIRCULINK_SERVER_TOOLS=true) keep them.
+const bool kShowServerTools = kDebugMode || bool.fromEnvironment('CIRCULINK_SERVER_TOOLS');
 
 /// Server address given at build time. A new value replaces the saved address once (see AppState.init).
-const String kServerFromBuild = String.fromEnvironment('HIRAMAN_SERVER');
+const String kServerFromBuild = String.fromEnvironment('CIRCULINK_SERVER');
 
 /// Other addresses the app may try, given at build time as a comma-separated list
 /// (tools/run-phone.ps1 fills it with this computer's own addresses).
-const String kServerCandidates = String.fromEnvironment('HIRAMAN_SERVERS');
+const String kServerCandidates = String.fromEnvironment('CIRCULINK_SERVERS');
 
 List<String> serverCandidates() => kServerCandidates.split(',').map((String s) => s.trim()).where((String s) => s.isNotEmpty).toList();
 
@@ -32,12 +32,12 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
-/// Talks to the Hiraman API (the same server the LGU portal uses).
+/// Talks to the CircuLink API (the same server the web portal uses).
 class Api {
   Api._();
   static final Api instance = Api._();
 
-  /// tools/run-phone.cmd builds with --dart-define=HIRAMAN_SERVER=http://localhost:4000
+  /// tools/run-phone.cmd builds with --dart-define=CIRCULINK_SERVER=http://localhost:4000
   /// and tunnels that port over USB, so a phone needs no Wi-Fi setup.
   /// Otherwise: the browser reaches the computer as localhost, and the Android emulator
   /// as 10.0.2.2. A phone on Wi-Fi uses the server address set on the login screen.
@@ -78,11 +78,11 @@ class Api {
       final http.Response res = await call().timeout(kRequestTimeout);
       return _handle(res);
     } on SocketException {
-      throw ApiException('Cannot reach the Hiraman server. Check your Wi-Fi and the server address.', code: 'network');
+      throw ApiException('Cannot reach the CircuLink server. Check your Wi-Fi and the server address.', code: 'network');
     } on TimeoutException {
       throw ApiException('The server took too long to answer. Please try again.', code: 'timeout');
     } on http.ClientException {
-      throw ApiException('Cannot reach the Hiraman server. Check your Wi-Fi and the server address.', code: 'network');
+      throw ApiException('Cannot reach the CircuLink server. Check your Wi-Fi and the server address.', code: 'network');
     }
   }
 

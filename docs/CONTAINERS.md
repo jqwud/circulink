@@ -1,6 +1,6 @@
-# Running Hiraman in containers
+# Running CircuLink in containers
 
-Containers run the server side of Hiraman (MySQL, the API and the LGU portal) the same way on any computer that has Docker. Nothing else needs installing: no Node, no MySQL. The phone app is still built separately (see `SETUP.md`) and connects to the API over the network.
+Containers run the server side of CircuLink (MySQL, the API and the web portal) the same way on any computer that has Docker. Nothing else needs installing: no Node, no MySQL. The phone app is still built separately (see `SETUP.md`) and connects to the API over the network.
 
 | File | What it does |
 |---|---|
@@ -37,7 +37,7 @@ Containers run the server side of Hiraman (MySQL, the API and the LGU portal) th
 ```
 docker compose exec api npm run seed
 ```
-This **replaces everything** with the demo residents, items and loans (password `hiraman123`). Never run it on a barangay's real install.
+This **replaces everything** with the demo accounts, hubs and recyclers (password `circulink123`). Never run it on a real install.
 
 ## Everyday use
 
@@ -64,7 +64,7 @@ The API listens on port 4000 of the computer running Docker. On the phone, set t
 ```
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 ```
-The API restarts when you save a file in `server/src`, logs every request, and MySQL is open on `localhost:3307` (user `hiraman`, the password from `docker.env`) for MySQL Workbench. The tests still run outside the container: `cd server && npm test`.
+The API restarts when you save a file in `server/src`, logs every request, and MySQL is open on `localhost:3307` (user `circulink`, the password from `docker.env`) for MySQL Workbench. The tests still run outside the container: `cd server && npm test`.
 
 ## Good to know
 

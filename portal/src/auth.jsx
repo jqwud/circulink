@@ -9,8 +9,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const out = () => setUser(null);
-    window.addEventListener('hiraman:logout', out);
-    return () => window.removeEventListener('hiraman:logout', out);
+    window.addEventListener('circulink:logout', out);
+    return () => window.removeEventListener('circulink:logout', out);
   }, []);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const res = await api('/auth/login', { method: 'POST', body: { email, password } });
     if (res.user.role === 'resident') {
-      const err = new Error('This portal is for barangay and LGU staff only.');
+      const err = new Error('This portal is for hub staff, partner organizations and admins. Residents use the CircuLink app.');
       err.code = 'residents_blocked';
       throw err;
     }

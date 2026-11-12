@@ -1,5 +1,5 @@
 // Builds the app that residents install. Refuses to build one that would not work for them.
-//   cd app && node tools/build-release.mjs --server https://hiraman.example.gov.ph
+//   cd app && node tools/build-release.mjs --server https://circulink.example.org
 //   (add --bundle for a Play Store .aab instead of an .apk)
 // Checks first: a server address is given (residents cannot change it in a release build), the release key
 // is set up (android/key.properties, see docs/RELEASE.md), and the shown version matches pubspec.yaml.
@@ -16,7 +16,7 @@ const problems = [];
 
 // Only the characters of a plain web address, since it goes into the build command.
 if (!args.includes('--server') || !/^https?:\/\/[A-Za-z0-9.:[\]-]+(\/[A-Za-z0-9._~/-]*)?$/.test(server || '')) {
-  problems.push('Give the server address residents will use, like --server https://hiraman.example.gov.ph');
+  problems.push('Give the server address residents will use, like --server https://circulink.example.org');
 } else if (server.startsWith('http://')) {
   console.warn(`Note: ${server} is plain HTTP. Logins can be read on shared Wi-Fi. Use HTTPS for a real rollout (docs/RELEASE.md).`);
 }
@@ -36,9 +36,9 @@ if (problems.length) {
   process.exit(1);
 }
 
-console.log(`Building Hiraman ${pubspec} for ${server} ...`);
+console.log(`Building CircuLink ${pubspec} for ${server} ...`);
 // Fixed words plus a checked address, through the shell so Windows finds flutter.bat.
-const cmd = `flutter build ${bundle ? 'appbundle' : 'apk'} --release --dart-define=HIRAMAN_SERVER=${server}`;
+const cmd = `flutter build ${bundle ? 'appbundle' : 'apk'} --release --dart-define=CIRCULINK_SERVER=${server}`;
 const run = spawnSync(cmd, { cwd: appDir, stdio: 'inherit', shell: true });
 if (run.status === 0) {
   console.log(`\nDone: build/app/outputs/${bundle ? 'bundle/release/app-release.aab' : 'flutter-apk/app-release.apk'}`);

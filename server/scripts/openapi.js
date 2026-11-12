@@ -11,8 +11,9 @@ const ACCESS = {
   public: 'No login needed.',
   user: 'Any logged-in account.',
   resident: 'A logged-in resident.',
-  staff: 'LGU staff or admin.',
-  admin: 'LGU admin only.',
+  staff: 'Hub staff or admin.',
+  partner: 'An approved partner organization.',
+  admin: 'Admins only.',
 };
 
 export function buildOpenApi() {
@@ -47,9 +48,9 @@ export function buildOpenApi() {
   return {
     openapi: '3.1.0',
     info: {
-      title: 'Hiraman API',
-      version: '1.0.0',
-      description: 'The API behind the Hiraman resident app and the LGU portal. All paths are under /api. Dates are Philippine time (UTC+8). Generated from server/scripts/api-catalog.js by npm run docs:api.',
+      title: 'CircuLink API',
+      version: '0.1.0',
+      description: 'The API behind the CircuLink resident app and the hub portal. All paths are under /api. Dates are Philippine time (UTC+8). Generated from server/scripts/api-catalog.js by npm run docs:api.',
     },
     servers: [{ url: 'http://localhost:4000/api' }],
     tags: Object.entries(TAGS).map(([name, description]) => ({ name, description })),

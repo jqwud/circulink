@@ -1,144 +1,25 @@
-// Scheduled jobs. Each job takes a "now" (tests move it days ahead) and is safe to run again:
-// it only acts on rows that still qualify, re-checked inside a locked transaction.
+// Scheduled jobs. Each job takes a "now" (tests move it days ahead) and is safe to run again.
+// More jobs (expiring drop-off codes, flag checks) are added with the features that need them.
 import fs from 'node:fs';
 import path from 'node:path';
-import { pool, q, one, withTx, todayPH, phTimestamp } from './db.js';
+import { q, one, phTimestamp } from './db.js';
 import { config } from './config.js';
 import { RULES } from './rules.js';
-import { OUT_LOANS_SQL, addCredits, addDays, audit, checkinState, loadRequest, notify } from './services.js';
-import { removePrivateFile } from './uploads.js';
-import { runTiwala } from './tiwala.js';
-import { runVouchers } from './rewards.js';
-import { runPoints } from './points.js';
 import { safeErrorLine, safeMessage } from './errors.js';
 
 const MINUTE = 60 * 1000;
 const DAY = 24 * 60 * MINUTE;
 
-// ---------- reminders: due tomorrow, due today, overdue ----------
-// The borrower is reminded once per day. The owner hears once when their item becomes overdue.
-// Nobody is reminded about an item the borrower already said they returned.
-export async function runReminders(now = new Date()) {
-  const today = todayPH(now);
-  const rows = await q(
-    `SELECT r.id, r.borrower_id, r.end_date, i.title, i.owner_id, DATEDIFF(r.end_date, ?) AS days_left
-       FROM requests r JOIN items i ON i.id = r.item_id
-      WHERE r.status = 'handed_over' AND r.borrower_returned_at IS NULL AND r.end_date <= DATE_ADD(?, INTERVAL 1 DAY)`, [today, today]);
-  let sent = 0;
-  for (const r of rows) {
-    const type = r.days_left > 0 ? 'due_tomorrow' : r.days_left === 0 ? 'due_today' : 'overdue';
-    const title = type === 'due_tomorrow' ? `Due tomorrow: ${r.title}` : type === 'due_today' ? `Due today: ${r.title}` : `Overdue: ${r.title}`;
-    const exists = await one(
-      'SELECT id FROM notifications WHERE user_id = ? AND type = ? AND ref_id = ? AND DATE(created_at) = ?', [r.borrower_id, type, r.id, today]);
-    if (!exists) {
-      await notify(pool, r.borrower_id, type, title, `Return by ${r.end_date}. Pawsa is counting on you!`, r.id, { item: r.title, end: r.end_date });
-      sent++;
-    }
-    if (type === 'overdue' && r.owner_id) {
-      const told = await one("SELECT id FROM notifications WHERE user_id = ? AND type = 'owner_overdue' AND ref_id = ?", [r.owner_id, r.id]);
-      if (!told) {
-        await notify(pool, r.owner_id, 'owner_overdue', `Not back yet: ${r.title}`, `It was due on ${r.end_date}. The borrower has been reminded.`, r.id,
-          { item: r.title, end: r.end_date });
-        sent++;
-      }
-    }
-  }
-  return { checked: rows.length, sent };
-}
-
-// ---------- daily check-ins ----------
-// One missed day: a reminder to the borrower (at most one a day). Two missed days in a row: the owner is
-// told once, and staff see the loan on the dashboard. A check-in starts the count again. No credit penalty.
-export async function runCheckins(now = new Date()) {
-  const today = todayPH(now);
-  const rows = await q(OUT_LOANS_SQL);
-  let reminded = 0;
-  let alerted = 0;
-  for (const r of rows) {
-    const missed = checkinState(r, today).missed_days;
-    if (missed >= 1 && r.checkin_reminded_on !== today) {
-      await notify(pool, r.borrower_id, 'checkin_missed', `Please check in: ${r.item_title}`,
-        `You have not checked in for ${missed} day${missed === 1 ? '' : 's'}. Open the request and tap one answer.`, r.id, { item: r.item_title, days: missed });
-      await q('UPDATE requests SET checkin_reminded_on = ? WHERE id = ?', [today, r.id]);
-      reminded++;
-    }
-    if (missed >= RULES.checkinAlertAfterMissedDays && !r.checkin_alerted_on) {
-      if (r.owner_id) {
-        await notify(pool, r.owner_id, 'checkin_alert', `No check-in for ${missed} days: ${r.item_title}`,
-          'The borrower has been reminded. The barangay can see this too.', r.id, { item: r.item_title, days: missed });
-      }
-      await q('UPDATE requests SET checkin_alerted_on = ? WHERE id = ?', [today, r.id]);
-      alerted++;
-    }
-  }
-  return { checked: rows.length, reminded, alerted };
-}
-
-// ---------- request expiry ----------
-// Pending: 7 days after it was made with no answer, or once its end date has passed.
-// Approved: once its end date has passed without a handover. Held credits are refunded.
-export async function expireRequests(now = new Date()) {
-  const today = todayPH(now);
-  const cutoff = phTimestamp(new Date(now.getTime() - RULES.pendingExpiryDays * DAY));
-  const qualifies = (r) => (r.status === 'pending' && (r.created_at <= cutoff || r.end_date < today))
-    || (r.status === 'approved' && r.end_date < today);
-  const rows = await q(
-    `SELECT id FROM requests
-      WHERE (status = 'pending' AND (created_at <= ? OR end_date < ?)) OR (status = 'approved' AND end_date < ?)`,
-    [cutoff, today, today]);
-  let expired = 0;
-  for (const { id } of rows) {
-    const done = await withTx(async (conn) => {
-      const r = await loadRequest(conn, id);
-      if (!qualifies(r)) return false;          // someone acted on it in the meantime
-      const why = r.status === 'pending'
-        ? `No answer within ${RULES.pendingExpiryDays} days.`
-        : `It was not picked up by ${r.end_date}.`;
-      await conn.query("UPDATE requests SET status = 'expired', credits_held = 0 WHERE id = ?", [r.id]);
-      if (r.credits_held) await addCredits(conn, r.borrower_id, r.credit_cost, 'refund_expired', r.id);
-      const params = { item: r.item_title, why: r.status === 'pending' ? 'no_answer' : 'not_picked_up', days: RULES.pendingExpiryDays, end: r.end_date };
-      await notify(conn, r.borrower_id, 'request_expired', `Request expired: ${r.item_title}`,
-        `${why}${r.credits_held ? ' Your credit was returned.' : ''}`, r.id, { ...params, refunded: !!r.credits_held });
-      if (r.owner_id) await notify(conn, r.owner_id, 'request_expired', `Request expired: ${r.item_title}`, why, r.id, { ...params, refunded: false });
-      return true;
-    });
-    if (done) expired++;
-  }
-  return { checked: rows.length, expired };
-}
-
-// ---------- ID photo retention ----------
-// ID photos are deleted 7 days after staff approve or reject them. The account keeps its status.
-export async function deleteOldIdPhotos(now = new Date()) {
-  const cutoff = phTimestamp(new Date(now.getTime() - RULES.idPhotoRetentionDays * DAY));
-  const rows = await q(
-    `SELECT id, id_photo_path FROM users
-      WHERE id_photo_path IS NOT NULL AND verification_status IN ('approved','rejected')
-        AND verification_decided_at IS NOT NULL AND verification_decided_at <= ?`, [cutoff]);
-  for (const u of rows) {
-    removePrivateFile(u.id_photo_path);
-    await q('UPDATE users SET id_photo_path = NULL WHERE id = ? AND id_photo_path = ?', [u.id, u.id_photo_path]);
-    await audit(null, 'id_photo_deleted', `user #${u.id} (${RULES.idPhotoRetentionDays} days after the decision)`);
-  }
-  return { deleted: rows.length };
-}
-
 // ---------- unused uploads ----------
-// Photos that were uploaded but never attached to anything are deleted after a day.
+// Photos that were uploaded but never attached to an item are deleted after the grace period.
 const OUR_FILE = /^[a-f0-9]{24}\.(jpg|png|webp|upload)$/;
 export async function cleanupUploads(now = new Date()) {
-  const used = new Set();
-  const refs = await q(
-    `SELECT photo_url AS p FROM items WHERE photo_url IS NOT NULL
-     UNION SELECT handover_photo FROM requests WHERE handover_photo IS NOT NULL
-     UNION SELECT return_photo FROM requests WHERE return_photo IS NOT NULL
-     UNION SELECT id_photo_path FROM users WHERE id_photo_path IS NOT NULL`);
-  for (const r of refs) used.add(path.basename(r.p));
+  const refs = await q('SELECT photo_url AS p FROM items WHERE photo_url IS NOT NULL');
+  const used = new Set(refs.map((r) => path.basename(r.p)));
   const grace = RULES.unusedUploadGraceHours * 60 * MINUTE;
   let removed = 0;
-  for (const sub of ['public', 'private']) {
-    const dir = path.join(config.uploadDir, sub);
-    if (!fs.existsSync(dir)) continue;
+  const dir = path.join(config.uploadDir, 'public');
+  if (fs.existsSync(dir)) {
     for (const name of fs.readdirSync(dir)) {
       if (!OUR_FILE.test(name) || used.has(name)) continue;
       const file = path.join(dir, name);
@@ -150,77 +31,18 @@ export async function cleanupUploads(now = new Date()) {
   return { removed };
 }
 
-// ---------- old free text ----------
-// What residents typed before quick replies (batch 27) is kept read-only for a year after the loan ends, then
-// deleted. Quick replies and staff notes stay with the request.
-export async function deleteOldMessages(now = new Date()) {
-  const r = await q(
-    `DELETE m FROM request_messages m
-       JOIN users u ON u.id = m.sender_id
-       JOIN requests x ON x.id = m.request_id
-      WHERE m.phrase_id IS NULL AND m.body IS NOT NULL AND u.role = 'resident'
-        AND x.status IN ('closed','cancelled','rejected')
-        AND COALESCE(x.settled_at, x.returned_at, x.end_date) < DATE_SUB(?, INTERVAL ? DAY)`, [phTimestamp(now), RULES.oldTextKeptDays]);
-  return { deleted: r.affectedRows };
-}
-
-// ---------- donations ----------
-// Reservations nobody completed end quietly (no penalty: the donor can report a missed pickup instead).
-// A donation unclaimed by its open_until day: the donor is asked to keep it longer, give it to the Shelf or
-// take it down; with no answer donationAnswerDays later, it is taken down.
-export async function runDonations(now = new Date()) {
-  const today = todayPH(now);
-  const out = { expired: 0, asked: 0, withdrawn: 0 };
-  const due = await q("SELECT id FROM donation_claims WHERE status = 'reserved' AND reserved_until < ?", [phTimestamp(now)]);
-  for (const { id } of due) {
-    await withTx(async (conn) => {
-      const [[c]] = await conn.query(
-        `SELECT c.*, i.title, i.owner_id FROM donation_claims c JOIN items i ON i.id = c.item_id WHERE c.id = ? FOR UPDATE`, [id]);
-      if (c.status !== 'reserved' || phTimestamp(new Date(c.reserved_until)) >= phTimestamp(now)) return;
-      await conn.query("UPDATE donation_claims SET status = 'released', closed_at = NOW() WHERE id = ?", [c.id]);
-      await conn.query("UPDATE items SET donation_status = 'open' WHERE id = ? AND donation_status = 'reserved'", [c.item_id]);
-      for (const uid of [c.claimer_id, c.owner_id].filter(Boolean)) {
-        await notify(conn, uid, 'claim_expired', `Reservation ended: ${c.title}`, 'The pickup was not confirmed in time, so it is offered to others again.', c.id, { item: c.title });
-      }
-      out.expired++;
-    });
-  }
-  const open = await q(
-    `SELECT i.id, i.title, i.owner_id, i.open_until,
-            EXISTS (SELECT 1 FROM notifications n WHERE n.type = 'donation_unclaimed' AND n.ref_id = i.id
-                     AND JSON_UNQUOTE(JSON_EXTRACT(n.params, '$.until')) = DATE_FORMAT(i.open_until, '%Y-%m-%d')) AS asked
-       FROM items i
-      WHERE i.listing_type = 'donate' AND i.donation_status = 'open' AND i.status = 'available' AND i.owner_id IS NOT NULL AND i.open_until <= ?`, [today]);
-  for (const i of open) {
-    if (!i.asked) {
-      await notify({ query: q }, i.owner_id, 'donation_unclaimed', `Nobody has claimed ${i.title} yet`,
-        `Keep it listed ${RULES.donationOpenDays} more days, give it to the Barangay Shelf, or take it down. With no answer, it is taken down in ${RULES.donationAnswerDays} days.`,
-        i.id, { item: i.title, until: i.open_until, days: RULES.donationOpenDays });
-      out.asked++;
-    } else if (addDays(i.open_until, RULES.donationAnswerDays) <= today) {
-      await withTx(async (conn) => {
-        await conn.query("UPDATE items SET donation_status = 'withdrawn', status = 'removed', removed_by = 'owner' WHERE id = ? AND donation_status = 'open'", [i.id]);
-        await conn.query("UPDATE donation_claims SET status = 'released', closed_at = NOW() WHERE item_id = ? AND status = 'waiting'", [i.id]);
-        await notify(conn, i.owner_id, 'donation_withdrawn', `Taken down: ${i.title}`, 'Nobody claimed it and there was no answer. You can list it again any time.', i.id, { item: i.title });
-      });
-      out.withdrawn++;
-    }
-  }
-  return out;
+// ---------- old notifications ----------
+// Read notifications are deleted after RULES.notificationsKeptDays. Unread ones stay.
+export async function deleteOldNotifications(now = new Date()) {
+  const cutoff = phTimestamp(new Date(now.getTime() - RULES.notificationsKeptDays * DAY));
+  const r = await q('DELETE FROM notifications WHERE read_at IS NOT NULL AND read_at < ?', [cutoff]);
+  return { removed: r.affectedRows };
 }
 
 // ---------- the runner ----------
 export const JOBS = [
-  { name: 'reminders', everyMs: 60 * MINUTE, run: runReminders },
-  { name: 'checkins', everyMs: 60 * MINUTE, run: runCheckins },
-  { name: 'expire_requests', everyMs: 60 * MINUTE, run: expireRequests },
-  { name: 'delete_old_id_photos', everyMs: 60 * MINUTE, run: deleteOldIdPhotos },
   { name: 'cleanup_uploads', everyMs: DAY, run: cleanupUploads },
-  { name: 'delete_old_messages', everyMs: DAY, run: deleteOldMessages },
-  { name: 'donations', everyMs: 60 * MINUTE, run: runDonations },
-  { name: 'tiwala', everyMs: DAY, run: runTiwala },
-  { name: 'vouchers', everyMs: DAY, run: runVouchers },
-  { name: 'ambag_points', everyMs: DAY, run: runPoints },
+  { name: 'delete_old_notifications', everyMs: DAY, run: deleteOldNotifications },
 ];
 
 // Runs every job whose interval has passed since its last run, and records the result in job_runs.

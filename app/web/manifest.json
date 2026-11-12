@@ -1,11 +1,11 @@
 {
-    "name": "Hiraman",
-    "short_name": "Hiraman",
+    "name": "CircuLink",
+    "short_name": "CircuLink",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFFDF2",
-    "theme_color": "#A3E635",
-    "description": "Hiram muna, kapitbahay. Borrow what you need, lend what you do not use.",
+    "background_color": "#F7FAF8",
+    "theme_color": "#0E7C66",
+    "description": "Keep it in the loop. Bring items you no longer need to a CircuLink hub.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

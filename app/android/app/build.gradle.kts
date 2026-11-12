@@ -9,7 +9,7 @@ plugins {
 
 // Release signing. The key is the team's and never goes in the repository (key.properties, *.jks and
 // *.keystore are git-ignored). Make it once with docs/RELEASE.md, then write android/key.properties:
-//   storeFile=C:/keys/hiraman-release.jks   storePassword=...   keyAlias=hiraman   keyPassword=...
+//   storeFile=C:/keys/circulink-release.jks   storePassword=...   keyAlias=circulink   keyPassword=...
 // Without that file, release builds are signed with the debug key, so `flutter run --release` still works,
 // but such a build must not be given to residents.
 val keyProperties = Properties().apply {
@@ -19,7 +19,7 @@ val keyProperties = Properties().apply {
 val hasReleaseKey = keyProperties.getProperty("storeFile") != null
 
 android {
-    namespace = "com.hiraman.hiraman"
+    namespace = "com.circulink.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -35,7 +35,7 @@ android {
     defaultConfig {
         // The app's permanent identity on phones and in stores. Decide it before the first public release
         // (docs/RELEASE.md); after that it can never change.
-        applicationId = "com.hiraman.hiraman"
+        applicationId = "com.circulink.app"
         // The version comes from pubspec.yaml ("version: 1.0.0+1" = name 1.0.0, build number 1).
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion

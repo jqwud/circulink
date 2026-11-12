@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { Pawsa } from '../components.jsx';
 
 export default function Login({ LangToggle }) {
   const { login } = useAuth();
@@ -15,7 +14,7 @@ export default function Login({ LangToggle }) {
     e.preventDefault();
     setBusy(true); setError('');
     try { await login(email, password); }
-    catch (err) { setError(err.code === 'residents_blocked' ? t('This portal is for barangay and LGU staff only.') : err.message); }
+    catch (err) { setError(err.code === 'residents_blocked' ? t('This portal is for hub staff, partner organizations and admins. Residents use the CircuLink app.') : err.message); }
     finally { setBusy(false); }
   }
 
@@ -23,9 +22,9 @@ export default function Login({ LangToggle }) {
     <main className="login">
       <div className="login-card">
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}><LangToggle /></div>
-        <Pawsa pose="wink" size={120} />
-        <h1>Hiraman</h1>
-        <p className="muted">{t('Staff login')}</p>
+        <h1><img className="login-logo" src="/logo.svg" alt="CircuLink" /></h1>
+        <p className="muted">{t('Keeping things in use, one drop-off at a time.')}</p>
+        <h2 style={{ fontSize: 18, marginBottom: 0 }}>{t('Portal login')}</h2>
         <form onSubmit={submit}>
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="field">
@@ -38,7 +37,7 @@ export default function Login({ LangToggle }) {
           </div>
           <button className="btn primary" style={{ width: '100%' }} disabled={busy}>{busy ? t('Signing in...') : t('Log in')}</button>
         </form>
-        <p className="hint">{t('Demo accounts (password hiraman123): admin@hiraman.test or staff@hiraman.test')}</p>
+        <p className="hint">{t('Demo accounts (password circulink123): admin@, staff@ or partner@circulink.test')}</p>
       </div>
     </main>
   );

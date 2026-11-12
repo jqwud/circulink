@@ -38,6 +38,6 @@ describe('API description', () => {
   });
 
   test('every operation says who may call it', () => {
-    for (const r of CATALOG) assert.ok(['public', 'user', 'resident', 'staff', 'admin'].includes(r.access), `${r.method} ${r.path}`);
+    for (const r of CATALOG) assert.ok(['public', 'user', 'resident', 'staff', 'partner', 'admin'].includes(r.access), `${r.method} ${r.path}`);
   });
 });
