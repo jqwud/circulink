@@ -95,19 +95,21 @@ Future<void> logIn(WidgetTester tester, String email, String password) async {
   }
 }
 
-/// Real letter shapes, so screens are measured as on a phone. The app asks for Nunito, which it does not ship,
-/// so Android shows Roboto; the test does the same, with fonts from the Flutter SDK.
+/// Real letter shapes, so screens are measured as on a phone: the Nunito files the app ships (assets/fonts),
+/// used for Roboto too. The Material icon font comes from the Flutter SDK when it is there; some CI machines
+/// do not have it, and then icons are drawn as boxes, which changes nothing the tests look at.
 Future<void> loadPhoneFonts() async {
-  final String fonts = '${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts';
-  Future<ByteData> read(String name) async => ByteData.sublistView(await File('$fonts/$name').readAsBytes());
+  Future<ByteData> read(String path) async => ByteData.sublistView(await File(path).readAsBytes());
+  const List<String> nunito = <String>['Regular', 'SemiBold', 'Bold', 'ExtraBold'];
   for (final String family in <String>['Nunito', 'Roboto']) {
     final FontLoader loader = FontLoader(family);
-    for (final String w in <String>['regular', 'medium', 'bold', 'black']) {
-      loader.addFont(read('roboto-$w.ttf'));
+    for (final String w in nunito) {
+      loader.addFont(read('assets/fonts/Nunito-$w.ttf'));
     }
     await loader.load();
   }
-  await (FontLoader('MaterialIcons')..addFont(read('materialicons-regular.otf'))).load();
+  final File icons = File('${Platform.environment['FLUTTER_ROOT']}/bin/cache/artifacts/material_fonts/materialicons-regular.otf');
+  if (icons.existsSync()) await (FontLoader('MaterialIcons')..addFont(read(icons.path))).load();
 }
 
 void main() {
