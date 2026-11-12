@@ -10,6 +10,8 @@ export const TAGS = {
   reference: 'Hubs, categories, rule numbers, photos and notifications',
   dropoffs: 'Residents declare items and get a drop-off code',
   staff: 'Hub staff check codes in, then weigh and sort items (the only place points are created)',
+  partners: 'Approved partner organizations ask for reusable stock and confirm pickups',
+  stock: 'Hub staff hand stock to partners, move items after sorting, and send recycle batches (items become final here)',
   admin: 'Admins review flagged drop-offs',
 };
 
@@ -45,4 +47,18 @@ export const CATALOG = [
   R('POST', '/staff/items/{id}/sort', 'staff', 'Weigh and sort one item: reuse, repair, recycle or reject. Creates its points (pending until final)', { tag: 'staff', body: ['weight_kg*', 'outcome*', 'category_id', 'expiry_date', 'description', 'photo_url'], errors: ['bad_weight', 'bad_outcome', 'bad_state', 'bad_category', 'food_outcome', 'food_expiring', 'not_received', 'not_your_hub', 'own_drop_off', 'bad_photo'] }),
   R('GET', '/admin/flags', 'admin', 'Flagged drop-offs (open, cleared or upheld)', { tag: 'admin', query: ['status'] }),
   R('POST', '/admin/flags/{id}/{decision}', 'admin', 'clear (points go on) or uphold (points of that drop-off are cancelled)', { tag: 'admin', errors: ['bad_decision', 'bad_state', 'not_found', 'own_drop_off'] }),
+  R('GET', '/stock', 'partner', 'Reusable items in stock at active hubs (never who gave them); food only while fresh', { tag: 'partners', query: ['hub_id', 'category_id'], errors: ['partner_only', 'partner_not_approved'] }),
+  R('POST', '/releases', 'partner', 'Ask a hub for stock items (one hub per request)', { tag: 'partners', ok: 201, body: ['hub_id*', 'item_ids*', 'note'], errors: ['partner_not_approved', 'bad_items', 'mixed_hubs', 'not_in_stock', 'already_requested', 'food_expiring'] }),
+  R('GET', '/releases', 'partner', 'My organization’s requests, newest first', { tag: 'partners', errors: ['partner_only'] }),
+  R('DELETE', '/releases/{id}', 'partner', 'Take back a request the hub has not handed over yet', { tag: 'partners', errors: ['not_found', 'bad_state'] }),
+  R('POST', '/releases/{id}/picked-up', 'partner', 'Confirm the handed-over items arrived', { tag: 'partners', errors: ['not_found', 'bad_state'] }),
+  R('GET', '/staff/stock', 'staff', 'Items at my hubs that are not final yet (stock, repair, recycling)', { tag: 'stock' }),
+  R('GET', '/staff/releases', 'staff', 'Partner requests at my hubs', { tag: 'stock', query: ['status'] }),
+  R('POST', '/staff/releases/{id}/hand-over', 'staff', 'Hand the items to the partner: they become final and their points are confirmed', { tag: 'stock', errors: ['not_found', 'bad_state', 'not_your_hub', 'partner_not_approved', 'own_release', 'food_expiring'] }),
+  R('POST', '/staff/releases/{id}/decline', 'staff', 'Decline a request with a reason; the items are free again', { tag: 'stock', body: ['reason*'], errors: ['reason_required', 'not_found', 'bad_state', 'not_your_hub'] }),
+  R('POST', '/staff/items/{id}/move', 'staff', 'Move a sorted item (repair done, spoiled, ...); its points can only go down', { tag: 'stock', body: ['to*'], errors: ['bad_state', 'item_busy', 'points_locked', 'not_your_hub', 'not_found'] }),
+  R('GET', '/staff/recyclers', 'staff', 'Active recyclers, and which are accredited for e-waste and batteries', { tag: 'stock' }),
+  R('GET', '/staff/recycle-batches', 'staff', 'Recycle batches at my hubs', { tag: 'stock' }),
+  R('POST', '/staff/recycle-batches', 'staff', 'Put items sorted for recycling into a batch for one recycler', { tag: 'stock', ok: 201, body: ['hub_id*', 'recycler_id*', 'item_ids*'], errors: ['bad_recycler', 'bad_items', 'mixed_hubs', 'bad_state', 'item_busy', 'recycler_not_accredited', 'not_your_hub'] }),
+  R('POST', '/staff/recycle-batches/{id}/send', 'staff', 'The batch leaves the hub: its items are recycled and their points confirmed', { tag: 'stock', errors: ['not_found', 'bad_state', 'recycler_not_accredited', 'not_your_hub'] }),
 ];

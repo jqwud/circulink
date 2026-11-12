@@ -8,7 +8,8 @@ import {
   normalizePhone, normalizeStudentId, canActAtHub, assertCanActAtHub, canReceiveItems, assertCanReceiveItems,
   samePerson, assertNotOwnDropOff, checkWeight, checkOutcome, pointsFor, impactOf, badgeFor, assertTransition,
   pointsStatus, repricePending, flagsFor, newCode, cleanCode, codeLooksValid, assertCanDeclare, codeExpiry,
-  assertCodeUsable, canSendToRecycler, assertCanSendToRecycler, foodOk, assertFoodOk, assertFoodRelease,
+  assertCodeUsable, canSendToRecycler, assertCanSendToRecycler, foodOk, assertFoodOk, assertFoodRelease, assertMove, outcomeAfterMove,
+  pointsAfterMove,
 } from '../src/rules.js';
 
 // Asserts that `fn` breaks a rule with this error code (and HTTP status).
@@ -289,5 +290,25 @@ describe('R13: rate limits', () => {
     // 30 tries per 15 minutes against about 887 million codes.
     assert.ok(RULES.codeCheckinsPer15Min <= 30);
     assert.ok(CODE_ALPHABET.length ** RULES.codeLength > 5e8);
+  });
+});
+
+describe('moving items after sorting', () => {
+  test('only moves inside the life cycle', () => {
+    assertMove('in_repair', 'in_stock');
+    assertMove('in_stock', 'in_recycle_batch');
+    breaks(() => assertMove('in_stock', 'released'), 'bad_state');
+    breaks(() => assertMove('released', 'in_stock'), 'bad_state');
+  });
+  test('the outcome follows the move; back to stock keeps the old one', () => {
+    assert.equal(outcomeAfterMove('repair', 'in_stock'), 'repair');
+    assert.equal(outcomeAfterMove('recycle', 'in_stock'), 'recycle');
+    assert.equal(outcomeAfterMove('reuse', 'in_recycle_batch'), 'recycle');
+    assert.equal(outcomeAfterMove('reuse', 'rejected'), 'reject');
+  });
+  test('points only go down, so a move can never be used to raise them', () => {
+    assert.equal(pointsAfterMove(10, 2, 10, 'reuse'), 10, 'recycle points stay when moved to stock');
+    assert.equal(pointsAfterMove(16, 2, 10, 'recycle'), 10);
+    assert.equal(pointsAfterMove(20, 2, 10, 'reject'), 0);
   });
 });

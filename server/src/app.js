@@ -13,6 +13,7 @@ import { pool } from './db.js';
 import authRoutes from './routes/auth.js';
 import metaRoutes from './routes/meta.js';
 import dropoffRoutes from './routes/dropoffs.js';
+import stockRoutes from './routes/stock.js';
 
 // The API's version (package.json), shown by /api/health so staff can tell which release is running.
 const VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -90,6 +91,7 @@ export function createApp(options = {}) {
   api.use(authRoutes);
   api.use(metaRoutes);
   api.use(dropoffRoutes);
+  api.use(stockRoutes);
   app.use('/api', api);
 
   // If the portal has been built (npm run build in /portal), serve it from the same address as the API.

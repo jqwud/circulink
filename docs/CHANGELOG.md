@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0: step 4, where items go (2026-11-12)
+
+- **Partner organizations** (approved only, R2) browse reusable stock at the hubs (never who gave it), ask one hub for items, take back a request, and confirm when items arrive.
+- **Hub staff** see their stock and partner requests, hand items over or decline with a reason, move items after sorting (repair done, spoiled, recyclable after all), and put recyclables into batches for a recycler, then send them.
+- Items become **final** when handed to a partner or sent to a recycler. Their points are then confirmed and the resident is told.
+- Checked again at the counter: the partner is still approved, staff never hand items to their own organization (also through a second account), food is still fresh, and e-waste and batteries go only to an accredited recycler (also if it lost its accreditation after the batch was made).
+- New rule: moving an item after sorting can only lower its points, never raise them, so sorting as "recycle" and moving to stock later cannot be used to gain points.
+- 27 new tests (146 server tests in total).
+
 ## 0.3.0: step 3, the drop-off flow (2026-11-12)
 
 - **Residents** declare items for a hub and get a 6-character code (`POST /declarations`), see their drop-offs with each item's outcome and points, cancel an open one, and see their impact (`GET /me/impact`: kg kept in use, estimated CO₂e, points and badge).

@@ -1,7 +1,7 @@
 # CircuLink: Circular Drop-off Hub System Spec
 
 Status: approved concept (2026-11-12). Replaces the Hiraman borrowing system.
-Name: **CircuLink** (chosen by the team, 2026-11-12). Steps 1 (clean slate, rebrand, new database), 2 (rules engine R1 to R13) and 3 (the drop-off flow in the API) are done.
+Name: **CircuLink** (chosen by the team, 2026-11-12). Steps 1 (clean slate, rebrand, new database), 2 (rules engine R1 to R13), 3 (the drop-off flow in the API) and 4 (stock, releases, repair and recycling in the API) are done.
 
 ## 1. Purpose (SDG 12)
 
@@ -69,7 +69,7 @@ Each rule is a pure function in `rules.js` with its own unit test. These tests a
 | R3 | Staff cannot process a drop-off whose resident account is their own (same user, or the same phone or student ID) | Staff crediting themselves |
 | R4 | Staff can only act at hubs they are assigned to | Cross-hub fraud |
 | R5 | Rejected items earn 0 points. Points follow weight, not item count | Junk drops and splitting one drop-off into many |
-| R6 | Points stay pending until the item reaches a final state **and every item of the same drop-off is sorted**, so a flag raised by the last item always comes first. Confirmed points never change | Earning points before the item is really handled |
+| R6 | Points stay pending (and if staff later move an item, for example a repair fails, its points can only go down) until the item reaches a final state **and every item of the same drop-off is sorted**, so a flag raised by the last item always comes first. Confirmed points never change | Earning points before the item is really handled |
 | R7 | Flag for admin review: one drop-off over 50 kg, a resident over 100 kg in 30 days, or a hub's daily total over 3× its 30-day average (once the day passes 20 kg, so a new hub's first busy day is not flagged). Flagged points stay pending; an upheld flag cancels them | Inflated weights |
 | R8 | One account per phone number or student ID. Phone verification uses a code shown in the app or by staff (no paid SMS) | Fake accounts |
 | R9 | At most 3 open declarations per resident. Codes are 6 characters, expire after 7 days, and work only once | Code spam |
