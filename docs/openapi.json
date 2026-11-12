@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CircuLink API",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "description": "The API behind the CircuLink resident app and the hub portal. All paths are under /api. Dates are Philippine time (UTC+8). Generated from server/scripts/api-catalog.js by npm run docs:api."
   },
   "servers": [
@@ -37,7 +37,7 @@
     },
     {
       "name": "admin",
-      "description": "Admins review flagged drop-offs"
+      "description": "Admins: accounts, partner approval, hubs, recyclers, categories, flags and the audit log"
     }
   ],
   "security": [
@@ -1763,6 +1763,841 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "getAdminUsers",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Accounts, filtered by role or searched by name, email or phone",
+        "description": "Admins only.",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminUsers",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Create a staff, partner or admin account; returns a temporary password shown once",
+        "description": "Admins only. Error codes: bad_role, bad_name, bad_email, bad_phone, bad_org, bad_kind, account_exists.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {},
+                  "name": {},
+                  "email": {},
+                  "phone": {},
+                  "org_name": {},
+                  "kind": {},
+                  "approve": {}
+                },
+                "required": [
+                  "role",
+                  "name",
+                  "email"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/suspend": {
+      "post": {
+        "operationId": "postAdminUsersIdSuspend",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Suspend an account (ends its sessions); never your own",
+        "description": "Admins only. Error codes: not_found, not_on_self.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/reinstate": {
+      "post": {
+        "operationId": "postAdminUsersIdReinstate",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Reinstate a suspended account",
+        "description": "Admins only. Error codes: not_found, not_on_self.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/reset-password": {
+      "post": {
+        "operationId": "postAdminUsersIdResetPassword",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Give a temporary password (shown once; must be changed at login)",
+        "description": "Admins only. Error codes: not_found, not_on_self.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/hubs": {
+      "put": {
+        "operationId": "putAdminUsersIdHubs",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Set the hubs a staff member works at",
+        "description": "Admins only. Error codes: not_found, not_staff, bad_hub.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hub_ids": {}
+                },
+                "required": [
+                  "hub_ids"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/users/{id}/delete": {
+      "post": {
+        "operationId": "postAdminUsersIdDelete",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Delete a resident account that asked for it (weights and points stay without a name)",
+        "description": "Admins only. Error codes: not_found, not_on_self, not_resident, not_requested.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/partners": {
+      "get": {
+        "operationId": "getAdminPartners",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Partner organizations, waiting ones first",
+        "description": "Admins only.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/partners/{id}/{decision}": {
+      "post": {
+        "operationId": "postAdminPartnersIdDecision",
+        "tags": [
+          "admin"
+        ],
+        "summary": "approve or suspend an organization (suspending drops its open requests)",
+        "description": "Admins only. Error codes: bad_decision, not_found, not_on_self.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "decision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/hubs": {
+      "get": {
+        "operationId": "getAdminHubs",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Every hub, with its staff count",
+        "description": "Admins only.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminHubs",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add a hub",
+        "description": "Admins only. Error codes: bad_name, bad_type, bad_address, bad_status.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {},
+                  "type": {},
+                  "address": {},
+                  "hours": {},
+                  "status": {}
+                },
+                "required": [
+                  "name",
+                  "type",
+                  "address"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/hubs/{id}": {
+      "patch": {
+        "operationId": "patchAdminHubsId",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Change a hub (pausing or closing it cancels its open codes)",
+        "description": "Admins only. Error codes: not_found, bad_name, bad_type, bad_address, bad_status.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {},
+                  "type": {},
+                  "address": {},
+                  "hours": {},
+                  "status": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/recyclers": {
+      "get": {
+        "operationId": "getAdminRecyclers",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Every recycler",
+        "description": "Admins only.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminRecyclers",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add a recycler",
+        "description": "Admins only. Error codes: bad_name, bad_materials, bad_status.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {},
+                  "materials": {},
+                  "accredited": {},
+                  "status": {}
+                },
+                "required": [
+                  "name",
+                  "materials"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/recyclers/{id}": {
+      "patch": {
+        "operationId": "patchAdminRecyclersId",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Change a recycler, including its accreditation for e-waste and batteries",
+        "description": "Admins only. Error codes: not_found, bad_name, bad_materials, bad_status.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {},
+                  "materials": {},
+                  "accredited": {},
+                  "status": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/categories": {
+      "get": {
+        "operationId": "getAdminCategories",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Every category, with its point rate and CO2 estimate",
+        "description": "Admins only.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postAdminCategories",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Add a category (at most 50 points per kg)",
+        "description": "Admins only. Error codes: bad_slug, bad_name, bad_rate, bad_co2, duplicate.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slug": {},
+                  "name_en": {},
+                  "name_fil": {},
+                  "rate_per_kg": {},
+                  "co2_per_kg": {},
+                  "hazardous": {},
+                  "food": {},
+                  "active": {}
+                },
+                "required": [
+                  "slug",
+                  "name_en",
+                  "name_fil",
+                  "rate_per_kg",
+                  "co2_per_kg"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/categories/{id}": {
+      "patch": {
+        "operationId": "patchAdminCategoriesId",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Change a category; the old values are kept in the audit log",
+        "description": "Admins only. Error codes: not_found, bad_name, bad_rate, bad_co2.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name_en": {},
+                  "name_fil": {},
+                  "rate_per_kg": {},
+                  "co2_per_kg": {},
+                  "hazardous": {},
+                  "food": {},
+                  "active": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/audit": {
+      "get": {
+        "operationId": "getAdminAudit",
+        "tags": [
+          "admin"
+        ],
+        "summary": "The audit log, newest first (read-only)",
+        "description": "Admins only.",
+        "parameters": [
+          {
+            "name": "entity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entity_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           }
         ],

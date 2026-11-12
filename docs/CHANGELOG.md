@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0: step 5, the admin side (2026-11-12)
+
+- **Accounts:** admins create staff, partner and admin accounts with a temporary password shown once (residents only ever sign up in the app), assign staff to hubs, suspend and reinstate (suspending ends every session at once), reset passwords, and delete resident accounts that asked for it (name and contact go; weights and points stay without a name, so totals stay right).
+- **Partner organizations:** approve or suspend. Suspending drops the organization's open requests, so the items go back to stock.
+- **Hubs, recyclers, categories:** add and change them. Pausing or closing a hub cancels its open codes. Recycler accreditation (R10) is set here. Point rates are limited to 0 to 50 per kg, and every change keeps the old value in the audit log.
+- **Audit log:** a read-only page of every change, with who made it. There is no way to edit or delete it through the API.
+- **Limits on admins:** an admin can never suspend, reset, delete or approve their own account, or decide a flag on their own drop-off.
+- 16 new tests.
+
 ## 0.4.0: step 4, where items go (2026-11-12)
 
 - **Partner organizations** (approved only, R2) browse reusable stock at the hubs (never who gave it), ask one hub for items, take back a request, and confirm when items arrive.
