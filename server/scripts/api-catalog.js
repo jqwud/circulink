@@ -8,6 +8,9 @@ const R = (method, path, access, summary, extra = {}) => ({ method, path, access
 export const TAGS = {
   account: 'Sign-up, login, profile and privacy',
   reference: 'Hubs, categories, rule numbers, photos and notifications',
+  dropoffs: 'Residents declare items and get a drop-off code',
+  staff: 'Hub staff check codes in, then weigh and sort items (the only place points are created)',
+  admin: 'Admins review flagged drop-offs',
 };
 
 export const CATALOG = [
@@ -29,4 +32,17 @@ export const CATALOG = [
   R('GET', '/notifications', 'user', 'My notifications, newest first (paged)', { tag: 'reference', query: ['limit', 'offset'] }),
   R('POST', '/notifications/read-all', 'user', 'Mark all my notifications read', { tag: 'reference' }),
   R('POST', '/notifications/{id}/read', 'user', 'Mark one notification read', { tag: 'reference', errors: ['not_found'] }),
+  R('POST', '/declarations', 'resident', 'Declare items for a hub; returns the drop-off with its 6-character code (at most 3 open)', { tag: 'dropoffs', ok: 201, body: ['hub_id*', 'items*', 'note'], errors: ['too_many_open', 'bad_hub', 'bad_items', 'bad_category'] }),
+  R('GET', '/declarations', 'resident', 'My drop-offs, newest first, with each item, its outcome and its points', { tag: 'dropoffs' }),
+  R('GET', '/declarations/{id}', 'resident', 'One of my drop-offs', { tag: 'dropoffs', errors: ['not_found'] }),
+  R('DELETE', '/declarations/{id}', 'resident', 'Cancel an open drop-off', { tag: 'dropoffs', errors: ['not_found', 'bad_state'] }),
+  R('GET', '/me/impact', 'user', 'kg kept in use, estimated CO2e avoided, points (confirmed and pending) and badge', { tag: 'dropoffs' }),
+  R('GET', '/staff/hubs', 'staff', 'The hubs I work at (every active hub for an admin)', { tag: 'staff' }),
+  R('GET', '/staff/queue', 'staff', 'Checked-in drop-offs at my hubs with items still to sort', { tag: 'staff' }),
+  R('POST', '/staff/checkin', 'staff', 'Check a drop-off in by its code (works once, only at its hub, never your own)', { tag: 'staff', body: ['code*'], errors: ['bad_code', 'code_used', 'code_expired', 'not_your_hub', 'own_drop_off', '429 too_many_codes'] }),
+  R('GET', '/staff/declarations/{id}', 'staff', 'A drop-off at my hub, with the resident name', { tag: 'staff', errors: ['not_found', 'not_your_hub'] }),
+  R('POST', '/staff/declarations/{id}/items', 'staff', 'Add an item the resident brought but did not list', { tag: 'staff', ok: 201, body: ['category_id*', 'description'], errors: ['not_received', 'bad_category', 'bad_items', 'not_your_hub', 'own_drop_off'] }),
+  R('POST', '/staff/items/{id}/sort', 'staff', 'Weigh and sort one item: reuse, repair, recycle or reject. Creates its points (pending until final)', { tag: 'staff', body: ['weight_kg*', 'outcome*', 'category_id', 'expiry_date', 'description', 'photo_url'], errors: ['bad_weight', 'bad_outcome', 'bad_state', 'bad_category', 'food_outcome', 'food_expiring', 'not_received', 'not_your_hub', 'own_drop_off', 'bad_photo'] }),
+  R('GET', '/admin/flags', 'admin', 'Flagged drop-offs (open, cleared or upheld)', { tag: 'admin', query: ['status'] }),
+  R('POST', '/admin/flags/{id}/{decision}', 'admin', 'clear (points go on) or uphold (points of that drop-off are cancelled)', { tag: 'admin', errors: ['bad_decision', 'bad_state', 'not_found', 'own_drop_off'] }),
 ];

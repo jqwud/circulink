@@ -167,11 +167,13 @@ export function assertTransition(from, to) {
   if (!(ITEM_TRANSITIONS[from] || []).includes(to)) throw broken(`An item that is ${from.replace(/_/g, ' ')} cannot become ${to.replace(/_/g, ' ')}.`, 'bad_state');
 }
 
-// What a points row should say now: pending while the item is still moving or an admin is looking at it,
-// confirmed once the item is final, cancelled if a reviewer upheld a flag (the points were not earned).
-export function pointsStatus({ itemState, openFlag = false, flagUpheld = false }) {
+// What a points row should say now: pending while the item is still moving, while other items of the same
+// drop-off are not sorted yet, or while an admin is looking at it; confirmed once the item is final;
+// cancelled if a reviewer upheld a flag (the points were not earned). Waiting for the whole drop-off means a
+// flag raised by its last item (R7) always comes before any of its points are confirmed.
+export function pointsStatus({ itemState, dropOffSorted = true, openFlag = false, flagUpheld = false }) {
   if (flagUpheld) return 'cancelled';
-  if (openFlag) return 'pending';
+  if (openFlag || !dropOffSorted) return 'pending';
   return FINAL_STATES.includes(itemState) ? 'confirmed' : 'pending';
 }
 
@@ -257,6 +259,13 @@ export function assertFoodOk(category, expiry, today) {
     throw broken(`Sealed food needs an expiry date at least ${RULES.foodMinDaysToExpiry} days away.`, 'food_expiring');
   }
 }
+// Sealed food is either given out as it is (reuse) or disposed of (reject): never repaired or recycled.
+export function assertFoodOutcome(category, outcome) {
+  if (category?.food && !['reuse', 'reject'].includes(outcome)) {
+    throw broken('Sealed food can only be given out (reuse) or rejected.', 'food_outcome');
+  }
+}
+
 // Food may be released only to a partner organization (never to anyone else), and only while still fresh.
 export function assertFoodRelease(category, expiry, today, user, partner) {
   if (!category?.food) return;

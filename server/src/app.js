@@ -12,6 +12,7 @@ import { errorMiddleware } from './errors.js';
 import { pool } from './db.js';
 import authRoutes from './routes/auth.js';
 import metaRoutes from './routes/meta.js';
+import dropoffRoutes from './routes/dropoffs.js';
 
 // The API's version (package.json), shown by /api/health so staff can tell which release is running.
 const VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -88,6 +89,7 @@ export function createApp(options = {}) {
   const api = express.Router();
   api.use(authRoutes);
   api.use(metaRoutes);
+  api.use(dropoffRoutes);
   app.use('/api', api);
 
   // If the portal has been built (npm run build in /portal), serve it from the same address as the API.

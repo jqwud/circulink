@@ -153,6 +153,10 @@ describe('R6: points stay pending until the item is final', () => {
     assert.equal(pointsStatus({ itemState: 'recycled' }), 'confirmed');
     assert.equal(pointsStatus({ itemState: 'rejected' }), 'confirmed');   // 0 points, but settled
   });
+  test('nothing is confirmed while other items of the same drop-off still wait to be sorted', () => {
+    assert.equal(pointsStatus({ itemState: 'rejected', dropOffSorted: false }), 'pending');
+    assert.equal(pointsStatus({ itemState: 'rejected', dropOffSorted: true }), 'confirmed');
+  });
   test('an open flag holds the points; an upheld flag cancels them', () => {
     assert.equal(pointsStatus({ itemState: 'released', openFlag: true }), 'pending');
     assert.equal(pointsStatus({ itemState: 'released', flagUpheld: true }), 'cancelled');

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CircuLink API",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "The API behind the CircuLink resident app and the hub portal. All paths are under /api. Dates are Philippine time (UTC+8). Generated from server/scripts/api-catalog.js by npm run docs:api."
   },
   "servers": [
@@ -18,6 +18,18 @@
     {
       "name": "reference",
       "description": "Hubs, categories, rule numbers, photos and notifications"
+    },
+    {
+      "name": "dropoffs",
+      "description": "Residents declare items and get a drop-off code"
+    },
+    {
+      "name": "staff",
+      "description": "Hub staff check codes in, then weigh and sort items (the only place points are created)"
+    },
+    {
+      "name": "admin",
+      "description": "Admins review flagged drop-offs"
     }
   ],
   "security": [
@@ -684,6 +696,518 @@
             "required": true,
             "schema": {
               "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/declarations": {
+      "post": {
+        "operationId": "postDeclarations",
+        "tags": [
+          "dropoffs"
+        ],
+        "summary": "Declare items for a hub; returns the drop-off with its 6-character code (at most 3 open)",
+        "description": "A logged-in resident. Error codes: too_many_open, bad_hub, bad_items, bad_category.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hub_id": {},
+                  "items": {},
+                  "note": {}
+                },
+                "required": [
+                  "hub_id",
+                  "items"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getDeclarations",
+        "tags": [
+          "dropoffs"
+        ],
+        "summary": "My drop-offs, newest first, with each item, its outcome and its points",
+        "description": "A logged-in resident.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/declarations/{id}": {
+      "get": {
+        "operationId": "getDeclarationsId",
+        "tags": [
+          "dropoffs"
+        ],
+        "summary": "One of my drop-offs",
+        "description": "A logged-in resident. Error codes: not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteDeclarationsId",
+        "tags": [
+          "dropoffs"
+        ],
+        "summary": "Cancel an open drop-off",
+        "description": "A logged-in resident. Error codes: not_found, bad_state.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/impact": {
+      "get": {
+        "operationId": "getMeImpact",
+        "tags": [
+          "dropoffs"
+        ],
+        "summary": "kg kept in use, estimated CO2e avoided, points (confirmed and pending) and badge",
+        "description": "Any logged-in account.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/hubs": {
+      "get": {
+        "operationId": "getStaffHubs",
+        "tags": [
+          "staff"
+        ],
+        "summary": "The hubs I work at (every active hub for an admin)",
+        "description": "Hub staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/queue": {
+      "get": {
+        "operationId": "getStaffQueue",
+        "tags": [
+          "staff"
+        ],
+        "summary": "Checked-in drop-offs at my hubs with items still to sort",
+        "description": "Hub staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/checkin": {
+      "post": {
+        "operationId": "postStaffCheckin",
+        "tags": [
+          "staff"
+        ],
+        "summary": "Check a drop-off in by its code (works once, only at its hub, never your own)",
+        "description": "Hub staff or admin. Error codes: bad_code, code_used, code_expired, not_your_hub, own_drop_off, 429 too_many_codes.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {}
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/declarations/{id}": {
+      "get": {
+        "operationId": "getStaffDeclarationsId",
+        "tags": [
+          "staff"
+        ],
+        "summary": "A drop-off at my hub, with the resident name",
+        "description": "Hub staff or admin. Error codes: not_found, not_your_hub.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/declarations/{id}/items": {
+      "post": {
+        "operationId": "postStaffDeclarationsIdItems",
+        "tags": [
+          "staff"
+        ],
+        "summary": "Add an item the resident brought but did not list",
+        "description": "Hub staff or admin. Error codes: not_received, bad_category, bad_items, not_your_hub, own_drop_off.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category_id": {},
+                  "description": {}
+                },
+                "required": [
+                  "category_id"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/items/{id}/sort": {
+      "post": {
+        "operationId": "postStaffItemsIdSort",
+        "tags": [
+          "staff"
+        ],
+        "summary": "Weigh and sort one item: reuse, repair, recycle or reject. Creates its points (pending until final)",
+        "description": "Hub staff or admin. Error codes: bad_weight, bad_outcome, bad_state, bad_category, food_outcome, food_expiring, not_received, not_your_hub, own_drop_off, bad_photo.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "weight_kg": {},
+                  "outcome": {},
+                  "category_id": {},
+                  "expiry_date": {},
+                  "description": {},
+                  "photo_url": {}
+                },
+                "required": [
+                  "weight_kg",
+                  "outcome"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/flags": {
+      "get": {
+        "operationId": "getAdminFlags",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Flagged drop-offs (open, cleared or upheld)",
+        "description": "Admins only.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/flags/{id}/{decision}": {
+      "post": {
+        "operationId": "postAdminFlagsIdDecision",
+        "tags": [
+          "admin"
+        ],
+        "summary": "clear (points go on) or uphold (points of that drop-off are cancelled)",
+        "description": "Admins only. Error codes: bad_decision, bad_state, not_found, own_drop_off.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "decision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
             }
           }
         ],

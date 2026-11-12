@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0: step 3, the drop-off flow (2026-11-12)
+
+- **Residents** declare items for a hub and get a 6-character code (`POST /declarations`), see their drop-offs with each item's outcome and points, cancel an open one, and see their impact (`GET /me/impact`: kg kept in use, estimated CO₂e, points and badge).
+- **Hub staff** see their hubs and queue, check a drop-off in by its code (`POST /staff/checkin`), add an item the resident did not list, and weigh and sort each item (`POST /staff/items/:id/sort`). Sorting is the only place points are created.
+- **Admins** review flagged drop-offs: clear (points go on) or uphold (points cancelled, resident told).
+- A job expires codes nobody used within 7 days.
+- R6 is stricter: points are confirmed only once every item of the drop-off is sorted, so a flag raised by the last item always holds all of them. Found while writing the tests.
+- R11: sealed food can only be given out or rejected.
+- R13: 30 wrong codes per staff member per 15 minutes; codes that work do not count.
+- 29 new end-to-end tests that try each rule the way a cheater would (119 server tests in total).
+
 ## 0.2.0: step 2, the rules engine (2026-11-12)
 
 - Every anti-abuse rule from the spec (R1 to R13) is now a small function in `server/src/rules.js`: who may act at a hub, who may receive items, no processing your own drop-off (also through a second account with the same phone or student ID), points from weight and outcome, the item life cycle, when points become confirmed or cancelled, review flags, drop-off codes, hazardous items, food, and rate limits.
