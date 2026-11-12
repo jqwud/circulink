@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0: step 6, the portal screens (2026-11-12)
+
+- **Hub staff:** *Check in and sort* (type the resident's code; weigh and sort each item, with an expiry date for food and a warning for hazardous items; add items they did not list; a queue of drop-offs still to sort), *Stock and recycling* (stock, repair queue and recyclables at my hubs; move items; make a recycle batch, where recyclers that are not accredited cannot be chosen for e-waste; mark batches as sent), *Releases to partners* (hand over or decline with a reason).
+- **Partner organizations:** *Available items* (choose items from one hub and ask for them; never shows who gave them) and *My requests* (take back, or confirm the items arrived).
+- **Admins:** all staff pages, plus *Flags*, *Accounts* (make accounts with a temporary password shown once, assign hubs, suspend, reset, delete on request; never on their own account), *Partner organizations*, *Hubs and recyclers*, *Categories* and the read-only *Audit log*.
+- The dashboard shows what needs doing for each role.
+- Every page is in English and Filipino (220 phrases).
+- Browser tests: the whole loop from check-in to confirmed points, the e-waste rule, an admin journey, and an accessibility scan of every page for each role (9 tests).
+
 ## 0.5.0: step 5, the admin side (2026-11-12)
 
 - **Accounts:** admins create staff, partner and admin accounts with a temporary password shown once (residents only ever sign up in the app), assign staff to hubs, suspend and reinstate (suspending ends every session at once), reset passwords, and delete resident accounts that asked for it (name and contact go; weights and points stay without a name, so totals stay right).

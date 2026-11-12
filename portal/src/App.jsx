@@ -5,6 +5,17 @@ import { useI18n } from './i18n.jsx';
 import { Loading, PasswordModal } from './components.jsx';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import CheckIn from './pages/staff/CheckIn.jsx';
+import Stock from './pages/staff/Stock.jsx';
+import Releases from './pages/staff/Releases.jsx';
+import Browse from './pages/partner/Browse.jsx';
+import Requests from './pages/partner/Requests.jsx';
+import Accounts from './pages/admin/Accounts.jsx';
+import Partners from './pages/admin/Partners.jsx';
+import Places from './pages/admin/Places.jsx';
+import Categories from './pages/admin/Categories.jsx';
+import Flags from './pages/admin/Flags.jsx';
+import Audit from './pages/admin/Audit.jsx';
 
 function LangToggle() {
   const { lang, setLang } = useI18n();
@@ -16,6 +27,29 @@ function LangToggle() {
   );
 }
 
+// The pages of each role (spec section 7). Admins may also act at every hub, so they get the staff pages.
+const STAFF_PAGES = [
+  { to: '/check-in', label: 'Check in and sort', el: <CheckIn /> },
+  { to: '/stock', label: 'Stock and recycling', el: <Stock /> },
+  { to: '/releases', label: 'Releases to partners', el: <Releases /> },
+];
+const PAGES = {
+  staff: STAFF_PAGES,
+  partner: [
+    { to: '/browse', label: 'Available items', el: <Browse /> },
+    { to: '/requests', label: 'My requests', el: <Requests /> },
+  ],
+  admin: [
+    ...STAFF_PAGES,
+    { to: '/flags', label: 'Flags', el: <Flags /> },
+    { to: '/accounts', label: 'Accounts', el: <Accounts /> },
+    { to: '/partners', label: 'Partner organizations', el: <Partners /> },
+    { to: '/places', label: 'Hubs and recyclers', el: <Places /> },
+    { to: '/categories', label: 'Categories', el: <Categories /> },
+    { to: '/audit', label: 'Audit log', el: <Audit /> },
+  ],
+};
+
 const ROLE_LABEL = { admin: 'Admin', staff: 'Hub staff', partner: 'Partner organization' };
 
 function Shell() {
@@ -25,9 +59,8 @@ function Shell() {
   const [pw, setPw] = useState(false);
   const loc = useLocation();
   useEffect(() => setOpen(false), [loc.pathname]);
-
-  // Each role gets its own pages as they are built (docs/CIRCULAR_HUB_SPEC.md, section 7).
-  const links = [{ to: '/', label: 'Dashboard', end: true }];
+  const pages = PAGES[user.role] || [];
+  const links = [{ to: '/', label: 'Dashboard', end: true }, ...pages];
 
   return (
     <div className="shell">
@@ -58,6 +91,7 @@ function Shell() {
         </div>
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          {pages.map((p) => <Route key={p.to} path={p.to} element={p.el} />)}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

@@ -271,3 +271,28 @@ export function useDateFormat() {
   };
 }
 
+
+// A button action: runs `fn`, shows `ok` (or the server's error) as a toast, then calls `after` (a reload).
+// `busy` is true while it runs, so the button can be disabled and a double click does nothing.
+export function useAct() {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const run = useCallback(async (fn, ok, after) => {
+    if (busy) return false;
+    setBusy(true);
+    try {
+      const r = await fn();
+      if (ok) toast(typeof ok === 'function' ? ok(r) : ok);
+      await after?.(r);
+      return r ?? true;
+    } catch (e) {
+      toast(e.message, 'bad');
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, toast]);
+  return { run, busy };
+}
+
+export const kg = (n) => `${Number(n || 0).toLocaleString('en-PH', { maximumFractionDigits: 2 })} kg`;
