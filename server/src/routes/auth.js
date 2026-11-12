@@ -9,6 +9,7 @@ import { publicUpload } from '../uploads.js';
 import { PRIVACY_VERSION, privacyNotice } from '../privacy.js';
 import { config } from '../config.js';
 import { audit } from '../services.js';
+import { normalizePhone, normalizeStudentId } from '../rules.js';
 
 const router = Router();
 const limiter = rateLimit({
@@ -16,21 +17,6 @@ const limiter = rateLimit({
   handler: (_req, res) => res.status(429).json({ error: 'Too many tries from this network. Please wait a few minutes.', code: 'too_many_requests' }),
 });
 
-// Phone: digits, spaces, + and -. Stored without spaces or dashes, so "0917 123 4567" and "0917-123-4567"
-// are the same number and one person cannot open two accounts with it (rule R8).
-export function normalizePhone(p) {
-  const v = String(p ?? '').trim();
-  if (!v) return null;
-  if (!/^\+?[0-9][0-9 -]{5,18}[0-9]$/.test(v)) throw bad('Enter a phone number with digits only, like 0917 123 4567.', 'bad_phone');
-  return v.replace(/[ -]/g, '');
-}
-// Student ID: letters, digits and dashes, stored in capitals (rule R8).
-export function normalizeStudentId(s) {
-  const v = String(s ?? '').trim().toUpperCase();
-  if (!v) return null;
-  if (!/^[A-Z0-9-]{4,30}$/.test(v)) throw bad('Enter your student ID as printed on your school ID.', 'bad_student_id');
-  return v;
-}
 
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
 

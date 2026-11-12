@@ -1,7 +1,7 @@
 # CircuLink: Circular Drop-off Hub System Spec
 
 Status: approved concept (2026-11-12). Replaces the Hiraman borrowing system.
-Name: **CircuLink** (chosen by the team, 2026-11-12). Step 1 (clean slate, rebrand, new database) is done.
+Name: **CircuLink** (chosen by the team, 2026-11-12). Steps 1 (clean slate, rebrand, new database) and 2 (rules engine R1 to R13) are done.
 
 ## 1. Purpose (SDG 12)
 
@@ -70,15 +70,15 @@ Each rule is a pure function in `rules.js` with its own unit test. These tests a
 | R4 | Staff can only act at hubs they are assigned to | Cross-hub fraud |
 | R5 | Rejected items earn 0 points. Points follow weight, not item count | Junk drops and splitting one drop-off into many |
 | R6 | Points stay pending until the item reaches a final state. If an outcome is reversed, the pending points are cancelled | Earning points before the item is really handled |
-| R7 | Flag for admin review: one drop-off over 50 kg, a resident over 100 kg in 30 days, or a hub's daily total over 3× its 30-day average. Flagged points stay pending | Inflated weights |
+| R7 | Flag for admin review: one drop-off over 50 kg, a resident over 100 kg in 30 days, or a hub's daily total over 3× its 30-day average (once the day passes 20 kg, so a new hub's first busy day is not flagged). Flagged points stay pending; an upheld flag cancels them | Inflated weights |
 | R8 | One account per phone number or student ID. Phone verification uses a code shown in the app or by staff (no paid SMS) | Fake accounts |
 | R9 | At most 3 open declarations per resident. Codes are 6 characters, expire after 7 days, and work only once | Code spam |
 | R10 | E-waste and battery items can only be sent to recyclers with `accredited = true` | Unsafe disposal (target 12.4) |
 | R11 | Food items need an expiry date at least 3 days ahead and can only be released to partners | Food safety |
 | R12 | Every state change goes into an append-only `audit_log`. Points come only from ledger rows; balances are never edited directly | Hidden edits |
-| R13 | Rate limits on login, declaration and code check-in endpoints | Bots |
+| R13 | Rate limits: 5 wrong passwords lock an email for 15 minutes, changes per person are limited, and code check-ins are capped at 30 per staff member per 15 minutes (with about 887 million possible codes) | Bots and code guessing |
 
-The numbers are starting values and live in `rules.js`.
+The numbers are starting values and live in `server/src/rules.js`, next to one function per rule. `server/test/rules.test.js` tests each rule on its own (`npm run test:unit`, no database needed).
 
 ## 6. Data model (MySQL)
 

@@ -114,6 +114,25 @@ describe('suspending an account', () => {
   });
 });
 
+describe('R13: rate limits', () => {
+  test('five wrong passwords lock the email for a while, even with the right password after', async () => {
+    const tries = [];
+    for (let i = 0; i < 5; i++) tries.push((await s.api('POST', '/auth/login', null, { email: 'carlo@circulink.test', password: 'wrong' })).status);
+    assert.deepEqual(tries, [401, 401, 401, 401, 401]);
+    const locked = await s.api('POST', '/auth/login', null, { email: 'carlo@circulink.test', password: 'circulink123' });
+    assert.equal(locked.status, 429); assert.equal(locked.json.code, 'too_many_attempts');
+  });
+  test('changes per person are limited; reading never is', async () => {
+    const tight = startServer({ writeLimit: 2 });
+    const token = (await tight.api('POST', '/auth/login', null, { email: 'ben@circulink.test', password: 'circulink123' })).json.token;
+    const codes = [];
+    for (let i = 0; i < 3; i++) codes.push((await tight.api('PATCH', '/me', token, { language: 'en' })).status);
+    assert.deepEqual(codes, [200, 200, 429]);
+    assert.equal((await tight.api('GET', '/me', token)).status, 200);
+    await tight.close();
+  });
+});
+
 describe('notifications', () => {
   test('a person reads only their own notifications', async () => {
     const anaId = (await one("SELECT id FROM users WHERE email = 'ana@circulink.test'")).id;
