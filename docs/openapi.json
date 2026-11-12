@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CircuLink API",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "The API behind the CircuLink resident app and the hub portal. All paths are under /api. Dates are Philippine time (UTC+8). Generated from server/scripts/api-catalog.js by npm run docs:api."
   },
   "servers": [
@@ -26,6 +26,14 @@
     {
       "name": "staff",
       "description": "Hub staff check codes in, then weigh and sort items (the only place points are created)"
+    },
+    {
+      "name": "partners",
+      "description": "Approved partner organizations ask for reusable stock and confirm pickups"
+    },
+    {
+      "name": "stock",
+      "description": "Hub staff hand stock to partners, move items after sorting, and send recycle batches (items become final here)"
     },
     {
       "name": "admin",
@@ -1208,6 +1216,553 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock": {
+      "get": {
+        "operationId": "getStock",
+        "tags": [
+          "partners"
+        ],
+        "summary": "Reusable items in stock at active hubs (never who gave them); food only while fresh",
+        "description": "An approved partner organization. Error codes: partner_only, partner_not_approved.",
+        "parameters": [
+          {
+            "name": "hub_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases": {
+      "post": {
+        "operationId": "postReleases",
+        "tags": [
+          "partners"
+        ],
+        "summary": "Ask a hub for stock items (one hub per request)",
+        "description": "An approved partner organization. Error codes: partner_not_approved, bad_items, mixed_hubs, not_in_stock, already_requested, food_expiring.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hub_id": {},
+                  "item_ids": {},
+                  "note": {}
+                },
+                "required": [
+                  "hub_id",
+                  "item_ids"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "operationId": "getReleases",
+        "tags": [
+          "partners"
+        ],
+        "summary": "My organization’s requests, newest first",
+        "description": "An approved partner organization. Error codes: partner_only.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{id}": {
+      "delete": {
+        "operationId": "deleteReleasesId",
+        "tags": [
+          "partners"
+        ],
+        "summary": "Take back a request the hub has not handed over yet",
+        "description": "An approved partner organization. Error codes: not_found, bad_state.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/releases/{id}/picked-up": {
+      "post": {
+        "operationId": "postReleasesIdPickedUp",
+        "tags": [
+          "partners"
+        ],
+        "summary": "Confirm the handed-over items arrived",
+        "description": "An approved partner organization. Error codes: not_found, bad_state.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/stock": {
+      "get": {
+        "operationId": "getStaffStock",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Items at my hubs that are not final yet (stock, repair, recycling)",
+        "description": "Hub staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/releases": {
+      "get": {
+        "operationId": "getStaffReleases",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Partner requests at my hubs",
+        "description": "Hub staff or admin.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/releases/{id}/hand-over": {
+      "post": {
+        "operationId": "postStaffReleasesIdHandOver",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Hand the items to the partner: they become final and their points are confirmed",
+        "description": "Hub staff or admin. Error codes: not_found, bad_state, not_your_hub, partner_not_approved, own_release, food_expiring.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/releases/{id}/decline": {
+      "post": {
+        "operationId": "postStaffReleasesIdDecline",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Decline a request with a reason; the items are free again",
+        "description": "Hub staff or admin. Error codes: reason_required, not_found, bad_state, not_your_hub.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {}
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/items/{id}/move": {
+      "post": {
+        "operationId": "postStaffItemsIdMove",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Move a sorted item (repair done, spoiled, ...); its points can only go down",
+        "description": "Hub staff or admin. Error codes: bad_state, item_busy, points_locked, not_your_hub, not_found.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to": {}
+                },
+                "required": [
+                  "to"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/recyclers": {
+      "get": {
+        "operationId": "getStaffRecyclers",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Active recyclers, and which are accredited for e-waste and batteries",
+        "description": "Hub staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/recycle-batches": {
+      "get": {
+        "operationId": "getStaffRecycleBatches",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Recycle batches at my hubs",
+        "description": "Hub staff or admin.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postStaffRecycleBatches",
+        "tags": [
+          "stock"
+        ],
+        "summary": "Put items sorted for recycling into a batch for one recycler",
+        "description": "Hub staff or admin. Error codes: bad_recycler, bad_items, mixed_hubs, bad_state, item_busy, recycler_not_accredited, not_your_hub.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hub_id": {},
+                  "recycler_id": {},
+                  "item_ids": {}
+                },
+                "required": [
+                  "hub_id",
+                  "recycler_id",
+                  "item_ids"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/staff/recycle-batches/{id}/send": {
+      "post": {
+        "operationId": "postStaffRecycleBatchesIdSend",
+        "tags": [
+          "stock"
+        ],
+        "summary": "The batch leaves the hub: its items are recycled and their points confirmed",
+        "description": "Hub staff or admin. Error codes: not_found, bad_state, recycler_not_accredited, not_your_hub.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
             }
           }
         ],

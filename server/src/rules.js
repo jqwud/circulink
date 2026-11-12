@@ -183,6 +183,27 @@ export function repricePending(row, newPoints) {
   return newPoints;
 }
 
+// After sorting, staff may still move an item (a repair failed, stock spoiled, a recyclable turned out to be
+// reusable). The item's outcome follows the move, but its points can only go down, never up: sorting as
+// "recycle" and then moving to stock cannot be used to raise points later.
+export const MOVES = {
+  in_repair: ['in_stock', 'in_recycle_batch', 'rejected'],
+  in_stock: ['in_repair', 'in_recycle_batch', 'rejected'],
+  in_recycle_batch: ['in_stock', 'rejected'],
+};
+export function assertMove(from, to) {
+  if (!(MOVES[from] || []).includes(to)) throw broken(`An item that is ${from.replace(/_/g, ' ')} cannot be moved to ${to.replace(/_/g, ' ')}.`, 'bad_state');
+}
+export function outcomeAfterMove(outcome, to) {
+  if (to === 'rejected') return 'reject';
+  if (to === 'in_recycle_batch') return 'recycle';
+  if (to === 'in_repair') return 'repair';
+  return outcome;   // back to stock: it keeps what it was sorted as
+}
+export function pointsAfterMove(currentPoints, weightKg, ratePerKg, newOutcome) {
+  return Math.min(Number(currentPoints), pointsFor(weightKg, ratePerKg, newOutcome));
+}
+
 // ---------- R7: unusual weights go to an admin ----------
 
 // Returns the flags to raise (empty when nothing is unusual). Flagged points stay pending (R6).
