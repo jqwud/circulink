@@ -64,3 +64,13 @@ Every push and pull request runs the API tests on a real MySQL (including one gr
 ## Build status
 
 All nine steps of the [build order](docs/CIRCULAR_HUB_SPEC.md#10-build-order) are done. What changed in each is in [`docs/CHANGELOG.md`](docs/CHANGELOG.md).
+
+## Team
+
+Group 5, ITEL-304 Iterative Programming.
+
+| Member | Role |
+|---|---|
+| Joseph Dion Caday | Developer, CI/CD Engineer |
+| Christian Paul Sorromero | Docker Engineer |
+| Justin Paul Plantilla | Tester / QA Engineer, Documentation Lead |
