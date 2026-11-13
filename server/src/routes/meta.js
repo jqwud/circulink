@@ -11,7 +11,7 @@ const router = Router();
 const categories = () => q(
   `SELECT id, slug, name_en, name_fil, rate_per_kg, co2_per_kg, hazardous, food
      FROM categories WHERE active = 1 ORDER BY name_en`);
-const activeHubs = () => q("SELECT id, name, type, address, hours FROM hubs WHERE status = 'active' ORDER BY name");
+const activeHubs = () => q("SELECT id, name, type, address, hours, photo_url FROM hubs WHERE status = 'active' ORDER BY name");
 
 // Hubs are public, so people can find a drop-off point before they sign up.
 router.get('/hubs', wrap(async (_req, res) => res.json(await activeHubs())));

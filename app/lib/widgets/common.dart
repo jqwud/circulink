@@ -2,6 +2,7 @@
 // Screens import this one file to get all of them.
 export 'ui/ask_text.dart';
 export 'ui/buttons.dart';
+export 'ui/category_chip.dart';
 export 'ui/count_up.dart';
 export 'ui/feedback.dart';
 export 'ui/hi_card.dart';

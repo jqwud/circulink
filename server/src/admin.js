@@ -9,6 +9,7 @@ import { bad, forbidden, notFound } from './errors.js';
 import { audit, notify } from './services.js';
 import { normalizePhone, ROLES, HUB_TYPES } from './rules.js';
 import { temporaryPassword } from './routes/auth.js';
+import { ownPhoto } from './uploads.js';
 
 const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
 const text = (v, max, code, what, min = 2) => {
@@ -179,6 +180,8 @@ function hubFields(body, partial) {
   }
   if (!partial || body.address !== undefined) f.address = text(body.address, 255, 'bad_address', 'the address', 5);
   if (body.hours !== undefined) f.hours = String(body.hours || '').trim().slice(0, 120) || null;
+  // A photo of the real place (empty removes it). Only files from our own upload endpoint.
+  if (body.photo_url !== undefined) f.photo_url = ownPhoto(body.photo_url);
   if (body.status !== undefined) {
     if (!['active', 'paused', 'closed'].includes(body.status)) throw bad('Choose active, paused or closed.', 'bad_status');
     f.status = body.status;

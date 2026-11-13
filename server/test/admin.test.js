@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { after, before, describe, test } from 'node:test';
 import { pool, one } from '../src/db.js';
 import { resetTestDatabase, seedTestDatabase } from './helpers/db.js';
-import { startServer } from './helpers/api.js';
+import { startServer, PNG } from './helpers/api.js';
 
 let s; let admin; let staff; let ana; let partner; let adminId; let hubSchool; let hubBrgy;
 
@@ -130,6 +130,16 @@ describe('hubs, recyclers and categories', () => {
     assert.equal((await one('SELECT status FROM declarations WHERE id = ?', [d.id])).status, 'cancelled');
     assert.equal((await s.api('POST', '/admin/hubs', admin, { name: 'X', type: 'mall', address: 'Somewhere' })).json.code, 'bad_name');
     assert.equal((await s.api('POST', '/admin/hubs', admin, { name: 'Mall Hub', type: 'mall', address: 'Somewhere' })).json.code, 'bad_type');
+  });
+  test('a hub gets a photo of the real place; only photos uploaded here are accepted', async () => {
+    const hub = (await s.api('GET', '/hubs')).json[0];
+    const photo = (await s.upload('/uploads', admin, PNG, 'image/png', 'hub.png')).json.url;
+    assert.equal((await s.api('PATCH', `/admin/hubs/${hub.id}`, admin, { photo_url: photo })).status, 200);
+    assert.equal((await s.api('GET', '/hubs')).json.find((h) => h.id === hub.id).photo_url, photo);
+    const bad = await s.api('PATCH', `/admin/hubs/${hub.id}`, admin, { photo_url: 'https://example.com/fake.jpg' });
+    assert.equal(bad.json.code, 'bad_photo');
+    assert.equal((await s.api('PATCH', `/admin/hubs/${hub.id}`, admin, { photo_url: '' })).status, 200);
+    assert.equal((await s.api('GET', '/hubs')).json.find((h) => h.id === hub.id).photo_url, null);
   });
   test('recyclers are added and their accreditation changed', async () => {
     const r = await s.api('POST', '/admin/recyclers', admin, { name: 'Metro E-Cycle', materials: 'E-waste', accredited: true });

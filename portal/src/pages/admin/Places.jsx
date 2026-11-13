@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../../api.js';
+import { api, upload } from '../../api.js';
 import { useI18n } from '../../i18n.jsx';
 import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, Tabs, useAct, useLoad } from '../../components.jsx';
 
@@ -30,7 +30,7 @@ function Hubs() {
           <thead><tr><th scope="col">{t('Name')}</th><th scope="col">{t('Type')}</th><th scope="col">{t('Address')}</th><th scope="col">{t('Staff')}</th><th scope="col">{t('Status')}</th><th scope="col"><span className="sr-only">{t('Actions')}</span></th></tr></thead>
           <tbody>{list.data.map((h) => (
             <tr key={h.id}>
-              <td>{h.name}{h.hours ? <div className="muted">{h.hours}</div> : null}</td>
+              <td>{h.name}{h.hours ? <div className="muted">{h.hours}</div> : null}{!h.photo_url && <div className="muted">{t('No photo yet')}</div>}</td>
               <td>{t(h.type)}</td><td>{h.address}</td><td>{h.staff_count}</td>
               <td><Badge value={h.status} label={t(h.status)} /></td>
               <td><button className="btn small" onClick={() => setEditing(h)}>{t('Edit')}</button></td>
@@ -47,7 +47,7 @@ function HubForm({ hub, onClose, onSaved }) {
   const { t } = useI18n();
   const { run, busy } = useAct();
   const isNew = !hub.id;
-  const [f, setF] = useState({ name: hub.name || '', type: hub.type || 'school', address: hub.address || '', hours: hub.hours || '', status: hub.status || 'active' });
+  const [f, setF] = useState({ name: hub.name || '', type: hub.type || 'school', address: hub.address || '', hours: hub.hours || '', status: hub.status || 'active', photo_url: hub.photo_url || '' });
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
   return (
     <Modal title={isNew ? t('New hub') : `${t('Edit')} ${hub.name}`} onClose={onClose}>
@@ -62,6 +62,21 @@ function HubForm({ hub, onClose, onSaved }) {
         </div>
         <div className="field"><label htmlFor="ha">{t('Address')}</label><input id="ha" value={f.address} onChange={set('address')} required minLength={5} /></div>
         <div className="field"><label htmlFor="hh">{t('Opening hours')} ({t('optional')})</label><input id="hh" value={f.hours} onChange={set('hours')} /></div>
+        <div className="field">
+          <label htmlFor="hp">{t('Photo of the place')} ({t('optional')})</label>
+          {f.photo_url && <img className="hub-photo" src={f.photo_url} alt={t('Current photo of this hub')} />}
+          <div className="row">
+            <input id="hp" type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={async (e) => {
+              const file = e.target.files?.[0];
+              e.target.value = '';
+              if (!file) return;
+              const url = await run(() => upload(file), t('Photo added. Save to keep it.'));
+              if (url) setF((x) => ({ ...x, photo_url: url }));
+            }} />
+            {f.photo_url && <button type="button" className="btn small" onClick={() => setF((x) => ({ ...x, photo_url: '' }))}>{t('Remove photo')}</button>}
+          </div>
+          <p className="hint">{t('A real photo of the school or barangay helps residents trust the hub. JPG, PNG or WEBP.')}</p>
+        </div>
         {!isNew && (
           <div className="field">
             <label htmlFor="hs">{t('Status')}</label>

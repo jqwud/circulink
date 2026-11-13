@@ -267,4 +267,13 @@ const Map<String, String> kErrorFil = <String, String>{
   "List what you no longer need and choose a hub. You get a drop-off code.": "Ilista ang hindi mo na kailangan at pumili ng hub. Makakatanggap ka ng drop-off code.",
   "Bring the items and show your code. Staff weigh and sort each one.": "Dalhin ang mga gamit at ipakita ang code mo. Titimbangin at aayusin ng staff ang bawat isa.",
   "Reusable items go to partner organizations. You earn verified points and grow from Seed to Forest.": "Mapupunta sa mga partner na organisasyon ang magagamit pa. Makakakuha ka ng beripikadong points at lalago mula Seed hanggang Forest.",
+  "Schools and barangays that accept items. Tap one for details.": "Mga paaralan at barangay na tumatanggap ng gamit. I-tap ang isa para sa detalye.",
+  "Every hub accepts these. Hazardous items and food need special care.": "Tinatanggap ito ng bawat hub. Kailangan ng espesyal na ingat ang mapanganib na gamit at pagkain.",
+  "Photo of {name}": "Larawan ng {name}",
+  "Could not open Maps.": "Hindi mabuksan ang Maps.",
+  "A photo of this place will be added by the hub admin.": "Idadagdag ng admin ng hub ang larawan ng lugar na ito.",
+  "Verified hub": "Beripikadong hub",
+  "Open in Maps": "Buksan sa Maps",
+  "What this hub accepts": "Tinatanggap ng hub na ito",
+  "Only hubs approved by CircuLink admins appear here. Staff weigh every item, so your points are always checked.": "Mga hub lang na inaprubahan ng mga admin ng CircuLink ang lumalabas dito. Tinitimbang ng staff ang bawat gamit, kaya laging sinusuri ang points mo.",
 };

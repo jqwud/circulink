@@ -101,6 +101,7 @@ fieldset.settle legend { font-weight: 800; padding: 0 6px; }
 .w-full { width: 100%; }
 .login-title { font-size: 18px; margin-bottom: 0; }
 .code-cell { white-space: pre-wrap; font-size: 12px; }
+.hub-photo { display: block; width: 100%; max-height: 200px; object-fit: cover; border-radius: var(--r-md); margin-bottom: 8px; }
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
 .toolbar input { max-width: 300px; }
 .toolbar select { width: auto; }
