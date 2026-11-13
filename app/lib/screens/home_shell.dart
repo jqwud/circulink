@@ -4,12 +4,12 @@ import 'package:provider/provider.dart';
 import '../core/i18n.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
+import 'dropoffs_screen.dart';
 import 'home_tab.dart';
 import 'hubs_screen.dart';
 import 'profile_screen.dart';
 
-/// The main screen with the bottom bar: Home, Hubs, Me.
-/// The drop-off tab (declare items, get a code) is added in build step 3.
+/// The main screen with the bottom bar: Home, Drop-offs, Hubs, Me.
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
@@ -60,6 +60,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         );
     final List<Widget> pages = <Widget>[
       HomeTab(onGoTo: _go),
+      const DropoffsScreen(),
       const HubsScreen(),
       const ProfileScreen(),
     ];
@@ -72,6 +73,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         indicatorColor: HiColors.primarySoft,
         destinations: <NavigationDestination>[
           NavigationDestination(icon: homeIcon(Icons.home_outlined), selectedIcon: homeIcon(Icons.home), label: context.t('Home')),
+          NavigationDestination(icon: const Icon(Icons.inventory_2_outlined), selectedIcon: const Icon(Icons.inventory_2), label: context.t('Drop-offs')),
           NavigationDestination(icon: const Icon(Icons.place_outlined), selectedIcon: const Icon(Icons.place), label: context.t('Hubs')),
           NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: context.t('Me')),
         ],
