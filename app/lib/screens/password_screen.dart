@@ -70,9 +70,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             if (widget.forced) ...<Widget>[
               const Center(child: BrandMark(size: 80)),
               const SizedBox(height: 8),
-              Text(context.t('Choose your own password'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+              Text(context.t('Choose your own password'), textAlign: TextAlign.center, style: HiText.h1),
               const SizedBox(height: 4),
-              Text(context.t('An admin gave you a temporary password. Pick a new one that only you know.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
+              Text(context.t('An admin gave you a temporary password. Pick a new one that only you know.'), textAlign: TextAlign.center, style: HiText.body.copyWith(color: HiColors.muted)),
               const SizedBox(height: 18),
             ],
             HiTextField(controller: _current, label: widget.forced ? context.t('Temporary password') : context.t('Current password'), obscure: true, textInputAction: TextInputAction.next, autofillHints: const <String>[AutofillHints.password]),

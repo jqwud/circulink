@@ -56,7 +56,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           const SizedBox(width: HiSpace.ms),
                           Expanded(
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                              Text(text.title, style: const TextStyle(fontWeight: FontWeight.w700)),
+                              Text(text.title, style: HiText.title),
                               if (text.body.isNotEmpty) Text(text.body),
                               const SizedBox(height: 4),
                               Text(fmtDate(str(n['created_at']), app.lang), style: HiText.caption),

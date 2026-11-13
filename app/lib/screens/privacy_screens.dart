@@ -54,28 +54,28 @@ class _PrivacyScreenState extends State<PrivacyScreen> {
                 if (widget.mustAccept) ...<Widget>[
                   const Center(child: BrandMark(size: 80)),
                   const SizedBox(height: 8),
-                  Text(ctx.t('Before you continue'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                  Text(ctx.t('Before you continue'), textAlign: TextAlign.center, style: HiText.h1),
                   const SizedBox(height: 4),
-                  Text(ctx.t('Please read how CircuLink uses your information.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
+                  Text(ctx.t('Please read how CircuLink uses your information.'), textAlign: TextAlign.center, style: HiText.body.copyWith(color: HiColors.muted)),
                   const SizedBox(height: 14),
                 ],
                 ...listOf(notice['sections']).map((Map<String, dynamic> s) => HiCard(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                        Text(str(s['title']), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                        Text(str(s['title']), style: HiText.title),
                         const SizedBox(height: 4),
-                        Text(str(s['body']), style: const TextStyle(height: 1.4)),
+                        Text(str(s['body']), style: HiText.body),
                       ]),
                     )),
                 HiCard(
                   color: HiColors.infoSoft,
                   borderColor: HiColors.infoSoft,
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                    Text(ctx.t('Data Protection Officer'), style: const TextStyle(fontWeight: FontWeight.w800, color: HiColors.info)),
+                    Text(ctx.t('Data Protection Officer'), style: HiText.title.copyWith(color: HiColors.info)),
                     const SizedBox(height: 4),
-                    Text(contact.isEmpty ? str(dpo['fallback']) : contact.join('\n'), style: const TextStyle(color: HiColors.info)),
+                    Text(contact.isEmpty ? str(dpo['fallback']) : contact.join('\n'), style: HiText.body.copyWith(color: HiColors.info)),
                   ]),
                 ),
-                Text('${ctx.t('Version')} ${str(notice['version'])}', style: const TextStyle(color: HiColors.muted, fontSize: 12)),
+                Text('${ctx.t('Version')} ${str(notice['version'])}', style: HiText.caption),
                 if (widget.mustAccept) ...<Widget>[
                   const SizedBox(height: 16),
                   PrimaryButton(label: ctx.t('I have read it and I agree'), busy: _busy, onPressed: _accept),
@@ -113,11 +113,11 @@ class MyDataScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: <Widget>[
-              Text(ctx.t('This is everything CircuLink keeps about you.'), style: const TextStyle(color: HiColors.muted)),
+              Text(ctx.t('This is everything CircuLink keeps about you.'), style: HiText.body.copyWith(color: HiColors.muted)),
               const SizedBox(height: 10),
               HiCard(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-                  Text(ctx.t('Profile'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  Text(ctx.t('Profile'), style: HiText.title),
                   const SizedBox(height: 6),
                   for (final MapEntry<String, dynamic> e in p.entries)
                     if (e.value != null && str(e.value).isNotEmpty)
@@ -134,7 +134,7 @@ class MyDataScreen extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Row(children: <Widget>[
                         Expanded(child: Text(ctx.t(s[1]))),
-                        Text('${listOf(data[s[0]]).length}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                        Text('${listOf(data[s[0]]).length}', style: HiText.title),
                       ]),
                     ),
                 ]),

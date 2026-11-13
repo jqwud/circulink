@@ -129,6 +129,7 @@ const Map<String, String> kFil = <String, String>{
   "You earn points and see the kilograms you kept out of the landfill.": "Makakakuha ka ng points at makikita mo ang kilong hindi napunta sa tambakan.",
   "You get a 6-character drop-off code. Bring the items and show the code.": "Makakakuha ka ng 6-character na drop-off code. Dalhin ang mga gamit at ipakita ang code.",
   "Your account stays. Welcome back!": "Mananatili ang account mo. Maligayang pagbabalik!",
+  "Your numbers could not be loaded. Pull down to try again.": "Hindi ma-load ang mga numero mo. Hilahin pababa para subukan ulit.",
   "Your impact": "Ang epekto mo",
   "Your request to delete your account will be cancelled.": "Kakanselahin ang hiling mong burahin ang account.",
   "Drop-offs": "Mga dala",

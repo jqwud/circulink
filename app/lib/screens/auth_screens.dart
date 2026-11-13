@@ -111,7 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (BuildContext c) => const RegisterScreen())),
-                child: Text(context.t('New here? Create an account'), style: const TextStyle(fontWeight: FontWeight.w800)),
+                child: Text(context.t('New here? Create an account'), style: HiText.title),
               ),
             ),
             const SizedBox(height: 8),
@@ -120,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
               Text(
                 context.t('Demo resident: ana@circulink.test, password circulink123'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: HiColors.muted, fontSize: 12),
+                style: HiText.caption,
               ),
           ],
         ),
@@ -244,7 +244,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Text(
               context.t('Points are given only by hub staff after they weigh your items. They cannot be transferred or exchanged for cash.'),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: HiColors.muted, fontSize: 13),
+              style: HiText.caption,
             ),
           ],
         ),

@@ -90,6 +90,10 @@ class _ImpactCardState extends State<ImpactCard> {
     return FutureBuilder<dynamic>(
       future: _impact,
       builder: (BuildContext context, AsyncSnapshot<dynamic> snap) {
+        // Show a dash, not a false 0, while loading or when the numbers could not be loaded.
+        final bool loading = snap.connectionState != ConnectionState.done;
+        final bool failed = !loading && snap.data == null;
+        final bool known = !loading && !failed;
         final Map<String, dynamic> m = mapOf(snap.data);
         final num kg = (m['kg_kept'] as num?) ?? 0;
         final int confirmed = intOf(m['points_confirmed']);
@@ -104,30 +108,34 @@ class _ImpactCardState extends State<ImpactCard> {
             break;
           }
         }
-        const TextStyle onP = TextStyle(color: HiColors.onPrimary, height: 1.35);
+        final TextStyle onP = HiText.body.copyWith(color: HiColors.onPrimary);
         return HiCard(
           color: HiColors.primary,
           borderColor: HiColors.primary,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
             Row(children: <Widget>[
-              Expanded(child: Text(context.t('Your impact'), style: const TextStyle(color: HiColors.onPrimary, fontWeight: FontWeight.w700))),
+              Expanded(child: Text(context.t('Your impact'), style: HiText.title.copyWith(color: HiColors.onPrimary))),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: HiColors.sun, borderRadius: BorderRadius.circular(HiRadius.pill)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: <Widget>[
                   const Icon(Icons.eco_rounded, size: 16, color: HiColors.ink),
                   const SizedBox(width: 4),
-                  Text(context.t(badgeNames[badge] ?? 'Seed'), style: const TextStyle(color: HiColors.ink, fontWeight: FontWeight.w800)),
+                  Text(context.t(badgeNames[badge] ?? 'Seed'), style: HiText.label),
                 ]),
               ),
             ]),
             const SizedBox(height: HiSpace.sm),
             Row(children: <Widget>[
-              Expanded(child: _Figure(value: '${kg == kg.roundToDouble() ? kg.toInt() : kg} kg', label: context.t('kept in use'))),
-              Expanded(child: _Figure(value: '$confirmed', label: context.t('points'))),
+              Expanded(child: _Figure(value: known ? '${kg == kg.roundToDouble() ? kg.toInt() : kg} kg' : '–', label: context.t('kept in use'))),
+              Expanded(child: _Figure(value: known ? '$confirmed' : '–', label: context.t('points'))),
             ]),
             const SizedBox(height: HiSpace.sm),
-            if (kg == 0 && pending == 0)
+            if (loading)
+              const SizedBox.shrink()
+            else if (failed)
+              Text(context.t('Your numbers could not be loaded. Pull down to try again.'), style: onP)
+            else if (kg == 0 && pending == 0)
               Text(context.t('Bring items to a hub to start. Your numbers grow after staff weigh them.'), style: onP)
             else ...<Widget>[
               if (co2 > 0) Text(context.tv('About {n} kg of CO2 avoided (estimate)', <String, Object>{'n': co2}), style: onP),
@@ -199,8 +207,8 @@ class _Figure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: <Widget>[
-      Text(value, style: const TextStyle(color: HiColors.onPrimary, fontSize: 28, fontWeight: FontWeight.w800)),
-      Text(label, style: const TextStyle(color: HiColors.onPrimary)),
+      Text(value, style: HiText.h1.copyWith(color: HiColors.onPrimary)),
+      Text(label, style: HiText.body.copyWith(color: HiColors.onPrimary)),
     ]);
   }
 }

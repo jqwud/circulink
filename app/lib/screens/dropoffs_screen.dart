@@ -113,7 +113,7 @@ class _DropoffCard extends StatelessWidget {
           StatusChip(context.t(label), tone: tone),
         ]),
         const SizedBox(height: HiSpace.xs),
-        if (open) Text(str(d['code']), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: 4, color: HiColors.accent)),
+        if (open) Text(str(d['code']), style: HiText.display.copyWith(fontSize: 26, letterSpacing: 4, color: HiColors.accent)),
         Text(
           '${context.tv(items.length == 1 ? '{n} item' : '{n} items', <String, Object>{'n': items.length})} · '
           '${open ? '${context.t('Use by')} ${fmtDate(str(d['expires_at']), context.lang)}' : fmtDate(str(d['received_at'] ?? d['created_at']), context.lang)}',
@@ -193,7 +193,7 @@ class _DropoffDetailScreenState extends State<DropoffDetailScreen> {
                     label: str(d['code']).split('').join(' '),
                     child: ExcludeSemantics(
                       child: SelectableText(str(d['code']),
-                          style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w800, letterSpacing: 8, color: HiColors.accent)),
+                          style: HiText.display.copyWith(fontSize: 40, letterSpacing: 8, color: HiColors.accent)),
                     ),
                   ),
                   const SizedBox(height: HiSpace.xs),

@@ -31,7 +31,7 @@ class ProfileScreen extends StatelessWidget {
               radius: 28,
               backgroundColor: HiColors.primarySoft,
               child: Text(app.firstName.isEmpty ? '?' : app.firstName[0].toUpperCase(),
-                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: HiColors.accent)),
+                  style: HiText.h1.copyWith(color: HiColors.accent)),
             ),
             const SizedBox(width: HiSpace.ms),
             Expanded(
@@ -69,7 +69,7 @@ class ProfileScreen extends StatelessWidget {
           },
         ),
         const SizedBox(height: 14),
-        Text('CircuLink ${context.t('Version')} ${kAppVersion.replaceFirst('+', ' (')})', textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 12)),
+        Text('CircuLink ${context.t('Version')} ${kAppVersion.replaceFirst('+', ' (')})', textAlign: TextAlign.center, style: HiText.caption),
       ],
     );
   }
