@@ -2,6 +2,7 @@
 // reload by themselves, without pulling to refresh. Nothing is redrawn when nothing changed.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:circulink/widgets/ui/pill_nav.dart';
 import 'package:circulink/core/state.dart';
 import 'package:circulink/core/theme.dart';
 import 'package:circulink/screens/home_shell.dart';
@@ -67,10 +68,10 @@ void main() {
       child: MaterialApp(theme: buildTheme(), home: const HomeShell()),
     ));
     await tester.pump();
-    expect(find.descendant(of: find.byType(NavigationBar), matching: find.text('3')), findsNothing);
+    expect(find.descendant(of: find.byType(PillNav), matching: find.text('3')), findsNothing);
     await app.liveCheck(fetch: () async => me(3));
     await tester.pump();
-    expect(find.descendant(of: find.byType(NavigationBar), matching: find.text('3')), findsOneWidget);
+    expect(find.descendant(of: find.byType(PillNav), matching: find.text('3')), findsOneWidget);
     // Leaving the screen stops the checks.
     await tester.pumpWidget(const SizedBox());
   });

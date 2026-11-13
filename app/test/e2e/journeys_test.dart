@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:circulink/widgets/ui/pill_nav.dart';
 import 'package:circulink/core/api.dart';
 import 'package:circulink/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -87,11 +88,11 @@ Future<void> logIn(WidgetTester tester, String email, String password) async {
   await tester.enterText(find.widgetWithText(TextField, 'Password'), password);
   final Finder agree = find.widgetWithText(FilledButton, 'I have read it and I agree');
   final Finder notice = find.text('Before you continue');
-  await tapAndWait(tester, find.widgetWithText(FilledButton, 'Log in'), find.byWidgetPredicate((Widget w) => w is NavigationBar || (w is Text && w.data == 'Before you continue')));
+  await tapAndWait(tester, find.widgetWithText(FilledButton, 'Log in'), find.byWidgetPredicate((Widget w) => w is PillNav || (w is Text && w.data == 'Before you continue')));
   // Demo accounts have not yet agreed to the current privacy notice, so the app asks once, as for anyone.
   if (notice.evaluate().isNotEmpty) {
     await tester.scrollUntilVisible(agree, 400, scrollable: find.byType(Scrollable).first);
-    await tapAndWait(tester, agree, find.byType(NavigationBar));
+    await tapAndWait(tester, agree, find.byType(PillNav));
   }
 }
 

@@ -9,6 +9,7 @@ export 'ui/hi_field.dart';
 export 'ui/hi_sheet.dart';
 export 'ui/hi_tabs.dart';
 export 'ui/info_banner.dart';
+export 'ui/pill_nav.dart';
 export 'ui/rows.dart';
 export 'ui/screen_header.dart';
 export 'ui/section_title.dart';

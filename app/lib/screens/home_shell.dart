@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../core/i18n.dart';
 import '../core/state.dart';
-import '../core/theme.dart';
+import '../widgets/common.dart';
 import 'dropoffs_screen.dart';
 import 'home_tab.dart';
 import 'hubs_screen.dart';
@@ -51,13 +51,6 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final AppState app = context.watch<AppState>();
-    // A red dot on Home (where the bell is) whenever there are unread notifications.
-    Widget homeIcon(IconData icon) => Badge(
-          isLabelVisible: app.unread > 0,
-          label: Text('${app.unread}'),
-          backgroundColor: HiColors.danger,
-          child: Icon(icon),
-        );
     final List<Widget> pages = <Widget>[
       HomeTab(onGoTo: _go),
       const DropoffsScreen(),
@@ -66,16 +59,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     ];
     return Scaffold(
       body: SafeArea(child: IndexedStack(index: _index, children: pages)),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _go,
-        backgroundColor: Colors.white,
-        indicatorColor: HiColors.primarySoft,
-        destinations: <NavigationDestination>[
-          NavigationDestination(icon: homeIcon(Icons.home_outlined), selectedIcon: homeIcon(Icons.home), label: context.t('Home')),
-          NavigationDestination(icon: const Icon(Icons.inventory_2_outlined), selectedIcon: const Icon(Icons.inventory_2), label: context.t('Drop-offs')),
-          NavigationDestination(icon: const Icon(Icons.place_outlined), selectedIcon: const Icon(Icons.place), label: context.t('Hubs')),
-          NavigationDestination(icon: const Icon(Icons.person_outline), selectedIcon: const Icon(Icons.person), label: context.t('Me')),
+      bottomNavigationBar: PillNav(
+        selected: _index,
+        onSelect: _go,
+        items: <PillNavItem>[
+          // The unread count sits on Home, where the bell is.
+          PillNavItem(icon: Icons.home_outlined, selectedIcon: Icons.home_rounded, label: context.t('Home'), badge: app.unread),
+          PillNavItem(icon: Icons.inventory_2_outlined, selectedIcon: Icons.inventory_2_rounded, label: context.t('Drop-offs')),
+          PillNavItem(icon: Icons.place_outlined, selectedIcon: Icons.place_rounded, label: context.t('Hubs')),
+          PillNavItem(icon: Icons.person_outline_rounded, selectedIcon: Icons.person_rounded, label: context.t('Me')),
         ],
       ),
     );
