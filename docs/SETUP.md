@@ -13,7 +13,7 @@ You need three things running: the **database** (MySQL), the **server** (Node.js
 In the project folder, as MySQL root, replace `your-password` with a password of your own for the app account:
 
 ```
-mysql -u root -p -e "SET @pw = 'your-password'; source database/create-test-db.sql"
+mysql -u root -p --init-command="SET @pw = 'your-password'" -e "source database/create-test-db.sql"
 mysql -u root -p -e "source database/schema.sql"
 ```
 
