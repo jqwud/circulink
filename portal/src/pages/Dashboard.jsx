@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { useAuth } from '../auth.jsx';
 import { useI18n } from '../i18n.jsx';
-import { Badge, ErrorBox, Loading, PageHeader, Stat, useLoad } from '../components.jsx';
+import { Badge, ErrorBox, Loading, PageHeader, Stat, kg, useLoad } from '../components.jsx';
 
 // What needs doing now, by role, then the hubs and what they accept.
 async function counts(role) {
@@ -11,7 +11,11 @@ async function counts(role) {
   }
   const [queue, releases, items] = await Promise.all([api('/staff/queue'), api('/staff/releases'), api('/staff/stock')]);
   const out = { queue: queue.length, releases: releases.length, stock: items.filter((i) => i.state === 'in_stock').length };
-  if (role === 'admin') out.flags = (await api('/admin/flags')).length;
+  if (role === 'admin') {
+    const [flags, report] = await Promise.all([api('/admin/flags'), api('/admin/reports')]);
+    out.flags = flags.length;
+    out.report = report.totals;
+  }
   return out;
 }
 
@@ -42,6 +46,16 @@ export default function Dashboard() {
           <Stat label={t('Items in stock')} value={n.stock ?? '–'} to="/stock" />
           {user.role === 'admin' && <Stat label={t('Open flags')} value={n.flags ?? '–'} to="/flags" tone={n.flags ? 'bad' : ''} />}
         </div>
+      )}
+      {n.report && (
+        <section className="card">
+          <h2>{t('This month')}</h2>
+          <div className="grid stats">
+            <Stat label={t('Kept in use')} value={kg(n.report.kg_kept)} tone="good" to="/reports" />
+            <Stat label={t('Diversion rate')} value={`${n.report.diversion_rate}%`} to="/reports" />
+            <Stat label={t('CO2e avoided (estimate)')} value={kg(n.report.co2e_avoided_kg)} to="/reports" />
+          </div>
+        </section>
       )}
 
       <section className="card">

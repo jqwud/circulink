@@ -6,7 +6,7 @@ import { portalLogin } from './helpers.js';
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 const PAGES = {
-  admin: ['/', '/check-in', '/stock', '/releases', '/flags', '/accounts', '/partners', '/places', '/categories', '/audit'],
+  admin: ['/', '/check-in', '/stock', '/releases', '/reports', '/flags', '/accounts', '/partners', '/places', '/categories', '/audit'],
   partner: ['/', '/browse', '/requests'],
 };
 

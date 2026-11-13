@@ -80,4 +80,7 @@ export const CATALOG = [
   R('POST', '/admin/categories', 'admin', 'Add a category (at most 50 points per kg)', { tag: 'admin', ok: 201, body: ['slug*', 'name_en*', 'name_fil*', 'rate_per_kg*', 'co2_per_kg*', 'hazardous', 'food', 'active'], errors: ['bad_slug', 'bad_name', 'bad_rate', 'bad_co2', 'duplicate'] }),
   R('PATCH', '/admin/categories/{id}', 'admin', 'Change a category; the old values are kept in the audit log', { tag: 'admin', body: ['name_en', 'name_fil', 'rate_per_kg', 'co2_per_kg', 'hazardous', 'food', 'active'], errors: ['not_found', 'bad_name', 'bad_rate', 'bad_co2'] }),
   R('GET', '/admin/audit', 'admin', 'The audit log, newest first (read-only)', { tag: 'admin', query: ['entity', 'entity_id', 'limit', 'before'] }),
+  R('GET', '/admin/reports', 'admin', 'Monthly impact report: kg by outcome, hub and category, plus the last 12 months (totals only, no names)', { tag: 'admin', query: ['month', 'hub_id'], errors: ['bad_month'] }),
+  R('GET', '/admin/reports.csv', 'admin', 'The monthly impact report as a CSV file', { tag: 'admin', csv: true, query: ['month', 'hub_id'], errors: ['bad_month'] }),
+  R('GET', '/impact', 'user', 'What everyone kept in use together: kg, estimated CO2e avoided, items and residents', { tag: 'dropoffs' }),
 ];

@@ -9,6 +9,14 @@ const FIL = {
   'Check in and sort': 'Tanggapin at pagsunod-sunurin', 'Stock and recycling': 'Stock at recycling', 'Releases to partners': 'Ibinibigay sa mga partner',
   'Available items': 'Mga makukuhang gamit', 'My requests': 'Mga hiling ko', 'Flags': 'Mga flag', 'Accounts': 'Mga account',
   'Partner organizations': 'Mga partner na organisasyon', 'Hubs and recyclers': 'Mga hub at recycler', 'Categories': 'Mga kategorya', 'Audit log': 'Talaan ng pagbabago',
+  // impact reports
+  'Impact reports': 'Ulat ng epekto', 'Kilograms kept in use, by hub and category. Totals only, never names.': 'Kilo ng gamit na napanatiling gamit, ayon sa hub at kategorya. Kabuuan lang, walang pangalan.',
+  'Month': 'Buwan', 'Export CSV': 'I-export ang CSV', 'Kept in use': 'Napanatiling gamit', 'Reused, repaired or recycled': 'Nagamit muli, naayos o na-recycle',
+  'Diversion rate': 'Diversion rate', 'Share of weighed kg not rejected': 'Bahagi ng natimbang na kg na hindi tinanggihan', 'CO2e avoided (estimate)': 'CO2e na naiwasan (tantiya)',
+  'Items sorted': 'Gamit na napagsunod-sunod', 'drop-offs': 'drop-off', 'residents': 'residente', 'Items given to partners': 'Gamit na naibigay sa partner', 'pickups': 'pickup',
+  'Where the weight went': 'Saan napunta ang timbang', 'Nothing was sorted this month.': 'Walang napagsunod-sunod ngayong buwan.', 'Last 12 months': 'Huling 12 buwan',
+  'No sorted items in the last 12 months.': 'Walang napagsunod-sunod sa huling 12 buwan.', 'kg kept in use per month': 'kg na napanatiling gamit bawat buwan',
+  'By hub': 'Ayon sa hub', 'By category': 'Ayon sa kategorya', 'This month': 'Ngayong buwan', 'See the report': 'Tingnan ang ulat',
   // login
   'Portal login': 'Login sa portal', 'Email': 'Email', 'Password': 'Password', 'Log in': 'Mag-log in', 'Signing in...': 'Nag-log in...',
   'This portal is for hub staff, partner organizations and admins. Residents use the CircuLink app.':

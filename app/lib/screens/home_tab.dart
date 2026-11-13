@@ -7,6 +7,7 @@ import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/brand_mark.dart';
 import '../widgets/common.dart';
+import 'guide_screen.dart';
 import 'notifications_screen.dart';
 
 /// Home: a greeting, the person's impact and badge, and how CircuLink works.
@@ -40,6 +41,12 @@ class HomeTab extends StatelessWidget {
           const SizedBox(height: HiSpace.md),
           const ImpactCard(),
           PrimaryButton(label: context.t('Declare items'), icon: Icons.add_rounded, onPressed: () => onGoTo(1)),
+          SoftButton(
+            label: context.t('Sorting guide'),
+            icon: Icons.menu_book_outlined,
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (BuildContext c) => const GuideScreen())),
+          ),
+          const _Together(),
           SectionTitle(context.t('How CircuLink works')),
           _Step(n: 1, icon: Icons.edit_note_rounded, text: context.t('Declare the things you no longer need and choose a hub.')),
           _Step(n: 2, icon: Icons.qr_code_2_rounded, text: context.t('You get a 6-character drop-off code. Bring the items and show the code.')),
@@ -129,6 +136,55 @@ class _ImpactCardState extends State<ImpactCard> {
                 Text(context.tv('{n} more points to {badge}', <String, Object>{'n': intOf(next['min']) - confirmed, 'badge': context.t(badgeNames[str(next['key'])] ?? '')}), style: onP),
             ],
           ]),
+        );
+      },
+    );
+  }
+}
+
+/// What everyone kept in use together (GET /impact), so one person's drop-off feels part of something.
+class _Together extends StatefulWidget {
+  const _Together();
+
+  @override
+  State<_Together> createState() => _TogetherState();
+}
+
+class _TogetherState extends State<_Together> {
+  int _version = -1;
+  late Future<dynamic> _impact;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppState app = context.watch<AppState>();
+    if (app.version != _version) {
+      _version = app.version;
+      _impact = app.api.get('/impact').catchError((Object _) => null);
+    }
+    return FutureBuilder<dynamic>(
+      future: _impact,
+      builder: (BuildContext context, AsyncSnapshot<dynamic> snap) {
+        final Map<String, dynamic> m = mapOf(snap.data);
+        final num kg = (m['kg_kept'] as num?) ?? 0;
+        if (kg == 0) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: HiSpace.ms),
+          child: HiCard(
+            color: HiColors.sunSoft,
+            child: Row(children: <Widget>[
+              const ExcludeSemantics(child: Icon(Icons.groups_rounded, color: HiColors.ink, size: 32)),
+              const SizedBox(width: HiSpace.ms),
+              Expanded(
+                child: Text(
+                  context.tv('Together, {p} residents kept {kg} kg out of the landfill.', <String, Object>{
+                    'p': intOf(m['residents']),
+                    'kg': kg == kg.roundToDouble() ? kg.toInt() : kg,
+                  }),
+                  style: HiText.body,
+                ),
+              ),
+            ]),
+          ),
         );
       },
     );

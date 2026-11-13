@@ -182,4 +182,13 @@ void main() {
     expect(find.text('2 kg · 10 points (pending)'), findsOneWidget);
     await settle(tester);
   }, skip: skip);
+
+  testWidgets('a resident opens the sorting guide from Home', (WidgetTester tester) async {
+    await openApp(tester);
+    await logIn(tester, 'ben@circulink.test', 'circulink123');
+    await tapAndWait(tester, find.widgetWithText(OutlinedButton, 'Sorting guide').hitTestable(), find.text('What happens at the hub'));
+    await tester.scrollUntilVisible(find.text('Batteries'), 400, scrollable: find.byType(Scrollable).last);
+    expect(find.textContaining('Tape the ends of each battery'), findsOneWidget);
+    await settle(tester);
+  }, skip: skip);
 }

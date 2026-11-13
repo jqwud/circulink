@@ -142,3 +142,23 @@ test('an admin approves a partner, makes a staff account and changes a point rat
   await page.getByRole('link', { name: 'Audit log' }).click();
   await expect(page.getByRole('cell', { name: /category updated/ }).first()).toBeVisible();
 });
+
+test('an admin reads the monthly impact report and exports it', async ({ page }) => {
+  // Ben brings 3 kg of cans to the barangay hub; staff there recycle them.
+  const ben = await loginApi('ben');
+  const staff2 = await loginApi('staff2');
+  const hub = (await api('GET', '/hubs')).json.find((h) => h.type === 'barangay');
+  const cans = (await api('GET', '/meta', ben)).json.categories.find((c) => c.slug === 'cans').id;
+  const d = (await api('POST', '/declarations', ben, { hub_id: hub.id, items: [{ category_id: cans }] })).json;
+  await api('POST', '/staff/checkin', staff2, { code: d.code });
+  expect((await api('POST', `/staff/items/${d.items[0].id}/sort`, staff2, { weight_kg: 3, outcome: 'recycle' })).status).toBe(200);
+
+  await portalLogin(page, 'admin');
+  await page.getByRole('link', { name: 'Impact reports' }).click();
+  await expect(page.getByRole('heading', { name: 'Impact reports' })).toBeVisible();
+  await page.getByLabel('Hub').selectOption({ label: hub.name });
+  await expect(page.getByRole('row', { name: new RegExp(hub.name) })).toContainText('3 kg');
+  const file = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+  expect((await file).suggestedFilename()).toMatch(/^circulink-report-\d{4}-\d{2}\.csv$/);
+});
