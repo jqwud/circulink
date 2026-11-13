@@ -35,9 +35,17 @@ Containers run the server side of CircuLink (MySQL, the API and the web portal) 
 ## Demo data (test installs only)
 
 ```
-docker compose exec api npm run seed
+docker compose exec api npm run seed:demo
 ```
-This **replaces everything** with the demo accounts, hubs and recyclers (password `circulink123`). Never run it on a real install.
+This **replaces everything** with the demo accounts, hubs and recyclers (password `circulink123`) and six months of drop-offs. `npm run seed` loads the accounts with no drop-offs. Never run it on a real install.
+
+## Running the published image instead of building
+
+The pipeline publishes the image to the GitHub Container Registry after every check passes on `main` ([`CICD.md`](CICD.md)). To use it, add one file to the command:
+
+```
+docker compose -f docker-compose.yml -f docker-compose.ghcr.yml up -d
+```
 
 ## Everyday use
 
@@ -71,7 +79,7 @@ The API restarts when you save a file in `server/src`, logs every request, and M
 - **Time zone:** the containers run in Philippine time (`TZ=Asia/Manila`); the API also sets it for every database connection.
 - **Secrets:** `docker.env` holds real passwords and is ignored by git. Never put it in the image or in a chat.
 - **HTTPS:** the containers serve plain HTTP, which is fine on a local network. Hosting on the internet needs HTTPS in front (a reverse proxy) first. The roadmap keeps that for later (decision S1).
-- **Automatic checks:** every push to GitHub builds the image, starts both containers, and checks the health and the portal page (`.github/workflows/ci.yml`, job "Containers").
+- **Automatic checks:** every push to GitHub builds the image, starts both containers, and checks the health and the portal page (`.github/workflows/ci.yml`, job "Containers"). On `main` and `v*` tags the image is then published to GHCR.
 
 ## When something goes wrong
 

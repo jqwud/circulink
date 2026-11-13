@@ -1,7 +1,7 @@
 # CircuLink: Circular Drop-off Hub System Spec
 
 Status: approved concept (2026-11-12). Replaces the Hiraman borrowing system.
-Name: **CircuLink** (chosen by the team, 2026-11-12). Steps 1 (clean slate, rebrand, new database), 2 (rules engine R1 to R13), 3 (the drop-off flow in the API), 4 (stock, releases, repair and recycling in the API) 5 (the admin side of the API), 6 (the portal screens), 7 (the app screens) and 8 (reports, impact dashboard, sorting guide) are done.
+Name: **CircuLink** (chosen by the team, 2026-11-12). All nine build steps (section 10) are done.
 
 ## 1. Purpose (SDG 12)
 
@@ -121,6 +121,7 @@ The numbers are starting values and live in `server/src/rules.js`, next to one f
 - Pull requests run CI only. Pushes to `main` and `v*` tags also build and push the Docker image to GHCR (Challenges 2 and 3).
 - One Dockerfile builds the API and portal inside the image, with no prebuilt `dist` copied in (Trap 1 in the lab guide).
 - Only free tools: Node 22, MySQL, GitHub Actions, GHCR.
+- How the pipeline does each of these is in [`CICD.md`](CICD.md).
 
 ## 10. Build order
 

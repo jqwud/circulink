@@ -38,11 +38,11 @@ Then:
 ```
 npm install
 npm run migrate
-npm run seed
+npm run seed:demo
 npm start
 ```
 
-`npm run migrate` applies the files in `database/migrations`, including the hub tables. It takes a backup first and does nothing when there is nothing new. `npm run seed` loads the demo data: an admin, hub staff, partner organizations, residents, two hubs and two recyclers. Run it again any time to reset the demo. When you see "CircuLink API running on http://localhost:4000", the server is up. Leave this terminal open.
+`npm run migrate` applies the files in `database/migrations`, including the hub tables. It takes a backup first and does nothing when there is nothing new. `npm run seed:demo` loads the demo data: an admin, hub staff, partner organizations, residents, two hubs and two recyclers, with six months of drop-offs so the reports and badges have something to show. `npm run seed` loads the same accounts with no drop-offs. Run either again any time to reset the demo. When you see "CircuLink API running on http://localhost:4000", the server is up. Leave this terminal open.
 
 Quick check: open http://localhost:4000/api/health in a browser. You should see `{"ok":true,"app":"CircuLink API",...}`.
 
@@ -112,7 +112,7 @@ The file is `build/app/outputs/flutter-apk/app-release.apk`. Without a release k
 | `Table 'circulink.hubs' doesn't exist` | Run `npm run migrate` in `server/`. |
 | App says it cannot reach the server | Tap **Find server**. If it still fails, check that the cable is plugged in or the phone is on the laptop's hotspot, and that the server window is open. |
 | Portal shows a blank page | Run `npm run build` in `portal/`, or use `npm run dev`. |
-| Want to start the demo over | `cd server` then `npm run seed`. |
+| Want to start the demo over | `cd server` then `npm run seed:demo` (or `npm run seed` for no drop-offs). |
 
 ## Backups and restore
 

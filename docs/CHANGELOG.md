@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.9.0: step 9, docs, demo data and the CI/CD pipeline (2026-11-13)
+
+- **CD:** the pipeline now publishes the Docker image to the GitHub Container Registry (`ghcr.io/jqwud/circulink`) when every check passes on `main` (`latest`, `sha-<commit>`) or on a `v*` tag (`1.2.3`, `1.2`). Pull requests and other branches are checked but never published. Only the publish job may write packages.
+- `docker-compose.ghcr.yml` runs the published image instead of building one.
+- **Demo data:** `npm run seed:demo` adds six months of drop-offs to the demo accounts: finished months with partner pickups and recycle batches, and this month with stock, an item in repair, a partner request, a heavy drop-off flagged for the admin and an open code. A test checks that this data keeps the rules (R5, R6, R7, R10). `npm run seed` is unchanged.
+- **Docs:** new `CICD.md`; the README, architecture, setup and containers guides now describe the finished system.
+
+## 0.8.0: step 8, reports, impact dashboard and sorting guide (2026-11-13)
+
+- **Impact reports** for admins (`GET /admin/reports`, `/admin/reports.csv`): kg by outcome, kg kept in use, diversion rate, estimated CO₂e, drop-offs, residents and partner pickups for a month, for all hubs or one, split by hub and by category, with the last 12 months. Totals only, never names. Weight from a drop-off whose flag was upheld is left out.
+- Portal: the *Impact reports* page with a CSV export, and a "This month" row on the admin dashboard.
+- App: the *Sorting guide* (how to prepare items, what each outcome means, a tip per category) and a card with what everyone kept in use together (`GET /impact`).
+- 8 new server tests, a portal journey and an app journey.
+
+## 0.7.0: step 7, the app screens (2026-11-13)
+
+- Residents declare items in the app and get a 6-character code, see their open codes and history, and open each drop-off to see what staff decided for every item (outcome, kg, points, pending or confirmed). An open drop-off can be cancelled.
+- Home shows the resident's real impact: kg kept in use, points, pending points, estimated CO₂ avoided, badge and points to the next badge.
+- New *Drop-offs* tab. Everything in English and Filipino.
+- A new app journey on the real API: declare, staff check in and sort, the resident sees the result.
+
 ## 0.6.0: step 6, the portal screens (2026-11-12)
 
 - **Hub staff:** *Check in and sort* (type the resident's code; weigh and sort each item, with an expiry date for food and a warning for hazardous items; add items they did not list; a queue of drop-offs still to sort), *Stock and recycling* (stock, repair queue and recyclables at my hubs; move items; make a recycle batch, where recyclers that are not accredited cannot be chosen for e-waste; mark batches as sent), *Releases to partners* (hand over or decline with a reason).
