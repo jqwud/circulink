@@ -18,14 +18,36 @@ const limiter = rateLimit({
 });
 
 
-const emailOk = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e || '');
+const emailOk = (e) => typeof e === 'string' && e.length <= 190 && /^[^\s@<>"']+@[^\s@<>"']+\.[^\s@<>"']+$/.test(e);
+
+// A person's name: letters of any language, spaces and . ' - , ( ). No digits, links or symbols, so a name
+// can never carry a web address, markup or a message.
+export const nameOk = (n) => typeof n === 'string' && n.trim().length >= 2 && n.trim().length <= 120 && /^[\p{L}\p{M} .'’,()-]+$/u.test(n.trim());
 
 export const PASSWORD_MIN = 8;
-function checkPassword(p) {
+// Passwords everyone tries first. Length alone does not stop "password123".
+const COMMON_PASSWORDS = new Set([
+  'password', 'password1', 'password12', 'password123', 'passw0rd', '12345678', '123456789', '1234567890', '11111111', '00000000',
+  '87654321', 'qwertyui', 'qwerty123', 'qwertyuiop', '1q2w3e4r', '1qaz2wsx', 'asdfghjk', 'abcd1234', 'abc12345', 'iloveyou',
+  'iloveyou1', 'letmein123', 'welcome1', 'welcome123', 'admin123', 'admin1234', 'administrator', 'football', 'baseball', 'superman',
+  'princess', 'sunshine', 'trustno1', 'changeme', 'mahalkita', 'mahalkita1', 'pilipinas', 'circulink', 'circulink1', 'circulink123',
+]);
+// `own`: the person's email, name and phone. A password made of them is the first thing someone else tries.
+function checkPassword(p, own = []) {
   if (typeof p !== 'string' || p.length < PASSWORD_MIN || p.length > 200) {
     throw bad(`Password must be at least ${PASSWORD_MIN} characters.`, 'bad_password');
   }
+  const low = p.toLowerCase();
+  const flat = (v) => String(v ?? '').toLowerCase().replace(/\s+/g, '');
+  const mine = own.flatMap((v) => [flat(v), flat(v).split('@')[0]]).filter((v) => v.length >= 4);
+  if (COMMON_PASSWORDS.has(low) || /^(.)\1+$/.test(p) || mine.includes(low.replace(/\s+/g, ''))) {
+    throw bad('That password is too easy to guess. Use one that is not a common word and not your name, email or phone.', 'weak_password');
+  }
 }
+
+// Compared when the email is unknown, so a wrong email takes as long as a wrong password and the answer
+// time never shows who has an account.
+const DUMMY_HASH = bcrypt.hashSync(crypto.randomBytes(16).toString('hex'), 10);
 
 // After 5 wrong passwords for one email within 15 minutes, that email is locked for 15 minutes, whatever
 // the network. Kept in memory: a restart clears it.
@@ -59,9 +81,9 @@ router.get('/privacy', (req, res) => res.json(privacyNotice(req.query.lang)));
 // Sign-up makes a resident account only. Staff, partner and admin accounts are made by an admin.
 router.post('/auth/register', limiter, wrap(async (req, res) => {
   const { name, email, password, phone, student_id: studentId, language, accept_privacy: acceptPrivacy } = req.body || {};
-  if (!name || String(name).trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
+  if (!nameOk(name)) throw bad('Please enter your full name, with letters only.', 'bad_name');
   if (!emailOk(email)) throw bad('Please enter a valid email.', 'bad_email');
-  checkPassword(password);
+  checkPassword(password, [email, name, phone]);
   const phoneOk = normalizePhone(phone);
   if (!phoneOk) throw bad('Please enter your phone number.', 'bad_phone');
   const studentOk = normalizeStudentId(studentId);
@@ -90,7 +112,8 @@ router.post('/auth/login', limiter, wrap(async (req, res) => {
     throw new HttpError(429, 'Too many wrong passwords. Wait 15 minutes, or ask an admin to reset your password.', 'too_many_attempts');
   }
   const user = await one('SELECT * FROM users WHERE email = ?', [key]);
-  const ok = user && (await bcrypt.compare(String(password || ''), user.password_hash));
+  const matches = await bcrypt.compare(String(password || ''), user ? user.password_hash : DUMMY_HASH);
+  const ok = !!user && matches;
   if (!ok) {
     loginFailed(key);
     throw new HttpError(401, 'Wrong email or password.', 'bad_login');
@@ -117,7 +140,7 @@ router.post('/auth/logout', authRequired, wrap(async (req, res) => {
 router.post('/me/password', authRequired, wrap(async (req, res) => {
   const { current, new_password: next } = req.body || {};
   if (!(await bcrypt.compare(String(current || ''), req.user.password_hash))) throw bad('Your current password is not right.', 'wrong_password');
-  checkPassword(next);
+  checkPassword(next, [req.user.email, req.user.name, req.user.phone]);
   await q('UPDATE users SET password_hash = ?, must_change_password = 0, token_version = token_version + 1 WHERE id = ?',
     [await bcrypt.hash(next, 10), req.user.id]);
   await audit(req.user.id, 'password_changed', { entity: 'user', entityId: req.user.id });
@@ -129,7 +152,7 @@ router.post('/me/password', authRequired, wrap(async (req, res) => {
 // The student ID is fixed after sign-up (one account per student ID), so only an admin can change it.
 router.patch('/me', authRequired, wrap(async (req, res) => {
   const { name, phone, language } = req.body || {};
-  if (name !== undefined && String(name).trim().length < 2) throw bad('Please enter your full name.', 'bad_name');
+  if (name !== undefined && !nameOk(name)) throw bad('Please enter your full name, with letters only.', 'bad_name');
   const fields = {};
   if (name !== undefined) fields.name = String(name).trim().slice(0, 120);
   if (phone !== undefined) {

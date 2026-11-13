@@ -150,7 +150,7 @@
           "account"
         ],
         "summary": "Create a resident account (one per email, phone and student ID; privacy notice must be accepted)",
-        "description": "No login needed. Error codes: bad_name, bad_email, bad_password, bad_phone, bad_student_id, privacy_required, signup_failed, too_many_requests.",
+        "description": "No login needed. Error codes: bad_name, bad_email, bad_password, weak_password, bad_phone, bad_student_id, privacy_required, signup_failed, too_many_requests.",
         "security": [],
         "responses": {
           "201": {
@@ -349,7 +349,7 @@
           "account"
         ],
         "summary": "Change the password (other sessions end; a new token is returned)",
-        "description": "Any logged-in account. Error codes: wrong_password, bad_password.",
+        "description": "Any logged-in account. Error codes: wrong_password, bad_password, weak_password.",
         "responses": {
           "200": {
             "description": "Success",

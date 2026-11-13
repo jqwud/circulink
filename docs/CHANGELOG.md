@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.1: the complete test case and stricter sign-up (2026-11-13)
+
+- **`docs/TEST_CASES.md`:** one test case of 26 steps from sign-up to the monthly report, with the security checks at each step. All of it is automated in `server/test/full-journey.test.js`.
+- **Passwords:** common passwords (`password123`, `12345678`), one repeated letter, and passwords made of your own email, name or phone are refused at sign-up and when changing a password.
+- **Names:** letters of any language, spaces and `. ' - , ( )` only, so a name can't carry a link or markup.
+- **Login** takes the same time for an unknown email as for a wrong password, so the answer time doesn't show who has an account.
+
 ## 0.9.0: step 9, docs, demo data and the CI/CD pipeline (2026-11-13)
 
 - **CD:** the pipeline now publishes the Docker image to the GitHub Container Registry (`ghcr.io/jqwud/circulink`) when every check passes on `main` (`latest`, `sha-<commit>`) or on a `v*` tag (`1.2.3`, `1.2`). Pull requests and other branches are checked but never published. Only the publish job may write packages.

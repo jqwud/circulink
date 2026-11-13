@@ -18,11 +18,11 @@ export const TAGS = {
 export const CATALOG = [
   R('GET', '/health', 'public', 'Is the API up, and can it reach the database?', { tag: 'account', ok: 200, errors: ['503 when the database is down'] }),
   R('GET', '/privacy', 'public', 'The privacy notice in English or Filipino', { tag: 'account', query: ['lang'] }),
-  R('POST', '/auth/register', 'public', 'Create a resident account (one per email, phone and student ID; privacy notice must be accepted)', { tag: 'account', ok: 201, body: ['name*', 'email*', 'password*', 'phone*', 'student_id', 'language', 'accept_privacy*'], errors: ['bad_name', 'bad_email', 'bad_password', 'bad_phone', 'bad_student_id', 'privacy_required', 'signup_failed', 'too_many_requests'] }),
+  R('POST', '/auth/register', 'public', 'Create a resident account (one per email, phone and student ID; privacy notice must be accepted)', { tag: 'account', ok: 201, body: ['name*', 'email*', 'password*', 'phone*', 'student_id', 'language', 'accept_privacy*'], errors: ['bad_name', 'bad_email', 'bad_password', 'weak_password', 'bad_phone', 'bad_student_id', 'privacy_required', 'signup_failed', 'too_many_requests'] }),
   R('POST', '/auth/login', 'public', 'Log in; returns a token and the user', { tag: 'account', body: ['email*', 'password*'], errors: ['401 bad_login', 'suspended', '429 too_many_attempts', 'too_many_requests'] }),
   R('GET', '/me', 'user', 'The logged-in account (with a renewed token once a day for residents)', { tag: 'account' }),
   R('POST', '/auth/logout', 'user', 'Log out: ends every session of this account', { tag: 'account' }),
-  R('POST', '/me/password', 'user', 'Change the password (other sessions end; a new token is returned)', { tag: 'account', body: ['current*', 'new_password*'], errors: ['wrong_password', 'bad_password'] }),
+  R('POST', '/me/password', 'user', 'Change the password (other sessions end; a new token is returned)', { tag: 'account', body: ['current*', 'new_password*'], errors: ['wrong_password', 'bad_password', 'weak_password'] }),
   R('PATCH', '/me', 'user', 'Change name, phone or language', { tag: 'account', body: ['name', 'phone', 'language'], errors: ['bad_name', 'bad_phone', 'phone_taken'] }),
   R('POST', '/me/privacy', 'user', 'Agree to the current privacy notice', { tag: 'account' }),
   R('GET', '/me/data', 'user', 'Everything CircuLink holds about this person ("My data")', { tag: 'account' }),
