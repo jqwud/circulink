@@ -55,9 +55,10 @@ jobs:
         env:
           DEMO_API_KEY: ${{ secrets.DEMO_API_KEY }}
         run: |
+          # Forks and fresh copies of the repo have no secrets, so a missing key only warns.
           if [ -z "$DEMO_API_KEY" ]; then
-            echo "DEMO_API_KEY is not set"
-            exit 1
+            echo "::warning title=DEMO_API_KEY missing::DEMO_API_KEY is not set (normal on forks and fresh clones)."
+            exit 0
           fi
           echo "DEMO_API_KEY is configured (value hidden)"
 
