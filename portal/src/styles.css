@@ -118,7 +118,7 @@ td small { display: block; color: var(--c-muted); }
 .badge.ok { background: var(--c-leaf-soft); color: var(--c-leaf); }
 .badge.warn { background: var(--c-warn-soft); color: #7a5410; }
 .badge.bad { background: var(--c-danger-soft); color: var(--c-danger); }
-.badge.info { background: #e3efff; color: #1b4f9c; }
+.badge.info { background: #ddedea; color: #1f5f5b; }
 .badge.muted { background: var(--c-muted-soft); color: var(--c-muted); }
 
 .tabs { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
@@ -144,7 +144,7 @@ td small { display: block; color: var(--c-muted); }
 
 /* ---------- login ---------- */
 .login { min-height: 100vh; display: grid; place-items: center; padding: 16px; background: linear-gradient(160deg, var(--c-primary-soft), var(--c-cream) 60%); }
-.login-card { background: #fff; border: 1px solid var(--c-line); border-radius: 28px; padding: 32px; width: min(420px, 100%); text-align: center; box-shadow: 0 20px 60px rgba(18, 38, 31, .12); }
+.login-card { background: #fff; border: 1px solid var(--c-line); border-radius: 28px; padding: 32px; width: min(420px, 100%); text-align: center; box-shadow: 0 20px 60px rgba(35,38,27, .12); }
 .login-card form { text-align: left; margin-top: 16px; }
 .login-card h1 { margin-top: 4px; }
 .form-error { background: var(--c-danger-soft); color: var(--c-danger); padding: 10px 12px; border-radius: var(--r-md); margin-bottom: 12px; font-weight: 600; }
@@ -172,7 +172,7 @@ dl.kv dt { color: var(--c-muted); } dl.kv dd { margin: 0; font-weight: 700; }
 
 .thread { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 50vh; overflow-y: auto; }
 .thread li { background: var(--c-surface-muted); border-radius: var(--r-md); padding: 8px 12px; }
-.thread li.staff { background: #e3efff; }
+.thread li.staff { background: #ddedea; }
 .thread li p { margin: 4px 0 0; white-space: pre-wrap; }
 
 .temp-password { font: 800 28px/1.2 ui-monospace, Consolas, monospace; letter-spacing: .12em; text-align: center; background: var(--c-surface-muted); border-radius: var(--r-md); padding: 14px; margin: 0 0 10px; user-select: all; }
@@ -201,7 +201,7 @@ tr.row-flash td { animation: rowflash 150ms ease-out; }
 @media (prefers-reduced-motion: reduce) { tr.row-flash td { animation: none; } }
 
 /* A calm note above a page (for example: the Tiwala score is in shadow mode). */
-.alert-info { padding: 12px 16px; margin-bottom: 16px; border-radius: var(--r-md); background: #e3efff; color: #1b4f9c; }
+.alert-info { padding: 12px 16px; margin-bottom: 16px; border-radius: var(--r-md); background: #ddedea; color: #1f5f5b; }
 
 /* A plain list (no bullets), for short lists inside cards. */
 ul.plain { list-style: none; padding: 0; margin: 8px 0 0; }

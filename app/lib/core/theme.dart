@@ -4,39 +4,39 @@ import 'package:flutter/material.dart';
 /// so the app and the web portal look like one product.
 class HiColors {
   /// CircuLink green: buttons, selected states, the loop in the logo. Text and icons on it use [onPrimary] (white, 5.1:1).
-  static const Color primary = Color(0xFF0E7C66);
-  static const Color primarySoft = Color(0xFFD7F2EA);
-  static const Color mint = Color(0xFFE6F6EF);
+  static const Color primary = Color(0xFF4A6B2A);
+  static const Color primarySoft = Color(0xFFE4ECD5);
+  static const Color mint = Color(0xFFEEF2E2);
   static const Color onPrimary = Color(0xFFFFFFFF);
 
   /// Darker green for links and small icons on light backgrounds.
-  static const Color accent = Color(0xFF0B6B58);
+  static const Color accent = Color(0xFF3D5A22);
 
   /// Amber: points, badges, the chain link in the logo.
-  static const Color sun = Color(0xFFF2B33D);
-  static const Color sunSoft = Color(0xFFFDF0D5);
+  static const Color sun = Color(0xFFBF8B2E);
+  static const Color sunSoft = Color(0xFFF6EBD3);
 
   /// Kept for older components: the same amber as [sun].
-  static const Color fur = Color(0xFFF2B33D);
-  static const Color cream = Color(0xFFF7FAF8);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFEEF3F0);
-  static const Color ink = Color(0xFF12261F);
-  static const Color muted = Color(0xFF4A5F57);
-  static const Color mutedSoft = Color(0xFFE3EBE7);
+  static const Color fur = Color(0xFFBF8B2E);
+  static const Color cream = Color(0xFFF6F2E8);
+  static const Color card = Color(0xFFFFFDF8);
+  static const Color surfaceMuted = Color(0xFFEFEADD);
+  static const Color ink = Color(0xFF23261B);
+  static const Color muted = Color(0xFF5C5F4E);
+  static const Color mutedSoft = Color(0xFFE6E2D5);
 
   /// Success.
-  static const Color leaf = Color(0xFF166534);
-  static const Color leafSoft = Color(0xFFDCFCE7);
+  static const Color leaf = Color(0xFF2F6B3A);
+  static const Color leafSoft = Color(0xFFE1EDD9);
   static const Color warn = Color(0xFF7A5410);
-  static const Color warnSoft = Color(0xFFFDF1D6);
+  static const Color warnSoft = Color(0xFFF8ECD2);
   static const Color danger = Color(0xFFB42318);
-  static const Color dangerSoft = Color(0xFFFEE4E2);
-  static const Color info = Color(0xFF1B4F9C);
-  static const Color infoSoft = Color(0xFFE3EFFF);
+  static const Color dangerSoft = Color(0xFFFBE4DF);
+  static const Color info = Color(0xFF1F5F5B);
+  static const Color infoSoft = Color(0xFFDDEDEA);
 
-  static const Color line = Color(0xFFDCE5E0);
-  static const Color lineStrong = Color(0xFFC3D0C9);
+  static const Color line = Color(0xFFE3DDCF);
+  static const Color lineStrong = Color(0xFFCCC4B2);
 }
 
 class HiSpace {

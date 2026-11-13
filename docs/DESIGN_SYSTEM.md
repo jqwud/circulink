@@ -21,19 +21,19 @@ One source: `brand/tokens.json` (also `brand/tokens.css` for the portal). The ap
 
 | Token | Hex | Use | Never |
 |---|---|---|---|
-| `primary` (CircuLink green) | #0E7C66 | Main buttons, selected states, the impact card, the loop in the logo | |
-| `onPrimary` | #FFFFFF | Text and icons on green (5.1:1) | |
-| `primarySoft` / `mint` | #D7F2EA / #E6F6EF | Unread rows, highlights, icon circles | |
-| `accent` | #0B6B58 | Links, small icons, focus rings | Large fills |
-| `sun` / `sunSoft` | #F2B33D / #FDF0D5 | Points, badges, the chain link in the logo | Text |
-| `cream` | #F7FAF8 | Screen background | |
-| `card` | #FFFFFF | Cards, sheets, dialogs | |
-| `ink` / `muted` | #12261F / #4A5F57 | Text / secondary text (both pass 4.5:1 on cream and white) | |
-| `leaf` / `leafSoft` | #166534 / #DCFCE7 | Success | |
-| `warn` / `warnSoft` | #7A5410 / #FDF1D6 | Waiting, special handling | |
-| `danger` / `dangerSoft` | #B42318 / #FEE4E2 | Errors, rejected items, destructive buttons | |
-| `info` / `infoSoft` | #1B4F9C / #E3EFFF | What happens next, staff messages | |
-| `line` / `lineStrong` | #DCE5E0 / #C3D0C9 | Borders and dividers | |
+| `primary` (moss) | #4A6B2A | Main buttons, selected states, the impact card, the loop in the logo | |
+| `onPrimary` | #FFFFFF | Text and icons on green (6.1:1) | |
+| `primarySoft` / `mint` | #E4ECD5 / #EEF2E2 | Unread rows, highlights, icon circles | |
+| `accent` | #3D5A22 | Links, small icons, focus rings | Large fills |
+| `sun` / `sunSoft` | #BF8B2E / #F6EBD3 | Points, badges, the chain link in the logo | Text |
+| `cream` | #F6F2E8 | Screen background | |
+| `card` | #FFFDF8 | Cards, sheets, dialogs | |
+| `ink` / `muted` | #23261B / #5C5F4E | Text / secondary text (both pass 4.5:1 on cream and white) | |
+| `leaf` / `leafSoft` | #2F6B3A / #E1EDD9 | Success | |
+| `warn` / `warnSoft` | #7A5410 / #F8ECD2 | Waiting, special handling | |
+| `danger` / `dangerSoft` | #B42318 / #FBE4DF | Errors, rejected items, destructive buttons | |
+| `info` / `infoSoft` | #1F5F5B / #DDEDEA | What happens next, staff messages | |
+| `line` / `lineStrong` | #E3DDCF / #CCC4B2 | Borders and dividers | |
 
 ### Type (Nunito, bundled)
 

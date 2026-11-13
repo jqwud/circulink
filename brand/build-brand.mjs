@@ -10,39 +10,39 @@ const root = path.join(here, '..');
 // ---------- design tokens (shared by app and portal) ----------
 export const tokens = {
   color: {
-    primary: '#0E7C66',      // CircuLink green: buttons, selected states, the loop in the logo (5.1:1 with white)
-    primarySoft: '#D7F2EA',  // pale green tint
-    mint: '#E6F6EF',         // light green surface, impact cards
+    primary: '#4A6B2A',      // moss: buttons, selected states, the loop in the logo (6.1:1 with white)
+    primarySoft: '#E4ECD5',  // pale moss tint
+    mint: '#EEF2E2',         // light moss surface, impact cards
     onPrimary: '#FFFFFF',    // text and icons on green
-    accent: '#0B6B58',       // links and small icons on light backgrounds
-    sun: '#F2B33D',          // amber: points, badges, the link in the logo
-    sunSoft: '#FDF0D5',
-    fur: '#F2B33D',          // kept for older components: same as sun
-    furDark: '#C98A12',
-    cream: '#F7FAF8',        // page background
-    card: '#FFFFFF',         // raised surfaces
-    surfaceMuted: '#EEF3F0', // input fill, skeletons, quiet panels
-    ink: '#12261F',          // all text
-    muted: '#4A5F57',        // secondary text
-    mutedSoft: '#E3EBE7',
-    leaf: '#166534',         // success
-    leafSoft: '#DCFCE7',
+    accent: '#3D5A22',       // links and small icons on light backgrounds
+    sun: '#BF8B2E',          // SDG 12 gold: points, badges, the link in the logo
+    sunSoft: '#F6EBD3',
+    fur: '#BF8B2E',          // kept for older components: same as sun
+    furDark: '#8F6620',
+    cream: '#F6F2E8',        // oat/kraft page background
+    card: '#FFFDF8',         // warm white raised surfaces
+    surfaceMuted: '#EFEADD', // input fill, skeletons, quiet panels
+    ink: '#23261B',          // all text
+    muted: '#5C5F4E',        // secondary text
+    mutedSoft: '#E6E2D5',
+    leaf: '#2F6B3A',         // success
+    leafSoft: '#E1EDD9',
     warn: '#7A5410',         // text-safe on warnSoft
-    warnSoft: '#FDF1D6',
+    warnSoft: '#F8ECD2',
     danger: '#B42318',
-    dangerSoft: '#FEE4E2',
-    info: '#1B4F9C',
-    infoSoft: '#E3EFFF',
-    line: '#DCE5E0',         // hairlines and input borders
-    lineStrong: '#C3D0C9',
+    dangerSoft: '#FBE4DF',
+    info: '#1F5F5B',
+    infoSoft: '#DDEDEA',
+    line: '#E3DDCF',         // hairlines and input borders
+    lineStrong: '#CCC4B2',
   },
   radius: { sm: 10, md: 14, lg: 20, pill: 999 },
   space: { xs: 4, sm: 8, ms: 12, md: 16, lg: 24, xl: 32 },
   // Soft shadows tinted with ink. card: resting cards, float: bars and sheets, modal: dialogs.
   shadow: {
-    card: '0 1px 2px rgba(18,38,31,.05), 0 2px 8px rgba(18,38,31,.05)',
-    float: '0 2px 6px rgba(18,38,31,.06), 0 8px 24px rgba(18,38,31,.08)',
-    modal: '0 8px 16px rgba(18,38,31,.08), 0 20px 48px rgba(18,38,31,.14)',
+    card: '0 1px 2px rgba(35,38,27,.05), 0 2px 8px rgba(35,38,27,.05)',
+    float: '0 2px 6px rgba(35,38,27,.06), 0 8px 24px rgba(35,38,27,.08)',
+    modal: '0 8px 16px rgba(35,38,27,.08), 0 20px 48px rgba(35,38,27,.14)',
   },
   // size / weight / line height
   type: {
