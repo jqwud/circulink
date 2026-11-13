@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.0: UI and UX pass (2026-11-13)
+
+- **App forms:** sign-in, sign-up and change password use the shared `HiTextField`, with autofill and a Next key. Mistakes now show under the field they belong to; server errors show as a red `InfoBanner` with an icon.
+- **Home:** the *Your impact* card shows a dash while loading and a short message when it cannot load, instead of a false 0 kg and 0 points.
+- **App text:** every screen uses the `HiText` styles; the splash tagline is translated.
+- **Portal, staff:** *Hand over* and *Mark as sent* ask before acting, because they confirm residents' points and cannot be undone. A failed load of the recycle batches or the category list now shows an error with *Try again* instead of nothing.
+- **Portal, partner:** *Take back* asks before cancelling a request.
+- **Portal dates:** shown in Manila time (for example *Nov 13, 2026, 3:12 PM*) instead of raw text, in check-in, releases, requests, flags, the audit log and expiry dates.
+- **Portal styling:** the focus ring uses the accent token, stat and note borders come from the tone tokens, the language buttons announce which one is on (`aria-pressed`), and inline styles were replaced by shared classes (only the data-sized chart bars keep one).
+
+## 1.1.0: the CI/CD lab (Lab Act 3) (2026-11-13)
+
+- **Pipeline:** the workflow is `.github/workflows/ci-cd.yml`, can be started by hand (`workflow_dispatch`), and also publishes the image as `:main` and `:v1.2.3`.
+- **Secret check:** a step confirms the `DEMO_API_KEY` repository secret without printing it; on forks and fresh copies, where secrets are missing, it only warns.
+- **Lab challenges:** a deliberately broken test stopped publishing (Challenge 1), pull request #1 ran the checks without publishing (Challenge 2), and the `v1.0.0` and `v1.1.0` tags published versioned images (Challenges 3 and 4).
+- **Team** table in the README.
+
 ## 0.9.1: the complete test case and stricter sign-up (2026-11-13)
 
 - **`docs/TEST_CASES.md`:** one test case of 26 steps from sign-up to the monthly report, with the security checks at each step. All of it is automated in `server/test/full-journey.test.js`.

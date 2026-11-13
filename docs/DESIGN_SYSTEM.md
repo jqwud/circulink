@@ -67,7 +67,7 @@ All live in `app/lib/widgets/ui/`, one per file; `import '../widgets/common.dart
 | `HiCard` | `hi_card.dart` | Any grouped content. White with shadow, or tinted (`color`) and flat. Tappable with `onTap`. |
 | `StatusChip` + `Tone` | `status_chip.dart`, `tone.dart` | A status, tier or cost. Tones: ok, warn, bad, info, muted; each has an icon. |
 | `InfoBanner` | `info_banner.dart` | A sentence about what happens next (info), something to watch (warn), done (ok) or a problem (bad). |
-| `HiTextField` | `hi_field.dart` | Every text input. Label above, helper or error below; never a custom border. |
+| `HiTextField` | `hi_field.dart` | Every text input. Label above, helper or error below; never a custom border. `suffix` for a button at the end, like show/hide password. |
 | `showHiSheet` | `hi_sheet.dart` | Short forms (reject, rate, report a problem): a bottom sheet with a title that rises with the keyboard. |
 | `HiTabs` | `hi_tabs.dart` | Tabs at the top of a screen, as pills, with optional counts. |
 | `HiListTile` | `rows.dart` | A row that opens something (Profile menu). `danger` for delete. |
@@ -89,6 +89,9 @@ All live in `app/lib/widgets/ui/`, one per file; `import '../widgets/common.dart
 - **Errors:** the server's message in the person's language (error codes in `kErrorFil`); a retry; never a stack trace. Server errors carry a `request_id` people can quote.
 - **Forms:** labels on every field, errors under the field they belong to, the main button at the end. Check on the phone what can be checked (length, required) and let the server decide the rest.
 - **Destructive actions:** `confirmDialog` (app) or `ConfirmModal` (portal) with the consequence in one sentence; Cancel has the focus; the confirm button is red.
+- **Final actions:** anything that confirms points or cannot be undone (hand over, mark a batch as sent) also asks first, with a normal green confirm button.
+- **Loading in the portal:** a failed load always shows `ErrorBox` with *Try again*; a section never just disappears.
+- **Dates in the portal:** `useDateFormat()` shows Manila time; `date(value, true)` adds the hour for things that happen several times a day. Never show the raw value.
 - **After every action:** `showMessage` for small ones, `celebrateDialog` for big ones.
 - **Sentences with numbers:** write them with placeholders and fill them from the server: `context.tv('You can have up to {n} open drop-off codes.', {'n': app.rule('maxOpenDeclarations', 3)})`.
 - **Notifications:** written in the reader's language from the notice's values (`core/notification_text.dart`).
@@ -104,7 +107,7 @@ All live in `app/lib/widgets/ui/`, one per file; `import '../widgets/common.dart
 
 ## Portal
 
-The portal uses the same tokens (`brand/tokens.css`) and the same words for statuses (`i18n.jsx` maps raw statuses to English and Filipino). Its components live in `portal/src/components.jsx`: `Modal`, `ConfirmModal`, `PasswordModal`, `Badge` (tones match the app's), `Tabs`, `Stat`, `PageHeader`, `Empty`, `ErrorBox`, `Mark` (the logo mark), toasts (`useToast`).
+The portal uses the same tokens (`brand/tokens.css`) and the same words for statuses (`i18n.jsx` maps raw statuses to English and Filipino). Layout helpers in `styles.css` (`.row.between`, `.row.right`, `.row.end`, `.m-0`, `.mt-0`, `.mt-12`, `.mt-16`, `.w-full`) replace inline styles; keep `style={{}}` for sizes that come from data. Its components live in `portal/src/components.jsx`: `Modal`, `ConfirmModal`, `PasswordModal`, `Badge` (tones match the app's), `Tabs`, `Stat`, `PageHeader`, `Empty`, `ErrorBox`, `Mark` (the logo mark), toasts (`useToast`).
 
 ## Adding something new
 
