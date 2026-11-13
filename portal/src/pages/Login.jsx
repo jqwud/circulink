@@ -21,10 +21,10 @@ export default function Login({ LangToggle }) {
   return (
     <main className="login">
       <div className="login-card">
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}><LangToggle /></div>
+        <div className="row right"><LangToggle /></div>
         <h1><img className="login-logo" src="/logo.svg" alt="CircuLink" /></h1>
         <p className="muted">{t('Keeping things in use, one drop-off at a time.')}</p>
-        <h2 style={{ fontSize: 18, marginBottom: 0 }}>{t('Portal login')}</h2>
+        <h2 className="login-title">{t('Portal login')}</h2>
         <form onSubmit={submit}>
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="field">
@@ -35,7 +35,7 @@ export default function Login({ LangToggle }) {
             <label htmlFor="pw">{t('Password')}</label>
             <input id="pw" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          <button className="btn primary" style={{ width: '100%' }} disabled={busy}>{busy ? t('Signing in...') : t('Log in')}</button>
+          <button className="btn primary w-full" disabled={busy}>{busy ? t('Signing in...') : t('Log in')}</button>
         </form>
         <p className="hint">{t('Demo accounts (password circulink123): admin@, staff@ or partner@circulink.test')}</p>
       </div>

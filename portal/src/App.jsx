@@ -80,7 +80,7 @@ function Shell() {
         <div className="me">
           <b>{user.name}</b>
           <span className="muted">{t(ROLE_LABEL[user.role] || user.role)}</span>
-          <div className="row" style={{ marginTop: 10 }}>
+          <div className="row mt-12">
             <button className="btn small" onClick={logout}>{t('Log out')}</button>
             <button className="btn small" onClick={() => setPw(true)}>{t('Change password')}</button>
           </div>

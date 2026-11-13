@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { api } from '../../api.js';
 import { useI18n } from '../../i18n.jsx';
-import { Badge, ConfirmModal, Empty, ErrorBox, Loading, PageHeader, Tabs, useAct, useLoad } from '../../components.jsx';
+import { Badge, ConfirmModal, Empty, ErrorBox, Loading, PageHeader, Tabs, useAct, useDateFormat, useLoad } from '../../components.jsx';
 
 // Drop-offs with unusual weights (R7). Their points wait here: clear them if the weights were real, uphold to
 // cancel the points of that drop-off.
 export default function Flags() {
   const { t } = useI18n();
+  const date = useDateFormat();
   const [status, setStatus] = useState('open');
   const [upholding, setUpholding] = useState(null);
   const list = useLoad(() => api(`/admin/flags?status=${status}`), [status]);
@@ -22,7 +23,7 @@ export default function Flags() {
             <thead><tr><th scope="col">{t('Why')}</th><th scope="col">{t('Resident')}</th><th scope="col">{t('Hub')}</th><th scope="col">{t('Details')}</th><th scope="col"><span className="sr-only">{t('Actions')}</span></th></tr></thead>
             <tbody>{list.data.map((f) => (
               <tr key={f.id}>
-                <td><Badge value="warn" label={t(f.kind)} /><div className="muted">{String(f.created_at).slice(0, 16)}</div></td>
+                <td><Badge value="warn" label={t(f.kind)} /><div className="muted">{date(f.created_at, true)}</div></td>
                 <td>{f.resident_name}</td><td>{f.hub_name}</td><td>{f.detail}</td>
                 <td className="cell-actions">{f.status === 'open' && (
                   <>

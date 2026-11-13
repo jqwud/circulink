@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { api } from '../../api.js';
 import { useI18n } from '../../i18n.jsx';
-import { Empty, ErrorBox, Loading, PageHeader, useLoad } from '../../components.jsx';
+import { Empty, ErrorBox, Loading, PageHeader, useDateFormat, useLoad } from '../../components.jsx';
 
 const ENTITIES = ['', 'user', 'declaration', 'item', 'release', 'recycle_batch', 'flag', 'partner', 'hub', 'recycler', 'category'];
 
 // Every change, newest first. Read-only: nobody can edit or delete it (R12).
 export default function Audit() {
   const { t } = useI18n();
+  const date = useDateFormat();
   const [entity, setEntity] = useState('');
   const [pages, setPages] = useState([]);
   const first = useLoad(async () => { setPages([]); return api(`/admin/audit?limit=100&entity=${entity}`); }, [entity]);
@@ -31,10 +32,10 @@ export default function Audit() {
               <thead><tr><th scope="col">{t('When')}</th><th scope="col">{t('Who')}</th><th scope="col">{t('What')}</th><th scope="col">{t('Details')}</th></tr></thead>
               <tbody>{rows.map((r) => (
                 <tr key={r.id}>
-                  <td>{String(r.created_at).slice(0, 16)}</td>
+                  <td>{date(r.created_at, true)}</td>
                   <td>{r.actor_name || '-'}{r.actor_role ? <div className="muted">{t(`role_${r.actor_role}`)}</div> : null}</td>
                   <td>{r.action.replace(/_/g, ' ')}{r.entity ? <div className="muted">{r.entity} #{r.entity_id}</div> : null}</td>
-                  <td><code style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{r.details ? JSON.stringify(r.details) : ''}</code></td>
+                  <td><code className="code-cell">{r.details ? JSON.stringify(r.details) : ''}</code></td>
                 </tr>
               ))}</tbody>
             </table></div>

@@ -95,6 +95,12 @@ fieldset.settle legend { font-weight: 800; padding: 0 6px; }
 .row.end { align-items: end; }
 .m-0 { margin: 0; }
 .mt-12 { margin-top: 12px; }
+.mt-0 { margin-top: 0; }
+.mt-16 { margin-top: 16px; }
+.row.right { justify-content: flex-end; }
+.w-full { width: 100%; }
+.login-title { font-size: 18px; margin-bottom: 0; }
+.code-cell { white-space: pre-wrap; font-size: 12px; }
 .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
 .toolbar input { max-width: 300px; }
 .toolbar select { width: auto; }

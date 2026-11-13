@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api.js';
 import { useI18n } from '../../i18n.jsx';
-import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, kg, useAct, useLoad } from '../../components.jsx';
+import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, kg, useAct, useDateFormat, useLoad } from '../../components.jsx';
 
 // Reusable items at the hubs, for approved partner organizations. Who gave them is never shown.
 export default function Browse() {
   const { t, lang } = useI18n();
+  const date = useDateFormat();
   const nav = useNavigate();
   const [hub, setHub] = useState('');
   const [picked, setPicked] = useState([]);
@@ -43,7 +44,7 @@ export default function Browse() {
                   <td>{kg(i.weight_kg)}</td>
                   <td>
                     {i.outcome === 'repair' && <Badge value="info" label={t('Repaired')} />}
-                    {i.category.food && <Badge value="warn" label={`${t('expires')} ${String(i.expiry_date).slice(0, 10)}`} />}
+                    {i.category.food && <Badge value="warn" label={`${t('expires')} ${date(i.expiry_date)}`} />}
                   </td>
                 </tr>
               );

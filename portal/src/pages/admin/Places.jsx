@@ -24,7 +24,7 @@ function Hubs() {
   if (list.error) return <ErrorBox error={list.error} onRetry={list.reload} />;
   return (
     <section className="card">
-      <div className="row" style={{ justifyContent: 'flex-end' }}><button className="btn primary" onClick={() => setEditing({})}>{t('New hub')}</button></div>
+      <div className="row right"><button className="btn primary" onClick={() => setEditing({})}>{t('New hub')}</button></div>
       {!list.data.length ? <Empty>{t('Nothing here yet.')}</Empty> : (
         <div className="table-wrap"><table>
           <thead><tr><th scope="col">{t('Name')}</th><th scope="col">{t('Type')}</th><th scope="col">{t('Address')}</th><th scope="col">{t('Staff')}</th><th scope="col">{t('Status')}</th><th scope="col"><span className="sr-only">{t('Actions')}</span></th></tr></thead>
@@ -104,12 +104,12 @@ function Recyclers() {
           </tr>
         ))}</tbody>
       </table></div>
-      <form className="row" style={{ marginTop: 16, gap: 8, alignItems: 'end' }} onSubmit={(e) => {
+      <form className="row end mt-16" onSubmit={(e) => {
         e.preventDefault();
         run(() => api('/admin/recyclers', { method: 'POST', body: f }), t('Recycler added.'), async () => { setF({ name: '', materials: '', accredited: false }); await list.reload(); });
       }}>
-        <div className="field" style={{ margin: 0 }}><label htmlFor="rn">{t('New recycler')}</label><input id="rn" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required minLength={2} /></div>
-        <div className="field" style={{ margin: 0 }}><label htmlFor="rm">{t('Takes')}</label><input id="rm" value={f.materials} onChange={(e) => setF({ ...f, materials: e.target.value })} required minLength={2} placeholder={t('Plastic, cans, paper')} /></div>
+        <div className="field m-0"><label htmlFor="rn">{t('New recycler')}</label><input id="rn" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} required minLength={2} /></div>
+        <div className="field m-0"><label htmlFor="rm">{t('Takes')}</label><input id="rm" value={f.materials} onChange={(e) => setF({ ...f, materials: e.target.value })} required minLength={2} placeholder={t('Plastic, cans, paper')} /></div>
         <label className="choice"><input type="checkbox" checked={f.accredited} onChange={(e) => setF({ ...f, accredited: e.target.checked })} /> {t('Accredited')}</label>
         <button className="btn" disabled={busy}>{t('Add')}</button>
       </form>

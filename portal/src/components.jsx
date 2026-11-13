@@ -180,7 +180,7 @@ export function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, 
   }
   return (
     <Modal title={title} onClose={busy ? () => {} : onClose}>
-      <p style={{ marginTop: 0 }}>{message}</p>
+      <p className="mt-0">{message}</p>
       <div className="modal-actions">
         <button type="button" className="btn" onClick={onClose} disabled={busy}>{t('Cancel')}</button>
         <button type="button" className={`btn ${danger ? 'danger' : 'primary'}`} onClick={yes} disabled={busy}>{confirmLabel}</button>
@@ -207,7 +207,7 @@ export function PasswordModal({ forced, onClose }) {
   }
   return (
     <Modal title={forced ? t('Choose your own password') : t('Change password')} onClose={forced ? () => {} : onClose}>
-      {forced && <p className="muted" style={{ marginTop: 0 }}>{t('An admin gave you a temporary password. Pick a new one that only you know.')}</p>}
+      {forced && <p className="muted mt-0">{t('An admin gave you a temporary password. Pick a new one that only you know.')}</p>}
       <form onSubmit={save}>
         <div className="field"><label htmlFor="pw1">{forced ? t('Temporary password') : t('Current password')}</label><input id="pw1" type="password" autoComplete="current-password" value={f.current} onChange={set('current')} required /></div>
         <div className="field"><label htmlFor="pw2">{t('New password')}</label><input id="pw2" type="password" autoComplete="new-password" minLength={8} placeholder={t('At least 8 characters')} value={f.next} onChange={set('next')} required /></div>
