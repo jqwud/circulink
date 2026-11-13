@@ -41,7 +41,7 @@ router.post('/declarations', authRequired, requireResident, wrap(async (req, res
 }));
 
 router.get('/declarations', authRequired, requireResident, wrap(async (req, res) => {
-  res.json(await myDeclarations(req.user.id));
+  res.json(await myDeclarations(req.user.id, req.query));
 }));
 
 router.get('/declarations/:id', authRequired, requireResident, wrap(async (req, res) => {

@@ -276,4 +276,7 @@ const Map<String, String> kErrorFil = <String, String>{
   "Open in Maps": "Buksan sa Maps",
   "What this hub accepts": "Tinatanggap ng hub na ito",
   "Only hubs approved by CircuLink admins appear here. Staff weigh every item, so your points are always checked.": "Mga hub lang na inaprubahan ng mga admin ng CircuLink ang lumalabas dito. Tinitimbang ng staff ang bawat gamit, kaya laging sinusuri ang points mo.",
+  "Show older drop-offs": "Ipakita ang mas lumang drop-off",
+  "Show older notifications": "Ipakita ang mas lumang abiso",
+  "New": "Bago",
 };

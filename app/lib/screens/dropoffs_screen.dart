@@ -9,9 +9,12 @@ import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'declare_screen.dart';
 
-/// The resident's drop-offs: open codes first (to show at the hub), then the history with each item's outcome.
-class DropoffsScreen extends StatelessWidget {
+/// The resident's drop-offs: open codes first (to show at the hub), then the history with each item's outcome,
+/// [pageSize] at a time so a long history stays quick.
+class DropoffsScreen extends StatefulWidget {
   const DropoffsScreen({super.key});
+
+  static const int pageSize = 20;
 
   static Future<void> openDeclare(BuildContext context) async {
     final Map<String, dynamic>? made = await Navigator.of(context).push<Map<String, dynamic>>(
@@ -23,14 +26,49 @@ class DropoffsScreen extends StatelessWidget {
   }
 
   @override
+  State<DropoffsScreen> createState() => _DropoffsScreenState();
+}
+
+class _DropoffsScreenState extends State<DropoffsScreen> {
+  List<Map<String, dynamic>> _past = <Map<String, dynamic>>[];
+  bool _hasMore = false;
+  bool _loadingMore = false;
+
+  String _pastPath(int offset) => '/declarations?status=past&limit=${DropoffsScreen.pageSize}&offset=$offset';
+
+  // Open codes and the first page of the history, together.
+  Future<List<Map<String, dynamic>>> _load() async {
+    final AppState app = context.app;
+    final List<dynamic> both = await Future.wait(<Future<dynamic>>[app.api.get('/declarations?status=open'), app.api.get(_pastPath(0))]);
+    _past = listOf(both[1]);
+    _hasMore = _past.length == DropoffsScreen.pageSize;
+    return listOf(both[0]);
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _loadingMore = true);
+    try {
+      final List<Map<String, dynamic>> more = listOf(await context.app.api.get(_pastPath(_past.length)));
+      if (!mounted) return;
+      setState(() {
+        _past = <Map<String, dynamic>>[..._past, ...more];
+        _hasMore = more.length == DropoffsScreen.pageSize;
+      });
+    } catch (e) {
+      if (mounted) showMessage(context, context.app.errorText(e), bad: true);
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final AppState app = context.watch<AppState>();
     return AsyncView<List<Map<String, dynamic>>>(
       refreshKey: app.version,
-      loader: () async => listOf(await app.api.get('/declarations')),
-      builder: (BuildContext context, List<Map<String, dynamic>> all, Future<void> Function() reload) {
-        final List<Map<String, dynamic>> open = all.where((Map<String, dynamic> d) => str(d['status']) == 'open').toList();
-        final List<Map<String, dynamic>> past = all.where((Map<String, dynamic> d) => str(d['status']) != 'open').toList();
+      loader: _load,
+      builder: (BuildContext context, List<Map<String, dynamic>> open, Future<void> Function() reload) {
+        final List<Map<String, dynamic>> past = _past;
         final int maxOpen = app.rule('maxOpenDeclarations', 3);
         return ListView(
           padding: const EdgeInsets.fromLTRB(HiSpace.gutter, 0, HiSpace.gutter, HiSpace.xl),
@@ -39,7 +77,7 @@ class DropoffsScreen extends StatelessWidget {
             PrimaryButton(
               label: context.t('Declare items'),
               icon: Icons.add_rounded,
-              onPressed: open.length >= maxOpen ? null : () => openDeclare(context),
+              onPressed: open.length >= maxOpen ? null : () => DropoffsScreen.openDeclare(context),
             ),
             if (open.length >= maxOpen)
               Padding(
@@ -53,6 +91,15 @@ class DropoffsScreen extends StatelessWidget {
               EmptyState(message: context.t('No drop-offs yet. Your past drop-offs and what happened to each item show here.'))
             else
               for (final Map<String, dynamic> d in past) _DropoffCard(d: d),
+            if (_hasMore)
+              Padding(
+                padding: const EdgeInsets.only(top: HiSpace.sm),
+                child: SoftButton(
+                  label: _loadingMore ? context.t('Loading...') : context.t('Show older drop-offs'),
+                  icon: Icons.expand_more_rounded,
+                  onPressed: _loadingMore ? null : _loadMore,
+                ),
+              ),
           ],
         );
       },

@@ -59,6 +59,16 @@ describe('declaring items', () => {
     assert.equal((await s.api('GET', `/declarations/${theirs}`, ben)).status, 404);
     assert.equal((await s.api('DELETE', `/declarations/${theirs}`, ben)).status, 404);
   });
+  test('open codes and past drop-offs load separately, the past a page at a time', async () => {
+    const open = (await s.api('GET', '/declarations?status=open', ben)).json;
+    assert.ok(open.length >= 1 && open.every((d) => d.status === 'open'));
+    const page1 = (await s.api('GET', '/declarations?status=past&limit=1&offset=0', ben)).json;
+    assert.equal(page1.length, 1);
+    assert.notEqual(page1[0].status, 'open');
+    const all = (await s.api('GET', '/declarations?status=past&limit=50', ben)).json;
+    const page2 = (await s.api('GET', '/declarations?status=past&limit=1&offset=1', ben)).json;
+    assert.deepEqual(page2.map((d) => d.id), all.slice(1, 2).map((d) => d.id));
+  });
   test('only residents declare; staff, partners and admins cannot', async () => {
     for (const t of [staff, partner, admin]) assert.equal((await declare(t, ['clothes'])).status, 403);
   });

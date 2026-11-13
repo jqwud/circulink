@@ -1,7 +1,8 @@
 // The drop-off flow (spec section 3): a resident declares items and gets a code, staff check the code in at
 // the hub, then weigh and sort each item. Points are written here and nowhere else (R1, R12). Every check is
 // a rule function from rules.js; this file only loads rows, calls the rules and saves the result.
-import { pool, q, one, withTx, todayPH, phTimestamp } from './db.js';
+import { pool, q, one, withTx, todayPH, phTimestamp, pageOf } from './db.js';
+import { config } from './config.js';
 import { HttpError, bad, notFound } from './errors.js';
 import { audit, notify } from './services.js';
 import {
@@ -90,8 +91,12 @@ export async function declarationView(id, { forStaff = false } = {}) {
   };
 }
 
-export async function myDeclarations(residentId) {
-  const ids = await q('SELECT id FROM declarations WHERE resident_id = ? ORDER BY id DESC LIMIT 100', [residentId]);
+// ?status=open gives the open codes, ?status=past the rest a page at a time (limit, offset), so a long
+// history loads in parts. Without status: the newest 100 of both, as before.
+export async function myDeclarations(residentId, query = {}) {
+  const which = query.status === 'open' ? "AND status = 'open'" : query.status === 'past' ? "AND status <> 'open'" : '';
+  const page = which ? pageOf(query, config.pages.residentDefault, config.pages.residentMax) : 'LIMIT 100';
+  const ids = await q(`SELECT id FROM declarations WHERE resident_id = ? ${which} ORDER BY id DESC ${page}`, [residentId]);
   return Promise.all(ids.map((r) => declarationView(r.id)));
 }
 
