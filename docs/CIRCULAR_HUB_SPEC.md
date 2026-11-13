@@ -1,7 +1,7 @@
 # CircuLink: Circular Drop-off Hub System Spec
 
 Status: approved concept (2026-11-12). Replaces the Hiraman borrowing system.
-Name: **CircuLink** (chosen by the team, 2026-11-12). Steps 1 (clean slate, rebrand, new database), 2 (rules engine R1 to R13), 3 (the drop-off flow in the API), 4 (stock, releases, repair and recycling in the API) 5 (the admin side of the API) and 6 (the portal screens) are done.
+Name: **CircuLink** (chosen by the team, 2026-11-12). Steps 1 (clean slate, rebrand, new database), 2 (rules engine R1 to R13), 3 (the drop-off flow in the API), 4 (stock, releases, repair and recycling in the API) 5 (the admin side of the API), 6 (the portal screens) and 7 (the app screens) are done.
 
 ## 1. Purpose (SDG 12)
 

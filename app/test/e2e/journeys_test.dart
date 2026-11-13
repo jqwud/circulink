@@ -154,4 +154,32 @@ void main() {
     await tapAndWait(tester, find.widgetWithText(FilledButton, 'Log in'), find.textContaining('use the web portal'));
     await settle(tester);
   }, skip: skip);
+
+  testWidgets('a resident declares items, gets a code, and sees what staff decided', (WidgetTester tester) async {
+    await openApp(tester);
+    await logIn(tester, 'carlo@circulink.test', 'circulink123');
+    await tapAndWait(tester, find.text('Drop-offs'), find.text('My drop-offs'));
+    await tapAndWait(tester, find.widgetWithText(FilledButton, 'Declare items'), find.text('Get my drop-off code'));
+    await tapAndWait(tester, find.text('Hub'), find.text('Campus Green Hub').last);
+    await tapAndWait(tester, find.text('Campus Green Hub').last, find.text('Category'));
+    await tapAndWait(tester, find.text('Category'), find.text('Clothes and textiles').last);
+    await tester.tap(find.text('Clothes and textiles').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'What is it? (Optional)'), '3 shirts');
+    await tapAndWait(tester, find.widgetWithText(FilledButton, 'Get my drop-off code'), find.text('Your drop-off code'));
+
+    // At the hub: staff check the code in and sort the item (the portal does this; here, the API).
+    final String carlo = await tester.runAsync(() => tokenOf('carlo')) as String;
+    final String staff = await tester.runAsync(() => tokenOf('staff')) as String;
+    final Map<String, dynamic> mine = ((await tester.runAsync(() => call('GET', '/declarations', token: carlo))) as List<dynamic>).first as Map<String, dynamic>;
+    expect(find.text(mine['code'] as String), findsOneWidget);
+    final Map<String, dynamic> received = await tester.runAsync(() => call('POST', '/staff/checkin', token: staff, body: <String, dynamic>{'code': mine['code']})) as Map<String, dynamic>;
+    final int itemId = ((received['items'] as List<dynamic>).first as Map<String, dynamic>)['id'] as int;
+    await tester.runAsync(() => call('POST', '/staff/items/$itemId/sort', token: staff, body: <String, dynamic>{'weight_kg': 2, 'outcome': 'recycle'}));
+
+    await tester.fling(find.byType(ListView).first, const Offset(0, 500), 1500);
+    await waitFor(tester, find.text('Received at the hub'));
+    expect(find.text('2 kg · 10 points (pending)'), findsOneWidget);
+    await settle(tester);
+  }, skip: skip);
 }
