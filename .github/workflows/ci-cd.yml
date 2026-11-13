@@ -11,6 +11,7 @@ on:
     branches: ['**']
     tags: ['v*']
   pull_request:
+  workflow_dispatch:   # run it by hand from the Actions tab
 
 # Jobs may only read the code. The publish job alone is also allowed to write packages.
 permissions:
@@ -60,7 +61,7 @@ jobs:
             echo "::warning title=DEMO_API_KEY missing::DEMO_API_KEY is not set (normal on forks and fresh clones)."
             exit 0
           fi
-          echo "DEMO_API_KEY is configured (value hidden)"
+          echo "Secret successfully configured."
 
   app:
     name: App (analyze and tests)
@@ -191,12 +192,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      # main -> :latest and :sha-<commit>; tag v1.2.3 -> :1.2.3 and :1.2
+      # main -> :main, :latest and :sha-<commit>; tag v1.2.3 -> :v1.2.3, :1.2.3 and :1.2
       - id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
+            type=ref,event=branch
+            type=ref,event=tag
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha
             type=semver,pattern={{version}}

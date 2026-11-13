@@ -1,6 +1,6 @@
 <p align="center"><img src="brand/logo.svg" alt="CircuLink" width="360"></p>
 
-<p align="center"><a href="https://github.com/jqwud/circulink/actions/workflows/ci.yml"><img src="https://github.com/jqwud/circulink/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI/CD"></a></p>
+<p align="center"><a href="https://github.com/jqwud/circulink/actions/workflows/ci-cd.yml"><img src="https://github.com/jqwud/circulink/actions/workflows/ci-cd.yml/badge.svg?branch=main" alt="CI/CD"></a></p>
 
 **Keep it in the loop.** CircuLink is a drop-off hub system that keeps items in use and out of the landfill. Residents bring things they no longer need to a hub at a school or barangay. Hub staff weigh each item and sort it: **reuse, repair, recycle or reject**. Reusable items go to verified partner organizations (shelters, schools, NGOs), and recyclables go to recyclers. Everything is weighed, so the main measure is **kilograms kept in use**.
 
@@ -31,7 +31,7 @@ The rules are numbered R1 to R13 in the spec, and each one has an automated test
 | `brand/` | The logo, icons and colors, one source for the app and the portal (`node build-brand.mjs`, `node build-icons.mjs`). |
 | `docs/` | `CIRCULAR_HUB_SPEC.md` (what we are building), `SETUP.md` (how to run it), `CONTAINERS.md` (Docker), `CICD.md` (the pipeline), `TEST_CASES.md` (the complete test case), `ARCHITECTURE.md` (how it fits together), `DESIGN_SYSTEM.md` (how it looks), `RELEASE.md`, `CHANGELOG.md`. |
 | `Dockerfile`, `docker-compose*.yml` | MySQL, the API and the portal in containers. |
-| `.github/workflows/ci.yml` | The CI/CD pipeline: checks on every push and pull request, and the image published to GHCR from `main` and `v*` tags. |
+| `.github/workflows/ci-cd.yml` | The CI/CD pipeline: checks on every push and pull request, and the image published to GHCR from `main` and `v*` tags. |
 
 ## Quick start
 

@@ -66,4 +66,4 @@ Points are written to `points_ledger` as `pending` when staff process an item. T
 
 ## From a push to a published image
 
-`.github/workflows/ci.yml` checks every push and pull request (API tests on MySQL, app, portal, containers, end to end). On `main` and `v*` tags, once every check has passed, it builds the `Dockerfile` and pushes the image to `ghcr.io/jqwud/circulink`. See [`CICD.md`](CICD.md).
+`.github/workflows/ci-cd.yml` checks every push and pull request (API tests on MySQL, app, portal, containers, end to end). On `main` and `v*` tags, once every check has passed, it builds the `Dockerfile` and pushes the image to `ghcr.io/jqwud/circulink`. See [`CICD.md`](CICD.md).

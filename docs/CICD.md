@@ -1,6 +1,6 @@
 # CI/CD: from a push to a published image
 
-Everything is in one file, [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), and uses only free tools: GitHub Actions, Docker and the GitHub Container Registry (GHCR).
+Everything is in one file, [`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml), and uses only free tools: GitHub Actions, Docker and the GitHub Container Registry (GHCR).
 
 ```
  push or pull request

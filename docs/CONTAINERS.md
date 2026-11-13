@@ -79,7 +79,7 @@ The API restarts when you save a file in `server/src`, logs every request, and M
 - **Time zone:** the containers run in Philippine time (`TZ=Asia/Manila`); the API also sets it for every database connection.
 - **Secrets:** `docker.env` holds real passwords and is ignored by git. Never put it in the image or in a chat.
 - **HTTPS:** the containers serve plain HTTP, which is fine on a local network. Hosting on the internet needs HTTPS in front (a reverse proxy) first. The roadmap keeps that for later (decision S1).
-- **Automatic checks:** every push to GitHub builds the image, starts both containers, and checks the health and the portal page (`.github/workflows/ci.yml`, job "Containers"). On `main` and `v*` tags the image is then published to GHCR.
+- **Automatic checks:** every push to GitHub builds the image, starts both containers, and checks the health and the portal page (`.github/workflows/ci-cd.yml`, job "Containers"). On `main` and `v*` tags the image is then published to GHCR.
 
 ## When something goes wrong
 
