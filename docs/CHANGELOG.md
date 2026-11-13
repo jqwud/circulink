@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0: the mobile overhaul and certificates (2026-11-14)
+
+- **Moss & Ochre palette:** moss green with SDG 12 gold on an oat background, with no blues. One source, `brand/build-brand.mjs`, feeds the app, the portal, the logos and the icons. Every text colour passes WCAG AA.
+- **Home:** an impact hero with one big number (kg kept in use), a separate points card with a verified mark and a tier progress bar, Declare plus two lighter actions, and "How it works" in three steps, open only for new residents.
+- **Navigation:** a floating pill bar whose open tab is a solid moss pill. Tappable cards sink slightly when pressed. Counters animate, except when "reduce motion" is on.
+- **Hubs:** category icons instead of a text list, and a hub page with a photo of the real place and Open in Maps. Admins upload hub photos in the portal (migration `002`).
+- **Notifications** have colour-coded icons for drop-offs, points, system notices and warnings. **Drop-offs and notifications load in pages**, with `GET /declarations?status=open|past&limit&offset`.
+- **Profile:** a hero with the tier, a stat strip, achievements, and settings grouped into three cards. The server address is no longer shown.
+- **Certificates** (`docs/CERTIFICATES.md`, migration `003`): Participation, Recognition and Circular Champion, signed by the hub head and the CircuLink programme lead. Each can be checked by its code at `/certificates/<code>`, and admins can approve, decline or revoke them.
+
 ## 1.2.0: UI and UX pass (2026-11-13)
 
 - **App forms:** sign-in, sign-up and change password use the shared `HiTextField`, with autofill and a Next key. Mistakes now show under the field they belong to; server errors show as a red `InfoBanner` with an icon.

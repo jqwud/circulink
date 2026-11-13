@@ -19,6 +19,8 @@ _Kind _kindOf(String type) {
       return _Kind.dropoff;
     case 'points_cancelled':
     case 'release_declined':
+    case 'certificate_declined':
+    case 'certificate_revoked':
       return _Kind.warning;
     default:
       return _Kind.system;
@@ -27,6 +29,7 @@ _Kind _kindOf(String type) {
 
 ({IconData icon, Color fg, Color bg}) _look(String type) {
   if (type == 'points_confirmed') return (icon: Icons.stars_rounded, fg: HiColors.warn, bg: HiColors.sunSoft);
+  if (type == 'certificate_issued') return (icon: Icons.workspace_premium_rounded, fg: HiColors.warn, bg: HiColors.sunSoft);
   switch (_kindOf(type)) {
     case _Kind.dropoff:
       return (icon: Icons.inventory_2_rounded, fg: HiColors.accent, bg: HiColors.primarySoft);

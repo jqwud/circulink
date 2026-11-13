@@ -9,6 +9,7 @@ import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/language_toggle.dart';
+import 'certificates_screen.dart';
 import 'home_tab.dart';
 import 'password_screen.dart';
 import 'privacy_screens.dart';
@@ -49,6 +50,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: HiSpace.lg),
             SectionTitle(context.t('Achievements')),
             _Achievements(impact: m, badges: app.badges),
+            const SizedBox(height: HiSpace.md),
+            _Group(rows: <Widget>[
+              _Row(icon: Icons.workspace_premium_outlined, label: context.t('My certificates'), onTap: () => _push(context, const CertificatesScreen())),
+            ]),
             if (deleting) ...<Widget>[
               const SizedBox(height: HiSpace.md),
               InfoBanner(context.t('You asked for your account to be deleted. An admin will do it soon.'), tone: Tone.warn),

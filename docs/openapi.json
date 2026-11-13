@@ -38,6 +38,10 @@
     {
       "name": "admin",
       "description": "Admins: accounts, partner approval, hubs, recyclers, categories, flags and the audit log"
+    },
+    {
+      "name": "certificates",
+      "description": "Certificates that recognise residents, and the public check by code"
     }
   ],
   "security": [
@@ -778,8 +782,34 @@
         "tags": [
           "dropoffs"
         ],
-        "summary": "My drop-offs, newest first, with each item, its outcome and its points",
+        "summary": "My drop-offs, newest first, with each item, its outcome and its points. status=open gives the open codes, status=past the rest (paged)",
         "description": "A logged-in resident.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Success",
@@ -2195,7 +2225,7 @@
           "admin"
         ],
         "summary": "Add a hub",
-        "description": "Admins only. Error codes: bad_name, bad_type, bad_address, bad_status.",
+        "description": "Admins only. Error codes: bad_name, bad_type, bad_address, bad_status, bad_photo.",
         "responses": {
           "201": {
             "description": "Success",
@@ -2225,7 +2255,10 @@
                   "type": {},
                   "address": {},
                   "hours": {},
-                  "status": {}
+                  "status": {},
+                  "photo_url": {},
+                  "head_name": {},
+                  "head_title": {}
                 },
                 "required": [
                   "name",
@@ -2245,7 +2278,7 @@
           "admin"
         ],
         "summary": "Change a hub (pausing or closing it cancels its open codes)",
-        "description": "Admins only. Error codes: not_found, bad_name, bad_type, bad_address, bad_status.",
+        "description": "Admins only. Error codes: not_found, bad_name, bad_type, bad_address, bad_status, bad_photo.",
         "parameters": [
           {
             "name": "id",
@@ -2285,7 +2318,10 @@
                   "type": {},
                   "address": {},
                   "hours": {},
-                  "status": {}
+                  "status": {},
+                  "photo_url": {},
+                  "head_name": {},
+                  "head_title": {}
                 }
               }
             }
@@ -2698,6 +2734,299 @@
             "description": "A CSV file",
             "content": {
               "text/csv": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/certificates": {
+      "get": {
+        "operationId": "getMeCertificates",
+        "tags": [
+          "certificates"
+        ],
+        "summary": "My certificates and what each level still needs",
+        "description": "A logged-in resident.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "postMeCertificates",
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Claim a certificate I qualify for (champion waits for an admin)",
+        "description": "A logged-in resident. Error codes: bad_level, not_eligible, already_claimed, revoked.",
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "level": {}
+                },
+                "required": [
+                  "level"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/certificates": {
+      "get": {
+        "operationId": "getAdminCertificates",
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Certificate requests and certificates, pending first",
+        "description": "Admins only.",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/certificates/{id}/approve": {
+      "post": {
+        "operationId": "postAdminCertificatesIdApprove",
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Issue a pending champion certificate",
+        "description": "Admins only. Error codes: not_found, bad_state.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/certificates/{id}/decline": {
+      "post": {
+        "operationId": "postAdminCertificatesIdDecline",
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Decline a pending request, with a reason the resident sees",
+        "description": "Admins only. Error codes: not_found, bad_state, bad_reason.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {}
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/certificates/{id}/revoke": {
+      "post": {
+        "operationId": "postAdminCertificatesIdRevoke",
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Revoke an issued certificate, with a reason the resident sees",
+        "description": "Admins only. Error codes: not_found, bad_state, bad_reason.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {}
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/certificates/{code}": {
+      "get": {
+        "operationId": "getCertificatesCode",
+        "tags": [
+          "certificates"
+        ],
+        "summary": "Check a certificate by its code: name, level, hub, kg, dates and whether it is still valid (also served as a printable page at /certificates/{code})",
+        "description": "No login needed. Error codes: not_found.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
             }
           },
           "4XX": {

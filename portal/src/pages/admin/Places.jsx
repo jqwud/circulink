@@ -47,7 +47,7 @@ function HubForm({ hub, onClose, onSaved }) {
   const { t } = useI18n();
   const { run, busy } = useAct();
   const isNew = !hub.id;
-  const [f, setF] = useState({ name: hub.name || '', type: hub.type || 'school', address: hub.address || '', hours: hub.hours || '', status: hub.status || 'active', photo_url: hub.photo_url || '' });
+  const [f, setF] = useState({ name: hub.name || '', type: hub.type || 'school', address: hub.address || '', hours: hub.hours || '', status: hub.status || 'active', photo_url: hub.photo_url || '', head_name: hub.head_name || '', head_title: hub.head_title || '' });
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
   return (
     <Modal title={isNew ? t('New hub') : `${t('Edit')} ${hub.name}`} onClose={onClose}>
@@ -62,6 +62,10 @@ function HubForm({ hub, onClose, onSaved }) {
         </div>
         <div className="field"><label htmlFor="ha">{t('Address')}</label><input id="ha" value={f.address} onChange={set('address')} required minLength={5} /></div>
         <div className="field"><label htmlFor="hh">{t('Opening hours')} ({t('optional')})</label><input id="hh" value={f.hours} onChange={set('hours')} /></div>
+        <div className="row">
+          <div className="field grow"><label htmlFor="hhn">{t('Head of this hub')} ({t('signs certificates')})</label><input id="hhn" value={f.head_name} onChange={set('head_name')} placeholder={t('Full name')} /></div>
+          <div className="field grow"><label htmlFor="hht">{t('Position')}</label><input id="hht" value={f.head_title} onChange={set('head_title')} placeholder={f.type === 'barangay' ? 'Punong Barangay' : f.type === 'school' ? 'School Principal' : t('Hub Head')} /></div>
+        </div>
         <div className="field">
           <label htmlFor="hp">{t('Photo of the place')} ({t('optional')})</label>
           {f.photo_url && <img className="hub-photo" src={f.photo_url} alt={t('Current photo of this hub')} />}

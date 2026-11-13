@@ -182,6 +182,9 @@ function hubFields(body, partial) {
   if (body.hours !== undefined) f.hours = String(body.hours || '').trim().slice(0, 120) || null;
   // A photo of the real place (empty removes it). Only files from our own upload endpoint.
   if (body.photo_url !== undefined) f.photo_url = ownPhoto(body.photo_url);
+  // Who signs this hub's certificates: the school principal or the punong barangay.
+  if (body.head_name !== undefined) f.head_name = String(body.head_name || '').trim().slice(0, 120) || null;
+  if (body.head_title !== undefined) f.head_title = String(body.head_title || '').trim().slice(0, 120) || null;
   if (body.status !== undefined) {
     if (!['active', 'paused', 'closed'].includes(body.status)) throw bad('Choose active, paused or closed.', 'bad_status');
     f.status = body.status;

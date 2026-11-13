@@ -15,6 +15,9 @@ import metaRoutes from './routes/meta.js';
 import dropoffRoutes from './routes/dropoffs.js';
 import stockRoutes from './routes/stock.js';
 import adminRoutes from './routes/admin.js';
+import certificateRoutes from './routes/certificates.js';
+import { certificateByCode, certificateHtml } from './certificates.js';
+import { HttpError } from './errors.js';
 
 // The API's version (package.json), shown by /api/health so staff can tell which release is running.
 const VERSION = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
@@ -94,13 +97,27 @@ export function createApp(options = {}) {
   api.use(dropoffRoutes);
   api.use(stockRoutes);
   api.use(adminRoutes);
+  api.use(certificateRoutes);
   app.use('/api', api);
+
+  // A certificate as a printable page, for anyone with its code (QR-free: the code is printed on it).
+  app.get('/certificates/:code', async (req, res, next) => {
+    try {
+      const c = await certificateByCode(req.params.code);
+      const link = `${req.protocol}://${req.get('host')}/certificates/${c.code}`;
+      res.type('html').send(certificateHtml(c, link));
+    } catch (e) {
+      if (e instanceof HttpError && e.status === 404) {
+        res.status(404).type('html').send('<!doctype html><meta charset="utf-8"><title>Not found</title><p style="font-family:sans-serif;padding:24px">No certificate has this code. Check the code and try again.</p>');
+      } else next(e);
+    }
+  });
 
   // If the portal has been built (npm run build in /portal), serve it from the same address as the API.
   const portalDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'portal', 'dist');
   if (fs.existsSync(path.join(portalDist, 'index.html'))) {
     app.use(express.static(portalDist));
-    app.get(/^\/(?!api|uploads).*/, (_req, res) => res.sendFile(path.join(portalDist, 'index.html')));
+    app.get(/^\/(?!api|uploads|certificates\/).*/, (_req, res) => res.sendFile(path.join(portalDist, 'index.html')));
   }
 
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found', code: 'not_found' }));

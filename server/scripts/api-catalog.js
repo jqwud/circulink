@@ -13,6 +13,7 @@ export const TAGS = {
   partners: 'Approved partner organizations ask for reusable stock and confirm pickups',
   stock: 'Hub staff hand stock to partners, move items after sorting, and send recycle batches (items become final here)',
   admin: 'Admins: accounts, partner approval, hubs, recyclers, categories, flags and the audit log',
+  certificates: 'Certificates that recognise residents, and the public check by code',
 };
 
 export const CATALOG = [
@@ -35,7 +36,7 @@ export const CATALOG = [
   R('POST', '/notifications/read-all', 'user', 'Mark all my notifications read', { tag: 'reference' }),
   R('POST', '/notifications/{id}/read', 'user', 'Mark one notification read', { tag: 'reference', errors: ['not_found'] }),
   R('POST', '/declarations', 'resident', 'Declare items for a hub; returns the drop-off with its 6-character code (at most 3 open)', { tag: 'dropoffs', ok: 201, body: ['hub_id*', 'items*', 'note'], errors: ['too_many_open', 'bad_hub', 'bad_items', 'bad_category'] }),
-  R('GET', '/declarations', 'resident', 'My drop-offs, newest first, with each item, its outcome and its points', { tag: 'dropoffs' }),
+  R('GET', '/declarations', 'resident', 'My drop-offs, newest first, with each item, its outcome and its points. status=open gives the open codes, status=past the rest (paged)', { tag: 'dropoffs', query: ['status', 'limit', 'offset'] }),
   R('GET', '/declarations/{id}', 'resident', 'One of my drop-offs', { tag: 'dropoffs', errors: ['not_found'] }),
   R('DELETE', '/declarations/{id}', 'resident', 'Cancel an open drop-off', { tag: 'dropoffs', errors: ['not_found', 'bad_state'] }),
   R('GET', '/me/impact', 'user', 'kg kept in use, estimated CO2e avoided, points (confirmed and pending) and badge', { tag: 'dropoffs' }),
@@ -71,8 +72,8 @@ export const CATALOG = [
   R('GET', '/admin/partners', 'admin', 'Partner organizations, waiting ones first', { tag: 'admin' }),
   R('POST', '/admin/partners/{id}/{decision}', 'admin', 'approve or suspend an organization (suspending drops its open requests)', { tag: 'admin', errors: ['bad_decision', 'not_found', 'not_on_self'] }),
   R('GET', '/admin/hubs', 'admin', 'Every hub, with its staff count', { tag: 'admin' }),
-  R('POST', '/admin/hubs', 'admin', 'Add a hub', { tag: 'admin', ok: 201, body: ['name*', 'type*', 'address*', 'hours', 'status'], errors: ['bad_name', 'bad_type', 'bad_address', 'bad_status'] }),
-  R('PATCH', '/admin/hubs/{id}', 'admin', 'Change a hub (pausing or closing it cancels its open codes)', { tag: 'admin', body: ['name', 'type', 'address', 'hours', 'status'], errors: ['not_found', 'bad_name', 'bad_type', 'bad_address', 'bad_status'] }),
+  R('POST', '/admin/hubs', 'admin', 'Add a hub', { tag: 'admin', ok: 201, body: ['name*', 'type*', 'address*', 'hours', 'status', 'photo_url', 'head_name', 'head_title'], errors: ['bad_name', 'bad_type', 'bad_address', 'bad_status', 'bad_photo'] }),
+  R('PATCH', '/admin/hubs/{id}', 'admin', 'Change a hub (pausing or closing it cancels its open codes)', { tag: 'admin', body: ['name', 'type', 'address', 'hours', 'status', 'photo_url', 'head_name', 'head_title'], errors: ['not_found', 'bad_name', 'bad_type', 'bad_address', 'bad_status', 'bad_photo'] }),
   R('GET', '/admin/recyclers', 'admin', 'Every recycler', { tag: 'admin' }),
   R('POST', '/admin/recyclers', 'admin', 'Add a recycler', { tag: 'admin', ok: 201, body: ['name*', 'materials*', 'accredited', 'status'], errors: ['bad_name', 'bad_materials', 'bad_status'] }),
   R('PATCH', '/admin/recyclers/{id}', 'admin', 'Change a recycler, including its accreditation for e-waste and batteries', { tag: 'admin', body: ['name', 'materials', 'accredited', 'status'], errors: ['not_found', 'bad_name', 'bad_materials', 'bad_status'] }),
@@ -82,5 +83,12 @@ export const CATALOG = [
   R('GET', '/admin/audit', 'admin', 'The audit log, newest first (read-only)', { tag: 'admin', query: ['entity', 'entity_id', 'limit', 'before'] }),
   R('GET', '/admin/reports', 'admin', 'Monthly impact report: kg by outcome, hub and category, plus the last 12 months (totals only, no names)', { tag: 'admin', query: ['month', 'hub_id'], errors: ['bad_month'] }),
   R('GET', '/admin/reports.csv', 'admin', 'The monthly impact report as a CSV file', { tag: 'admin', csv: true, query: ['month', 'hub_id'], errors: ['bad_month'] }),
+  R('GET', '/me/certificates', 'resident', 'My certificates and what each level still needs', { tag: 'certificates' }),
+  R('POST', '/me/certificates', 'resident', 'Claim a certificate I qualify for (champion waits for an admin)', { tag: 'certificates', ok: 201, body: ['level*'], errors: ['bad_level', 'not_eligible', 'already_claimed', 'revoked'] }),
+  R('GET', '/admin/certificates', 'admin', 'Certificate requests and certificates, pending first', { tag: 'certificates', query: ['status'] }),
+  R('POST', '/admin/certificates/{id}/approve', 'admin', 'Issue a pending champion certificate', { tag: 'certificates', errors: ['not_found', 'bad_state'] }),
+  R('POST', '/admin/certificates/{id}/decline', 'admin', 'Decline a pending request, with a reason the resident sees', { tag: 'certificates', body: ['reason*'], errors: ['not_found', 'bad_state', 'bad_reason'] }),
+  R('POST', '/admin/certificates/{id}/revoke', 'admin', 'Revoke an issued certificate, with a reason the resident sees', { tag: 'certificates', body: ['reason*'], errors: ['not_found', 'bad_state', 'bad_reason'] }),
+  R('GET', '/certificates/{code}', 'public', 'Check a certificate by its code: name, level, hub, kg, dates and whether it is still valid (also served as a printable page at /certificates/{code})', { tag: 'certificates', errors: ['not_found'] }),
   R('GET', '/impact', 'user', 'What everyone kept in use together: kg, estimated CO2e avoided, items and residents', { tag: 'dropoffs' }),
 ];

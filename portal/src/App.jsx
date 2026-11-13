@@ -15,6 +15,7 @@ import Partners from './pages/admin/Partners.jsx';
 import Places from './pages/admin/Places.jsx';
 import Categories from './pages/admin/Categories.jsx';
 import Flags from './pages/admin/Flags.jsx';
+import Certificates from './pages/admin/Certificates.jsx';
 import Audit from './pages/admin/Audit.jsx';
 import Reports from './pages/admin/Reports.jsx';
 
@@ -44,6 +45,7 @@ const PAGES = {
     ...STAFF_PAGES,
     { to: '/reports', label: 'Impact reports', el: <Reports /> },
     { to: '/flags', label: 'Flags', el: <Flags /> },
+    { to: '/certificates', label: 'Certificates', el: <Certificates /> },
     { to: '/accounts', label: 'Accounts', el: <Accounts /> },
     { to: '/partners', label: 'Partner organizations', el: <Partners /> },
     { to: '/places', label: 'Hubs and recyclers', el: <Places /> },

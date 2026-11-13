@@ -145,6 +145,30 @@ export function badgeFor(confirmedPoints) {
   return [...BADGES].reverse().find((b) => confirmedPoints >= b.min).key;
 }
 
+// ---------- certificates: recognition for keeping things in use ----------
+// Not goods or credit: a certificate signed by the hub's head and the CircuLink programme lead. Only confirmed
+// points count, and the drop-off and month minimums reward a habit, not one big delivery made to qualify.
+// Champion certificates also need an admin's approval.
+export const CERTIFICATE_LEVELS = [
+  { key: 'participation', points: 100, dropoffs: 3, months: 1, review: false },
+  { key: 'recognition', points: 500, dropoffs: 8, months: 3, review: false },
+  { key: 'champion', points: 2000, dropoffs: 15, months: 6, review: true },
+];
+
+// What a resident still needs for each level, from their confirmed points, received drop-offs and the number
+// of different months they dropped off in.
+export function certificateProgress({ points, dropoffs, months }) {
+  return CERTIFICATE_LEVELS.map((l) => ({
+    ...l,
+    eligible: points >= l.points && dropoffs >= l.dropoffs && months >= l.months,
+    missing: {
+      points: Math.max(0, l.points - points),
+      dropoffs: Math.max(0, l.dropoffs - dropoffs),
+      months: Math.max(0, l.months - months),
+    },
+  }));
+}
+
 // ---------- R6: points stay pending until the item is final ----------
 
 // The item life cycle. Anything not listed is refused.
