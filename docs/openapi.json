@@ -2620,6 +2620,126 @@
           }
         }
       }
+    },
+    "/admin/reports": {
+      "get": {
+        "operationId": "getAdminReports",
+        "tags": [
+          "admin"
+        ],
+        "summary": "Monthly impact report: kg by outcome, hub and category, plus the last 12 months (totals only, no names)",
+        "description": "Admins only. Error codes: bad_month.",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hub_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/reports.csv": {
+      "get": {
+        "operationId": "getAdminReportsCsv",
+        "tags": [
+          "admin"
+        ],
+        "summary": "The monthly impact report as a CSV file",
+        "description": "Admins only. Error codes: bad_month.",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hub_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A CSV file",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/impact": {
+      "get": {
+        "operationId": "getImpact",
+        "tags": [
+          "dropoffs"
+        ],
+        "summary": "What everyone kept in use together: kg, estimated CO2e avoided, items and residents",
+        "description": "Any logged-in account.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {}
+            }
+          },
+          "4XX": {
+            "description": "An error: { error, code }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

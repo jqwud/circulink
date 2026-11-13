@@ -7,6 +7,7 @@ import {
   listUsers, createAccount, setSuspended, resetPassword, setStaffHubs, deleteAccount, listPartners, setPartnerStatus, listHubs,
   createHub, updateHub, listRecyclers, saveRecycler, listCategories, saveCategory, auditLog,
 } from '../admin.js';
+import { monthlyReport, reportCsv, communityImpact } from '../reports.js';
 
 const router = Router();
 const admin = [authRequired, requireAdmin];
@@ -38,5 +39,15 @@ router.patch('/admin/categories/:id', ...admin, wrap(async (req, res) => res.jso
 router.get('/admin/audit', ...admin, wrap(async (req, res) => res.json(await auditLog({
   entity: req.query.entity, entityId: req.query.entity_id, limit: req.query.limit, before: req.query.before,
 }))));
+
+// Impact reports (12.6): totals only, never names.
+router.get('/admin/reports', ...admin, wrap(async (req, res) => res.json(await monthlyReport({ month: req.query.month, hubId: req.query.hub_id }))));
+router.get('/admin/reports.csv', ...admin, wrap(async (req, res) => {
+  const report = await monthlyReport({ month: req.query.month, hubId: req.query.hub_id });
+  res.type('text/csv').attachment(`circulink-report-${report.month}.csv`).send(reportCsv(report));
+}));
+
+// What everyone kept in use together, for the app's home screen (12.8).
+router.get('/impact', authRequired, wrap(async (_req, res) => res.json(await communityImpact())));
 
 export default router;

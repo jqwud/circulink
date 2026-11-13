@@ -16,6 +16,7 @@ import Places from './pages/admin/Places.jsx';
 import Categories from './pages/admin/Categories.jsx';
 import Flags from './pages/admin/Flags.jsx';
 import Audit from './pages/admin/Audit.jsx';
+import Reports from './pages/admin/Reports.jsx';
 
 function LangToggle() {
   const { lang, setLang } = useI18n();
@@ -41,6 +42,7 @@ const PAGES = {
   ],
   admin: [
     ...STAFF_PAGES,
+    { to: '/reports', label: 'Impact reports', el: <Reports /> },
     { to: '/flags', label: 'Flags', el: <Flags /> },
     { to: '/accounts', label: 'Accounts', el: <Accounts /> },
     { to: '/partners', label: 'Partner organizations', el: <Partners /> },
