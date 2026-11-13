@@ -1,6 +1,6 @@
 # CircuLink: Circular Drop-off Hub System Spec
 
-Status: approved concept (2026-11-12). Replaces the Hiraman borrowing system.
+Status: approved concept (2026-11-12).
 Name: **CircuLink** (chosen by the team, 2026-11-12). All nine build steps (section 10) are done.
 
 ## 1. Purpose (SDG 12)
@@ -98,7 +98,7 @@ The numbers are starting values and live in `server/src/rules.js`, next to one f
 | `points_ledger` | id, user_id, item_id, points, status (pending/confirmed/cancelled), reason |
 | `flags` | id, kind, ref_id, status (open/cleared/upheld), reviewed_by |
 | `audit_log` | id, actor_id, action, entity, entity_id, data_json, created_at (no update or delete) |
-| `notifications` | kept from Hiraman |
+| `notifications` | id, user_id, type, title, body, params, ref_id, read_at, created_at |
 
 ## 7. Screens
 
@@ -113,7 +113,7 @@ The numbers are starting values and live in `server/src/rules.js`, next to one f
 
 - **Keep:** Express API structure, auth and token handling, uploads, notifications, jobs runner, migration scripts, Docker setup, CI, Flutter UI kit and theme, portal shell.
 - **Rewrite:** rules, services, routes, schema, every app and portal screen, seed data, docs, branding text.
-- **Remove:** loans and borrowing, Barangay Shelf, Tiwala score, credits, food vouchers, disputes, phrase messaging, and every Hiraman name in the UI.
+- **Remove:** loans and borrowing, Barangay Shelf, Tiwala score, credits, food vouchers, disputes, phrase messaging, and every old name in the UI.
 
 ## 9. Fit with the CI/CD lab (Lab Act 3)
 
@@ -125,7 +125,7 @@ The numbers are starting values and live in `server/src/rules.js`, next to one f
 
 ## 10. Build order
 
-1. Clean slate: remove Hiraman features, keep the shell, write the new schema and migrations
+1. Clean slate: remove the old features, keep the shell, write the new schema and migrations
 2. Rules engine (R1–R13) and its unit tests
 3. Declarations, codes, staff check-in, weigh and sort, points ledger
 4. Stock, partner requests, releases, recycle batches, repair queue

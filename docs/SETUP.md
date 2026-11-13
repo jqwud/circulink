@@ -77,7 +77,7 @@ To edit the portal and see changes instantly, run `npm run dev` instead and open
 
 The app finds the server by itself. The login screen shows **"Connected to …"**, or **"Cannot reach the server"** with a **Find server** button.
 
-The Android app ID changed to `com.circulink.app`, so CircuLink installs as a new app next to an old Hiraman build. You can uninstall Hiraman from the phone.
+The Android app ID is `com.circulink.app`.
 
 ### Without the cable
 
