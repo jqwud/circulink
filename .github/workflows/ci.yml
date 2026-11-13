@@ -1,11 +1,20 @@
-# Checks every push and pull request: the API tests on a real MySQL, the app's analysis and tests,
-# the portal's lint and build, and end-to-end tests of the portal and the app against a real server.
-# Nothing here deploys anything.
-name: CI
+# CI: checks every push and pull request: the API tests on a real MySQL (with the R1 to R13 rule tests), the
+# app's analysis and tests, the portal's lint and build, the containers, and end-to-end tests of the portal
+# and the app against a real server.
+# CD: when ALL of those pass on a push to main or on a v* tag, the Docker image is built and pushed to the
+# GitHub Container Registry (ghcr.io). Pull requests and other branches are only checked, never published.
+# More in docs/CICD.md.
+name: CI/CD
 
 on:
   push:
+    branches: ['**']
+    tags: ['v*']
   pull_request:
+
+# Jobs may only read the code. The publish job alone is also allowed to write packages.
+permissions:
+  contents: read
 
 jobs:
   server:
@@ -71,6 +80,7 @@ jobs:
           sed -i "s/^JWT_SECRET=.*/JWT_SECRET=$(openssl rand -hex 32)/" docker.env
       - run: docker compose config --quiet
       - run: docker compose -f docker-compose.yml -f docker-compose.dev.yml config --quiet
+      - run: docker compose -f docker-compose.yml -f docker-compose.ghcr.yml config --quiet
       - run: docker compose up -d --build --wait --wait-timeout 300
       - run: curl -fsS http://localhost:4000/api/health
       - run: curl -fsS http://localhost:4000/ | grep -q 'id="root"'
@@ -152,3 +162,49 @@ jobs:
             echo "::error title=App journeys failed::$(grep -v '^\s*$' e2e.log | tail -60 | cut -c1-200 | sed ':a;N;$!ba;s/%/%25/g;s/\n/%0A/g')"
           fi
           exit $code
+
+  publish:
+    name: Publish the image to GHCR (main and v* tags only)
+    # One failed or skipped check above and this job does not run: a broken rule never reaches the registry.
+    needs: [server, app, containers, portal, e2e]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      # The token GitHub makes for this run; no password or secret is stored anywhere.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # main -> :latest and :sha-<commit>; tag v1.2.3 -> :1.2.3 and :1.2
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      # The same Dockerfile the containers job tested: the portal is built inside the image, nothing prebuilt is copied in.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Say what was published
+        run: |
+          {
+            echo "### Published"
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
