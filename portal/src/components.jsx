@@ -259,7 +259,8 @@ export function Tabs({ tabs, value, onChange }) {
 export function useDateFormat() {
   const { lang } = useI18n();
   const locale = lang === 'fil' ? 'fil-PH' : 'en-PH';
-  return (s) => {
+  // withTime adds the hour and minute, for things that happen several times a day.
+  return (s, withTime = false) => {
     if (!s) return '';
     // The server stores Philippine time without a zone: read it as +08:00 and show it in Manila time,
     // so a computer set to another zone never shows the wrong day.
@@ -267,7 +268,10 @@ export function useDateFormat() {
     const iso = text.length <= 10 ? `${text}T12:00:00+08:00` : /([zZ]|[+-]\d\d:\d\d)$/.test(text) ? text : `${text.replace(' ', 'T')}+08:00`;
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return s;
-    return d.toLocaleDateString(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Manila' });
+    const opts = { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Manila' };
+    return withTime && text.length > 10
+      ? d.toLocaleString(locale, { ...opts, hour: 'numeric', minute: '2-digit' })
+      : d.toLocaleDateString(locale, opts);
   };
 }
 

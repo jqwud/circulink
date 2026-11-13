@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../../api.js';
 import { useI18n } from '../../i18n.jsx';
-import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, Tabs, kg, useAct, useLoad } from '../../components.jsx';
+import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, Tabs, kg, useAct, useDateFormat, useLoad } from '../../components.jsx';
 
 // Partner requests at my hubs: hand the items over (they become final, points confirmed) or decline.
 export default function Releases() {
@@ -21,11 +21,12 @@ export default function Releases() {
 
 export function ReleaseItems({ r }) {
   const { t, lang } = useI18n();
+  const date = useDateFormat();
   return (
     <ul className="tag-list">
       {r.items.map((i) => (
         <li key={i.id} className="tag">{lang === 'fil' ? i.category.name_fil : i.category.name_en}{i.description ? `: ${i.description}` : ''} · {kg(i.weight_kg)}
-          {i.category.food && i.expiry_date ? ` · ${t('expires')} ${String(i.expiry_date).slice(0, 10)}` : ''}</li>
+          {i.category.food && i.expiry_date ? ` · ${t('expires')} ${date(i.expiry_date)}` : ''}</li>
       ))}
     </ul>
   );
@@ -34,23 +35,30 @@ export function ReleaseItems({ r }) {
 function ReleaseCard({ r, onChange }) {
   const { t } = useI18n();
   const { run, busy } = useAct();
+  const date = useDateFormat();
+  const [handing, setHanding] = useState(false);
   const [declining, setDeclining] = useState(false);
   const [reason, setReason] = useState('');
   return (
     <section className="card">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2 style={{ margin: 0 }}>{r.partner.org_name}</h2>
+      <div className="row between">
+        <h2 className="m-0">{r.partner.org_name}</h2>
         <Badge value={r.status === 'requested' ? 'pending' : r.status === 'cancelled' ? 'cancelled' : 'approved'} label={t(r.status)} />
       </div>
-      <p className="muted">#{r.id} · {r.hub.name} · {r.items.length} {t('items')} · {kg(r.total_kg)} · {String(r.created_at).slice(0, 16)}</p>
+      <p className="muted">#{r.id} · {r.hub.name} · {r.items.length} {t('items')} · {kg(r.total_kg)} · {date(r.created_at, true)}</p>
       {r.note && <p className="note">{r.note}</p>}
       <ReleaseItems r={r} />
       {r.status === 'requested' && (
-        <div className="row" style={{ marginTop: 12 }}>
-          <button className="btn primary" disabled={busy}
-            onClick={() => run(() => api(`/staff/releases/${r.id}/hand-over`, { method: 'POST' }), t('Handed over. Points confirmed.'), onChange)}>{t('Hand over')}</button>
+        <div className="row mt-12">
+          <button className="btn primary" disabled={busy} onClick={() => setHanding(true)}>{t('Hand over')}</button>
           <button className="btn" disabled={busy} onClick={() => setDeclining(true)}>{t('Decline')}</button>
         </div>
+      )}
+      {handing && (
+        <ConfirmModal title={t('Hand over these items?')}
+          message={t('The organization takes the items now and the residents get their points. This cannot be undone.')}
+          confirmLabel={t('Hand over')} onClose={() => setHanding(false)}
+          onConfirm={() => run(() => api(`/staff/releases/${r.id}/hand-over`, { method: 'POST' }), t('Handed over. Points confirmed.'), onChange)} />
       )}
       {declining && (
         <Modal title={t('Decline this request?')} onClose={() => setDeclining(false)}>

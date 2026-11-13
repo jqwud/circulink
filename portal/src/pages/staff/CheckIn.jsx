@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../../api.js';
 import { useI18n } from '../../i18n.jsx';
-import { Badge, Empty, ErrorBox, Loading, PageHeader, kg, useAct, useLoad, useToast } from '../../components.jsx';
+import { Badge, Empty, ErrorBox, Loading, PageHeader, kg, useAct, useDateFormat, useLoad, useToast } from '../../components.jsx';
 
 const OUTCOMES = ['reuse', 'repair', 'recycle', 'reject'];
 
@@ -10,6 +10,7 @@ const OUTCOMES = ['reuse', 'repair', 'recycle', 'reject'];
 export default function CheckIn() {
   const { t } = useI18n();
   const toast = useToast();
+  const date = useDateFormat();
   const [params, setParams] = useSearchParams();
   const openId = Number(params.get('id')) || null;
   const [code, setCode] = useState('');
@@ -26,8 +27,8 @@ export default function CheckIn() {
   return (
     <>
       <PageHeader title={t('Check in and sort')} subtitle={t('Type the code the resident shows you. It works once, only at its own hub.')} />
-      <form className="card row" onSubmit={submit} style={{ alignItems: 'end', gap: 12 }}>
-        <div className="field" style={{ margin: 0 }}>
+      <form className="card row end" onSubmit={submit}>
+        <div className="field m-0">
           <label htmlFor="code">{t('Drop-off code')}</label>
           <input id="code" className="code-input" value={code} maxLength={9} autoComplete="off" autoFocus
             onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="ABC123" required />
@@ -35,6 +36,7 @@ export default function CheckIn() {
         <button className="btn primary" disabled={busy || code.replace(/[\s-]/g, '').length !== 6}>{t('Check in')}</button>
       </form>
 
+      {openId && meta.error && <ErrorBox error={meta.error} onRetry={meta.reload} />}
       {openId && meta.data && <Declaration id={openId} meta={meta.data} onDone={() => { setParams({}); toast(t('All items sorted.')); }} />}
 
       <section className="card">
@@ -46,7 +48,7 @@ export default function CheckIn() {
               <thead><tr><th scope="col">{t('Resident')}</th><th scope="col">{t('Hub')}</th><th scope="col">{t('Items left')}</th><th scope="col">{t('Checked in')}</th><th scope="col"><span className="sr-only">{t('Actions')}</span></th></tr></thead>
               <tbody>{queue.data.map((r) => (
                 <tr key={r.id}>
-                  <td>{r.resident_name}</td><td>{r.hub_name}</td><td>{r.to_sort} / {r.items}</td><td>{String(r.received_at).slice(0, 16)}</td>
+                  <td>{r.resident_name}</td><td>{r.hub_name}</td><td>{r.to_sort} / {r.items}</td><td>{date(r.received_at, true)}</td>
                   <td><button className="btn small" onClick={() => setParams({ id: r.id })}>{t('Sort')}</button></td>
                 </tr>
               ))}</tbody>
@@ -69,8 +71,8 @@ function Declaration({ id, meta, onDone }) {
 
   return (
     <section className="card" aria-labelledby="decl-title">
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h2 id="decl-title" style={{ margin: 0 }}>{t('Drop-off of')} {d.data.resident.name}</h2>
+      <div className="row between">
+        <h2 id="decl-title" className="m-0">{t('Drop-off of')} {d.data.resident.name}</h2>
         <span className="muted">{d.data.hub.name} · {left} {t('to sort')}</span>
       </div>
       {d.data.note && <p className="note">{d.data.note}</p>}
@@ -78,7 +80,7 @@ function Declaration({ id, meta, onDone }) {
         await reload();
         if (left === 1) onDone();
       }} />)}
-      <form className="row" style={{ marginTop: 12, gap: 8 }} onSubmit={async (e) => {
+      <form className="row mt-12" onSubmit={async (e) => {
         e.preventDefault();
         await run(() => api(`/staff/declarations/${id}/items`, { method: 'POST', body: { category_id: Number(extra) } }), t('Item added.'), reload);
         setExtra('');

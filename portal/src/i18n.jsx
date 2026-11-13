@@ -54,6 +54,10 @@ const FIL = {
   // releases
   'Hand items over only to the organization named on the request.': 'Ibigay lang ang mga gamit sa organisasyong nakapangalan sa hiling.',
   'Hand over': 'Ibigay', 'Decline': 'Tanggihan', 'Handed over. Points confirmed.': 'Naibigay. Nakumpirma ang points.',
+  'Hand over these items?': 'Ibigay ang mga gamit na ito?',
+  'The organization takes the items now and the residents get their points. This cannot be undone.': 'Kukunin na ng organisasyon ang mga gamit at matatanggap ng mga residente ang points nila. Hindi na ito mababawi.',
+  'Mark this batch as sent?': 'Markahan bilang naipadala ang batch na ito?',
+  'Do this only after the recycler has picked it up. The residents get their points and this cannot be undone.': 'Gawin lang ito kapag nakuha na ng recycler. Matatanggap ng mga residente ang points nila at hindi na ito mababawi.',
   'Decline this request?': 'Tanggihan ang hiling na ito?', 'Reason (the organization sees this)': 'Dahilan (makikita ito ng organisasyon)',
   'Declined. The items are back in stock.': 'Tinanggihan. Bumalik sa stock ang mga gamit.', 'expires': 'mapapanis sa',
   // partners

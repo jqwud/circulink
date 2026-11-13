@@ -72,6 +72,7 @@ test('the whole loop: check in, sort, a partner asks, hand over, recycle, and th
   await page.getByRole('link', { name: 'Releases to partners' }).click();
   await expect(page.getByRole('heading', { name: 'Lingap Shelter' })).toBeVisible();
   await page.getByRole('button', { name: 'Hand over' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Hand over' }).click();
   await expect(page.getByText('Handed over. Points confirmed.')).toBeVisible();
   await page.getByRole('link', { name: 'Stock and recycling' }).click();
   await page.getByRole('tab', { name: /For recycling/ }).click();
@@ -81,6 +82,7 @@ test('the whole loop: check in, sort, a partner asks, hand over, recycle, and th
   await page.getByRole('button', { name: 'Make batch' }).click();
   await expect(page.getByText('Batch made.')).toBeVisible();
   await page.getByRole('button', { name: 'Mark as sent' }).first().click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Mark as sent' }).click();
   await expect(page.getByText('Batch sent. Points confirmed.')).toBeVisible();
   await logout(page);
 

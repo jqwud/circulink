@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../../api.js';
 import { useI18n } from '../../i18n.jsx';
-import { Badge, Empty, ErrorBox, Loading, Modal, PageHeader, Tabs, kg, useAct, useLoad } from '../../components.jsx';
+import { Badge, ConfirmModal, Empty, ErrorBox, Loading, Modal, PageHeader, Tabs, kg, useAct, useLoad } from '../../components.jsx';
 
 const STATES = ['in_stock', 'in_repair', 'in_recycle_batch'];
 // Where an item can go from each state. Points can only go down (the server checks this too).
@@ -119,11 +119,12 @@ function NewBatch({ items, onClose, onMade }) {
 function Batches({ data, onSent }) {
   const { t } = useI18n();
   const { run, busy } = useAct();
-  if (data.loading || !data.data) return null;
+  const [sending, setSending] = useState(null);
+  if (data.loading) return null;
   return (
     <section className="card">
       <h2>{t('Recycle batches')}</h2>
-      {!data.data.length ? <Empty>{t('No batches yet.')}</Empty> : (
+      {data.error ? <ErrorBox error={data.error} onRetry={data.reload} /> : !data.data.length ? <Empty>{t('No batches yet.')}</Empty> : (
         <div className="table-wrap"><table>
           <thead><tr><th scope="col">#</th><th scope="col">{t('Recycler')}</th><th scope="col">{t('Hub')}</th><th scope="col">{t('Items')}</th><th scope="col">{t('Weight')}</th><th scope="col">{t('Status')}</th><th scope="col"><span className="sr-only">{t('Actions')}</span></th></tr></thead>
           <tbody>{data.data.map((b) => (
@@ -131,14 +132,19 @@ function Batches({ data, onSent }) {
               <td>{b.id}</td><td>{b.recycler_name}{b.accredited ? ` (${t('accredited')})` : ''}</td><td>{b.hub_name}</td><td>{b.items}</td><td>{kg(b.total_kg)}</td>
               <td><Badge value={b.status === 'sent' ? 'approved' : 'open'} label={t(b.status === 'sent' ? 'Sent' : 'Open')} /></td>
               <td>{b.status === 'open' && (
-                <button className="btn small primary" disabled={busy}
-                  onClick={() => run(() => api(`/staff/recycle-batches/${b.id}/send`, { method: 'POST' }), t('Batch sent. Points confirmed.'), async () => { await data.reload(); await onSent(); })}>
+                <button className="btn small primary" disabled={busy} onClick={() => setSending(b)}>
                   {t('Mark as sent')}
                 </button>
               )}</td>
             </tr>
           ))}</tbody>
         </table></div>
+      )}
+      {sending && (
+        <ConfirmModal title={t('Mark this batch as sent?')}
+          message={t('Do this only after the recycler has picked it up. The residents get their points and this cannot be undone.')}
+          confirmLabel={t('Mark as sent')} onClose={() => setSending(null)}
+          onConfirm={() => run(() => api(`/staff/recycle-batches/${sending.id}/send`, { method: 'POST' }), t('Batch sent. Points confirmed.'), async () => { await data.reload(); await onSent(); })} />
       )}
     </section>
   );
