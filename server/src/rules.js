@@ -31,7 +31,7 @@ export const RULES = {
 
 // What can happen to an item at the hub, and how much of the category rate it earns (R5).
 export const OUTCOMES = ['reuse', 'repair', 'recycle', 'reject'];
-export const OUTCOME_MULTIPLIER = { reuse: 1.0, repair: 0.8, recycle: 0.5, reject: 0 };
+export const OUTCOME_MULTIPLIER = { reuse: 1.0, repair: 0.8, recycle: 0.5, reject: 1 };
 
 // Badge tiers by confirmed points. Points cannot be transferred and have no cash value.
 export const BADGES = [
