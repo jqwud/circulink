@@ -51,6 +51,16 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm test
+            - name: Verify Secret Configuration
+        env:
+          DEMO_API_KEY: ${{ secrets.DEMO_API_KEY }}
+        run: |
+          if [ -z "$DEMO_API_KEY" ]; then
+            echo "DEMO_API_KEY is not set"
+            exit 1
+          fi
+          echo "DEMO_API_KEY is configured (value hidden)"
+
 
   app:
     name: App (analyze and tests)
