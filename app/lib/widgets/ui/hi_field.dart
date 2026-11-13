@@ -20,6 +20,8 @@ class HiTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final IconData? icon;
+  /// A widget at the end of the field, like the show/hide password button.
+  final Widget? suffix;
 
   const HiTextField({
     super.key,
@@ -39,6 +41,7 @@ class HiTextField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.icon,
+    this.suffix,
   });
 
   @override
@@ -64,6 +67,7 @@ class HiTextField extends StatelessWidget {
         errorMaxLines: 3,
         hintText: hint,
         prefixIcon: icon == null ? null : Icon(icon),
+        suffixIcon: suffix,
       ),
     );
   }

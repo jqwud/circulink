@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../core/i18n.dart';
 import '../core/state.dart';
 import '../core/theme.dart';
 import '../widgets/brand_mark.dart';
@@ -44,7 +45,7 @@ class _Splash extends StatelessWidget {
             const SizedBox(height: 4),
             const BrandWordmark(),
             const SizedBox(height: 4),
-            const Text('Keep it in the loop.', style: TextStyle(color: HiColors.muted, fontSize: 15)),
+            Text(context.t('Keep it in the loop.'), style: HiText.body.copyWith(color: HiColors.muted)),
             const SizedBox(height: 22),
             SizedBox(
               width: 120,

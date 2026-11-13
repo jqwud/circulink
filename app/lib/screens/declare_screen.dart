@@ -139,7 +139,7 @@ class _DeclareScreenState extends State<DeclareScreen> {
           if (_error != null)
             Padding(
               padding: const EdgeInsets.only(bottom: HiSpace.sm),
-              child: Text(_error!, style: const TextStyle(color: HiColors.danger, fontWeight: FontWeight.w700)),
+              child: InfoBanner(_error!, tone: Tone.bad),
             ),
           PrimaryButton(label: context.t('Get my drop-off code'), icon: Icons.qr_code_2_rounded, busy: _busy, onPressed: _submit),
         ],

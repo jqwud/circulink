@@ -76,38 +76,34 @@ class _LoginScreenState extends State<LoginScreen> {
             const Center(child: BrandMark(size: 112)),
             const SizedBox(height: 8),
             const Center(child: BrandWordmark()),
-            Text(context.t('Keep it in the loop.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted, fontSize: 15)),
+            Text(context.t('Keep it in the loop.'), textAlign: TextAlign.center, style: HiText.body.copyWith(color: HiColors.muted)),
             const SizedBox(height: 20),
             const ServerStatusCard(),
-            TextField(
+            HiTextField(
               controller: _email,
+              label: context.t('Email'),
+              icon: Icons.mail_outline,
               keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
               autofillHints: const <String>[AutofillHints.email],
-              decoration: InputDecoration(labelText: context.t('Email'), prefixIcon: const Icon(Icons.mail_outline)),
             ),
             const SizedBox(height: 14),
-            TextField(
+            HiTextField(
               controller: _password,
-              obscureText: _hide,
+              label: context.t('Password'),
+              icon: Icons.lock_outline,
+              obscure: _hide,
+              autofillHints: const <String>[AutofillHints.password],
               onSubmitted: (_) => _submit(),
-              decoration: InputDecoration(
-                labelText: context.t('Password'),
-                
-                prefixIcon: const Icon(Icons.lock_outline),
-                suffixIcon: IconButton(
-                  tooltip: _hide ? context.t('Show password') : context.t('Hide password'),
-                  icon: Icon(_hide ? Icons.visibility : Icons.visibility_off),
-                  onPressed: () => setState(() => _hide = !_hide),
-                ),
+              suffix: IconButton(
+                tooltip: _hide ? context.t('Show password') : context.t('Hide password'),
+                icon: Icon(_hide ? Icons.visibility : Icons.visibility_off),
+                onPressed: () => setState(() => _hide = !_hide),
               ),
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: HiColors.dangerSoft, borderRadius: BorderRadius.circular(12)),
-                child: Text(_error!, style: const TextStyle(color: HiColors.danger, fontWeight: FontWeight.w600)),
-              ),
+              InfoBanner(_error!, tone: Tone.bad),
             ],
             const SizedBox(height: 18),
             PrimaryButton(label: context.t('Log in'), busy: _busy, onPressed: _submit),
@@ -151,6 +147,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _busy = false;
   String? _error;
+  // Errors shown under the field they belong to.
+  final Map<String, String> _fieldErrors = <String, String>{};
 
   @override
   void dispose() {
@@ -163,10 +161,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _submit() async {
-    if (_name.text.trim().length < 2 || !_email.text.contains('@') || _phone.text.trim().length < 7 || _password.text.length < 8) {
-      setState(() => _error = context.tx('Please fill in your name, a valid email, your phone number and a password of at least 8 characters.'));
-      return;
-    }
+    final Map<String, String> errors = <String, String>{
+      if (_name.text.trim().length < 2) 'name': context.tx('Please enter your full name.'),
+      if (!_email.text.contains('@')) 'email': context.tx('Please enter a valid email.'),
+      if (_phone.text.trim().length < 7) 'phone': context.tx('Please enter your phone number.'),
+      if (_password.text.length < 8) 'password': context.tx('The password needs at least 8 characters.'),
+    };
+    setState(() {
+      _fieldErrors
+        ..clear()
+        ..addAll(errors);
+      _error = null;
+    });
+    if (errors.isNotEmpty) return;
     if (!_agreed) {
       setState(() => _error = context.tx('Please read and accept the privacy notice.'));
       return;
@@ -202,15 +209,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: <Widget>[
             const Center(child: BrandMark(size: 80)),
             const SizedBox(height: 12),
-            TextField(controller: _name, textCapitalization: TextCapitalization.words, decoration: InputDecoration(labelText: context.t('Full name'))),
+            HiTextField(controller: _name, label: context.t('Full name'), error: _fieldErrors['name'], textCapitalization: TextCapitalization.words, textInputAction: TextInputAction.next, autofillHints: const <String>[AutofillHints.name]),
             const SizedBox(height: 14),
-            TextField(controller: _email, keyboardType: TextInputType.emailAddress, decoration: InputDecoration(labelText: context.t('Email'))),
+            HiTextField(controller: _email, label: context.t('Email'), error: _fieldErrors['email'], keyboardType: TextInputType.emailAddress, textInputAction: TextInputAction.next, autofillHints: const <String>[AutofillHints.email]),
             const SizedBox(height: 14),
-            TextField(controller: _phone, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: context.t('Phone'), helperText: context.t('One account per phone number'))),
+            HiTextField(controller: _phone, label: context.t('Phone'), helper: context.t('One account per phone number'), error: _fieldErrors['phone'], keyboardType: TextInputType.phone, textInputAction: TextInputAction.next, autofillHints: const <String>[AutofillHints.telephoneNumber]),
             const SizedBox(height: 14),
-            TextField(controller: _studentId, textCapitalization: TextCapitalization.characters, decoration: InputDecoration(labelText: '${context.t('Student ID')} (${context.t('Optional')})', helperText: context.t('Only if you drop off at a school hub'))),
+            HiTextField(controller: _studentId, label: '${context.t('Student ID')} (${context.t('Optional')})', helper: context.t('Only if you drop off at a school hub'), textCapitalization: TextCapitalization.characters, textInputAction: TextInputAction.next),
             const SizedBox(height: 14),
-            TextField(controller: _password, obscureText: true, decoration: InputDecoration(labelText: context.t('Password'), helperText: context.t('At least 8 characters'))),
+            HiTextField(controller: _password, label: context.t('Password'), helper: context.t('At least 8 characters'), error: _fieldErrors['password'], obscure: true, autofillHints: const <String>[AutofillHints.newPassword]),
             const SizedBox(height: 8),
             CheckboxListTile(
               value: _agreed,
@@ -229,11 +236,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: HiColors.dangerSoft, borderRadius: BorderRadius.circular(12)),
-                child: Text(_error!, style: const TextStyle(color: HiColors.danger, fontWeight: FontWeight.w600)),
-              ),
+              InfoBanner(_error!, tone: Tone.bad),
             ],
             const SizedBox(height: 18),
             PrimaryButton(label: context.t('Create account'), busy: _busy, onPressed: _submit),

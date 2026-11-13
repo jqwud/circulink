@@ -21,6 +21,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController _again = TextEditingController();
   bool _busy = false;
   String? _error;
+  String? _nextError;
+  String? _againError;
 
   @override
   void dispose() {
@@ -31,14 +33,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Future<void> _save() async {
-    if (_next.text.length < 8) {
-      setState(() => _error = context.tx('The new password needs at least 8 characters.'));
-      return;
-    }
-    if (_next.text != _again.text) {
-      setState(() => _error = context.tx('The two new passwords are not the same.'));
-      return;
-    }
+    final String? nextError = _next.text.length < 8 ? context.tx('The new password needs at least 8 characters.') : null;
+    final String? againError = nextError == null && _next.text != _again.text ? context.tx('The two new passwords are not the same.') : null;
+    setState(() {
+      _nextError = nextError;
+      _againError = againError;
+      _error = null;
+    });
+    if (nextError != null || againError != null) return;
     setState(() {
       _busy = true;
       _error = null;
@@ -57,8 +59,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     }
   }
 
-  InputDecoration _field(String label) => InputDecoration(labelText: label);
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,18 +75,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               Text(context.t('An admin gave you a temporary password. Pick a new one that only you know.'), textAlign: TextAlign.center, style: const TextStyle(color: HiColors.muted)),
               const SizedBox(height: 18),
             ],
-            TextField(controller: _current, obscureText: true, decoration: _field(widget.forced ? context.t('Temporary password') : context.t('Current password'))),
+            HiTextField(controller: _current, label: widget.forced ? context.t('Temporary password') : context.t('Current password'), obscure: true, textInputAction: TextInputAction.next, autofillHints: const <String>[AutofillHints.password]),
             const SizedBox(height: 14),
-            TextField(controller: _next, obscureText: true, decoration: _field(context.t('New password')).copyWith(helperText: context.t('At least 8 characters'))),
+            HiTextField(controller: _next, label: context.t('New password'), helper: context.t('At least 8 characters'), error: _nextError, obscure: true, textInputAction: TextInputAction.next, autofillHints: const <String>[AutofillHints.newPassword]),
             const SizedBox(height: 14),
-            TextField(controller: _again, obscureText: true, decoration: _field(context.t('New password again'))),
+            HiTextField(controller: _again, label: context.t('New password again'), error: _againError, obscure: true, autofillHints: const <String>[AutofillHints.newPassword], onSubmitted: (_) => _save()),
             if (_error != null) ...<Widget>[
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: HiColors.dangerSoft, borderRadius: BorderRadius.circular(12)),
-                child: Text(_error!, style: const TextStyle(color: HiColors.danger, fontWeight: FontWeight.w600)),
-              ),
+              InfoBanner(_error!, tone: Tone.bad),
             ],
             const SizedBox(height: 18),
             PrimaryButton(label: context.t('Save new password'), busy: _busy, onPressed: _save),
