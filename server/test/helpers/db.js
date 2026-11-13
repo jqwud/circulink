@@ -12,7 +12,7 @@ const schemaFile = path.join(serverRoot, '..', 'database', 'schema.sql');
 
 const notReady = (e) => new Error(
   `The test database "${config.db.database}" is not ready (${e.code || e.message}).\n`
-  + '  Create it once as MySQL root:  mysql -u root -p -e "source database/create-test-db.sql"\n'
+  + '  Create it once as MySQL root with database/create-test-db.sql (the command is at the top of that file).\n'
   + '  See docs/SETUP.md, "Running the automated tests".');
 
 // Drops every table in the test database, recreates them from schema.sql, then applies every migration.
